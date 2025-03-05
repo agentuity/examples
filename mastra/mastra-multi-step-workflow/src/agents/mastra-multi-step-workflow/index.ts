@@ -1,5 +1,4 @@
 import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
-import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { Agent, Step, Workflow } from "@mastra/core";
