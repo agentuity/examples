@@ -1,0 +1,30 @@
+{
+  "name": "basic-agent",
+  "description": "Basic agent example for Agentuity JavaScript SDK",
+  "version": "0.0.1",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "agentuity build",
+    "prestart": "agentuity bundle",
+    "start": "node --env-file .env .agentuity/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "agentuity",
+    "agent",
+    "ai",
+    "ai agent",
+    "vercel",
+    "bun"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@agentuity/sdk": "^0.0.73"
+  }
+}
