@@ -1,4 +1,5 @@
 <div align="center">
+    <img src=".github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
     <strong>Agentuity Examples</strong> <br/>
     <strong>Build Agents, Not Infrastructure</strong> <br/>
 <br />
