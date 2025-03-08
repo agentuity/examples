@@ -4,11 +4,13 @@
 # ------------------------------------------------
 
 # The ID of the project which is automatically generated
-project_id: proj_py_langchain_example
+project_id: proj_vercel_ai_sdk_example
 # The name of the project which is editable
-name: py-langchain
+name: vercel-ai-sdk
 # The description of the project which is editable
-description: "LangChain framework example for Agentuity Python SDK"
+description: "Vercel AI SDK framework examples for Agentuity"
+# The version semver range required to run this project
+version: '>=0.0.0'
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -20,14 +22,20 @@ development:
     files:
       - src/**
   # The command to run the development server
-  command: python
+  command: node
   # The arguments to pass to the development server
   args:
-    - .agentuity/index.py
+    - .agentuity/index.js
 deployment:
-  command: python
+  command: node
   args:
-    - .agentuity/index.py
+    - --disable-sigusr1
+    - --disallow-code-generation-from-strings
+    - --no-addons
+    - --no-deprecation
+    - --no-global-search-paths
+    - --report-uncaught-exception
+    - .agentuity/index.js
   # You should tune the resources for the deployment
   resources:
     # The memory requirements
@@ -39,18 +47,22 @@ deployment:
 # You should not need to change these value
 bundler:
   enabled: true
-  identifier: python
-  language: python
-  runtime: python
+  identifier: nodejs
+  language: javascript
+  runtime: nodejs
   agents:
     dir: src/agents
   ignore:
-    - venv/**
-    - __pycache__/**
+    - node_modules/**
+    - dist/**
     - src/**
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_py_langchain_example
+    id: agent_vercel_openai_example
     # The name of the Agent which is editable
-    name: langchain-agent
+    name: vercel-openai
+  - # The ID of the Agent which is automatically generated
+    id: agent_vercel_anthropic_example
+    # The name of the Agent which is editable
+    name: vercel-anthropic

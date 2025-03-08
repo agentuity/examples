@@ -4,11 +4,13 @@
 # ------------------------------------------------
 
 # The ID of the project which is automatically generated
-project_id: proj_py_llamaindex_example
+project_id: proj_langchain_example
 # The name of the project which is editable
-name: py-llamaindex
+name: langchain
 # The description of the project which is editable
-description: "LlamaIndex framework example for Agentuity Python SDK"
+description: "LangChain framework example for Agentuity Python SDK"
+# The version semver range required to run this project
+version: '>=0.0.0'
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -51,6 +53,6 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_py_llamaindex_example
+    id: agent_py_langchain_example
     # The name of the Agent which is editable
-    name: llamaindex-agent
+    name: langchain-agent

@@ -9,6 +9,8 @@ project_id: proj_py_agent_communication_example
 name: py-agent-communication
 # The description of the project which is editable
 description: "Agent communication example for Agentuity Python SDK"
+# The version semver range required to run this project
+version: '>=0.0.0'
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable

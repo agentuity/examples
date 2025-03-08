@@ -4,11 +4,13 @@
 # ------------------------------------------------
 
 # The ID of the project which is automatically generated
-project_id: proj_py_crewai_example
+project_id: proj_crewai_example
 # The name of the project which is editable
-name: py-crewai
+name: crewai
 # The description of the project which is editable
 description: "CrewAI framework example for Agentuity Python SDK"
+# The version semver range required to run this project
+version: '>=0.0.0'
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable

@@ -9,6 +9,8 @@ project_id: proj_py_basic_agent_example
 name: py-basic-agent
 # The description of the project which is editable
 description: "Basic agent example for Agentuity Python SDK"
+# The version semver range required to run this project
+version: '>=0.0.0'
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable

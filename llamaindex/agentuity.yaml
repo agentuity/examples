@@ -4,11 +4,13 @@
 # ------------------------------------------------
 
 # The ID of the project which is automatically generated
-project_id: proj_error_handling_example
+project_id: proj_llamaindex_example
 # The name of the project which is editable
-name: error-handling
+name: llamaindex
 # The description of the project which is editable
-description: "Error handling example for Agentuity JavaScript SDK"
+description: "LlamaIndex framework example for Agentuity Python SDK"
+# The version semver range required to run this project
+version: '>=0.0.0'
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -20,20 +22,14 @@ development:
     files:
       - src/**
   # The command to run the development server
-  command: node
+  command: python
   # The arguments to pass to the development server
   args:
-    - .agentuity/index.js
+    - .agentuity/index.py
 deployment:
-  command: node
+  command: python
   args:
-    - --disable-sigusr1
-    - --disallow-code-generation-from-strings
-    - --no-addons
-    - --no-deprecation
-    - --no-global-search-paths
-    - --report-uncaught-exception
-    - .agentuity/index.js
+    - .agentuity/index.py
   # You should tune the resources for the deployment
   resources:
     # The memory requirements
@@ -45,18 +41,18 @@ deployment:
 # You should not need to change these value
 bundler:
   enabled: true
-  identifier: nodejs
-  language: javascript
-  runtime: nodejs
+  identifier: python
+  language: python
+  runtime: python
   agents:
     dir: src/agents
   ignore:
-    - node_modules/**
-    - dist/**
+    - venv/**
+    - __pycache__/**
     - src/**
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_error_handling_example
+    id: agent_py_llamaindex_example
     # The name of the Agent which is editable
-    name: error-handling
+    name: llamaindex-agent
