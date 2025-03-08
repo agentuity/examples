@@ -4,11 +4,11 @@
 # ------------------------------------------------
 
 # The ID of the project which is automatically generated
-project_id: proj_FWtYf7z5im67c8a60bi1i0eKjDN2rxpa
+project_id: proj_basic_agent_example
 # The name of the project which is editable
-name: mastra-weather-workflow
+name: basic-agent
 # The description of the project which is editable
-description: ""
+description: "Basic agent example for Agentuity JavaScript SDK"
 # The version semver range required to run this project
 version: '>=0.0.0'
 # The development configuration for the project
@@ -59,6 +59,6 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_akiTCGbTnkNQ67c8a60b9fOVKu1gzjYc
+    id: agent_basic_agent_example
     # The name of the Agent which is editable
-    name: mastra-weather-workflow
+    name: basic-agent

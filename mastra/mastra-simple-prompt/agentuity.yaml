@@ -9,6 +9,8 @@ project_id: proj_7suO9deK5L767c89b8aB0jmB8hf17z2b
 name: mastra-simple-prompt
 # The description of the project which is editable
 description: ""
+# The version semver range required to run this project
+version: '>=0.0.0'
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable

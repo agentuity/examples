@@ -9,6 +9,8 @@ project_id: proj_X67c8a1fd4058DyO2ZwqF4k3HtHVkGI1
 name: mastra-simple-weather
 # The description of the project which is editable
 description: ""
+# The version semver range required to run this project
+version: '>=0.0.0'
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
