@@ -3,21 +3,20 @@ import json
 
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    data = request.json()
+    data = request.data.json
     action = data.get("action")
     user_id = data.get("userId")
     preferences = data.get("preferences")
 
     if action == "get":
         # Retrieve user preferences
-        data = await context.kv.get("user-preferences", user_id)
+        result = await context.kv.get("user-preferences", user_id)
 
-        if not data:
+        if not result.exists:
             return response.json({"message": "No preferences found"})
 
-        # Convert bytes to string and parse as JSON
-        prefs_string = data.decode("utf-8")
-        user_prefs = json.loads(prefs_string)
+        # Access the data
+        user_prefs = result.data.json
 
         return response.json({"preferences": user_prefs})
     
@@ -26,9 +25,8 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         await context.kv.set(
             "user-preferences",
             user_id,
-            json.dumps(preferences),
-            # Optional TTL (30 days in seconds)
-            60 * 60 * 24 * 30
+            preferences,
+            {"ttl": 60 * 60 * 24 * 30}  # 30 days in seconds
         )
 
         return response.json({"message": "Preferences saved successfully!"})

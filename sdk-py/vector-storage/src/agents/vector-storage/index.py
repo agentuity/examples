@@ -1,9 +1,8 @@
 from agentuity import AgentRequest, AgentResponse, AgentContext
-import json
 
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    data = request.json()
+    data = request.data.json
     action = data.get("action")
     query = data.get("query")
     products = data.get("products")
@@ -16,6 +15,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         # Prepare documents for vector storage
         documents = [
             {
+                "key": product["id"],
                 "document": product["description"],
                 "metadata": {
                     "id": product["id"],
@@ -28,7 +28,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         ]
 
         # Store in vector database
-        ids = await context.vector.upsert("products", *documents)
+        ids = await context.vector.upsert("products", documents)
 
         return response.json({
             "message": f"Indexed {len(ids)} products successfully",
@@ -41,17 +41,28 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
             return response.json({"error": "Query is required for search"})
 
         # Perform semantic search
-        results = await context.vector.search("products", query, {
-            "limit": 5,
-            "filter": {
-                # Optional: Add filters based on metadata
-                # "category": "electronics"
+        results = await context.vector.search(
+            "products",
+            query,
+            limit=5,
+            similarity=0.5,
+            metadata={}
+        )
+
+        # Format results
+        formatted_results = [
+            {
+                "id": result.id,
+                "key": result.key,
+                "similarity": 1.0 - result.distance,
+                "metadata": result.metadata
             }
-        })
+            for result in results
+        ]
 
         return response.json({
             "message": f"Found {len(results)} matching products",
-            "results": results
+            "results": formatted_results
         })
     
     elif action == "delete":
@@ -63,10 +74,10 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         product_ids = [p["id"] for p in products]
         
         # Delete from vector database
-        await context.vector.delete("products", *product_ids)
+        count = await context.vector.delete("products", product_ids[0])
         
         return response.json({
-            "message": f"Deleted {len(product_ids)} products successfully",
+            "message": f"Deleted {count} products successfully",
             "ids": product_ids
         })
     
