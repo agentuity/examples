@@ -5,13 +5,13 @@ export default async function handler(
   response: AgentResponse,
   context: AgentContext,
 ) {
-  const { action, query, products } = request.json();
+  const { action, query, products } = request.data.json;
 
   switch (action) {
     case 'index': {
       // Index products in vector storage
       if (!Array.isArray(products) || products.length === 0) {
-        return response.json({ error: 'No products to index' });
+        return await response.json({ error: 'No products to index' });
       }
 
       // Prepare documents for vector storage
@@ -28,7 +28,7 @@ export default async function handler(
       // Store in vector database
       const ids = await context.vector.upsert('products', ...documents);
 
-      return response.json({
+      return await response.json({
         message: `Indexed ${ids.length} products successfully`,
         ids
       });
@@ -36,7 +36,7 @@ export default async function handler(
     case 'search': {
       // Search for products by semantic similarity
       if (!query) {
-        return response.json({ error: 'Query is required for search' });
+        return await response.json({ error: 'Query is required for search' });
       }
 
       // Perform semantic search
@@ -48,7 +48,7 @@ export default async function handler(
         }
       });
 
-      return response.json({
+      return await response.json({
         message: `Found ${results.length} matching products`,
         results
       });
@@ -56,7 +56,7 @@ export default async function handler(
     case 'delete': {
       // Delete products from vector storage
       if (!Array.isArray(products) || products.length === 0) {
-        return response.json({ error: 'No product IDs to delete' });
+        return await response.json({ error: 'No product IDs to delete' });
       }
 
       // Extract product IDs
@@ -65,12 +65,12 @@ export default async function handler(
       // Delete from vector database
       await context.vector.delete('products', ...productIds);
       
-      return response.json({
+      return await response.json({
         message: `Deleted ${productIds.length} products successfully`,
         ids: productIds
       });
     }
     default:
-      return response.json({ error: 'Invalid action. Use "index", "search", or "delete".' });
+      return await response.json({ error: 'Invalid action. Use "index", "search", or "delete".' });
   }
 }
