@@ -9,7 +9,7 @@ export default async function Agent(
 ) {
   try {
     // Get the prompt from the request or use a default
-    const prompt = req.text() ?? "Why is the sky blue?";
+    const prompt = req.data.text ?? "Why is the sky blue?";
     
     // Log the incoming prompt
     ctx.logger.info(`Processing prompt: ${prompt}`);
@@ -25,13 +25,13 @@ export default async function Agent(
     ctx.logger.info("Successfully generated response");
     
     // Return the generated text
-    return resp.text(res.text);
+    return await resp.text(res.text);
   } catch (error) {
     // Log any errors
     ctx.logger.error("Error generating text with Anthropic", error);
     
     // Return an error message
-    return resp.status(500).text(
+    return await resp.status(500).text(
       "Sorry, I encountered an error while generating a response. Please try again later."
     );
   }
