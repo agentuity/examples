@@ -10,7 +10,7 @@ export default async function handler(
     const mainSpan = context.telemetry.startSpan('process-request');
     
     // Get the request data
-    const data = request.json();
+    const data = request.data.json;
     const { query, userId } = data;
     
     // Record user information as attributes
@@ -52,7 +52,7 @@ export default async function handler(
     mainSpan.end();
     
     // Return the response
-    return response.json({
+    return await response.json({
       message: `Processed query: ${query || 'No query provided'}`,
       timestamp: new Date().toISOString(),
       metrics: {
@@ -71,7 +71,7 @@ export default async function handler(
     context.logger.error('Error processing request', error);
     
     // Return error response
-    return response.json({
+    return await response.json({
       error: 'Failed to process request',
       message: error instanceof Error ? error.message : 'Unknown error'
     });

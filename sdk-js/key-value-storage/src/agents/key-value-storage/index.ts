@@ -5,7 +5,7 @@ export default async function handler(
   response: AgentResponse,
   context: AgentContext,
 ) {
-  const { action, userId, preferences } = request.json();
+  const { action, userId, preferences } = request.data.json;
 
   switch (action) {
     case 'get': {
@@ -13,34 +13,50 @@ export default async function handler(
       const data = await context.kv.get('user-preferences', userId);
 
       if (!data) {
-        return response.json({ message: 'No preferences found' });
+        return await response.json({ message: 'No preferences found' });
       }
 
       // Convert ArrayBuffer to string and parse as JSON
       const prefsString = new TextDecoder().decode(data);
       const userPrefs = JSON.parse(prefsString);
 
-      return response.json({ preferences: userPrefs });
+      return await response.json({
+        message: 'User preferences retrieved',
+        preferences: userPrefs
+      });
     }
     case 'set': {
       // Store user preferences
-      await context.kv.set(
-        'user-preferences',
-        userId,
-        JSON.stringify(preferences),
-        // Optional TTL (30 days in seconds)
-        60 * 60 * 24 * 30
-      );
+      if (!userId || !preferences) {
+        return await response.json({ error: 'User ID and preferences are required' });
+      }
 
-      return response.json({ message: 'Preferences saved successfully!' });
+      // Convert preferences to JSON string and then to ArrayBuffer
+      const prefsString = JSON.stringify(preferences);
+      const prefsBuffer = new TextEncoder().encode(prefsString);
+
+      // Store in key-value storage with 24-hour TTL
+      await context.kv.set('user-preferences', userId, prefsBuffer, { ttl: 86400 });
+
+      return await response.json({
+        message: 'User preferences saved',
+        userId
+      });
     }
     case 'delete': {
       // Delete user preferences
+      if (!userId) {
+        return await response.json({ error: 'User ID is required' });
+      }
+
       await context.kv.delete('user-preferences', userId);
-      
-      return response.json({ message: 'Preferences deleted successfully!' });
+
+      return await response.json({
+        message: 'User preferences deleted',
+        userId
+      });
     }
     default:
-      return response.json({ error: 'Invalid action. Use "get", "set", or "delete".' });
+      return await response.json({ error: 'Invalid action. Use "get", "set", or "delete".' });
   }
 }
