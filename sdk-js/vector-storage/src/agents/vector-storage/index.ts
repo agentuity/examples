@@ -5,13 +5,13 @@ export default async function handler(
   response: AgentResponse,
   context: AgentContext,
 ) {
-  const { action, query, products } = request.json();
+  const { action, query, products } = request.data.json;
 
   switch (action) {
     case 'index': {
       // Index products in vector storage
       if (!Array.isArray(products) || products.length === 0) {
-        return response.json({ error: 'No products to index' });
+        return await response.json({ error: 'No products to index' });
       }
 
       // Prepare documents for vector storage
@@ -28,27 +28,24 @@ export default async function handler(
       // Store in vector database
       const ids = await context.vector.upsert('products', ...documents);
 
-      return response.json({
-        message: `Indexed ${ids.length} products successfully`,
+      return await response.json({
+        message: `Indexed ${ids.length} products`,
         ids
       });
     }
     case 'search': {
-      // Search for products by semantic similarity
+      // Search for products by description
       if (!query) {
-        return response.json({ error: 'Query is required for search' });
+        return await response.json({ error: 'Search query is required' });
       }
 
-      // Perform semantic search
+      // Search vector database
       const results = await context.vector.search('products', query, {
         limit: 5,
-        filter: {
-          // Optional: Add filters based on metadata
-          // category: 'electronics'
-        }
+        similarity: 0.7
       });
 
-      return response.json({
+      return await response.json({
         message: `Found ${results.length} matching products`,
         results
       });
@@ -56,21 +53,21 @@ export default async function handler(
     case 'delete': {
       // Delete products from vector storage
       if (!Array.isArray(products) || products.length === 0) {
-        return response.json({ error: 'No product IDs to delete' });
+        return await response.json({ error: 'No product IDs to delete' });
       }
 
       // Extract product IDs
-      const productIds = products.map(p => p.id);
-      
+      const productIds = products.map(product => product.id);
+
       // Delete from vector database
       await context.vector.delete('products', ...productIds);
-      
-      return response.json({
-        message: `Deleted ${productIds.length} products successfully`,
+
+      return await response.json({
+        message: `Deleted ${productIds.length} products`,
         ids: productIds
       });
     }
     default:
-      return response.json({ error: 'Invalid action. Use "index", "search", or "delete".' });
+      return await response.json({ error: 'Invalid action. Use "index", "search", or "delete".' });
   }
 }

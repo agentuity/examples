@@ -1,11 +1,10 @@
 from agentuity import AgentRequest, AgentResponse, AgentContext
-import json
 
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     try:
         # Get the request data
-        data = request.json()
+        data = request.data.json
         name = data.get("name", "Guest")
         
         # Log the request

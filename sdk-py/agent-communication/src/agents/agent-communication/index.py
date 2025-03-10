@@ -1,10 +1,9 @@
 from agentuity import AgentRequest, AgentResponse, AgentContext
-import json
 from datetime import datetime
 
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    data = request.json()
+    data = request.data.json
     action = data.get("action")
     message = data.get("message")
     agent_id = data.get("agentId")
@@ -17,29 +16,46 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         if not message:
             return response.json({"error": "Message is required"})
 
-        # Send message to the specified agent
-        result = await context.agent.send(agent_id, {
-            "message": message,
-            "sender": context.agent.id,
-            "timestamp": datetime.now().isoformat()
-        })
+        # Send message to the specified agent using handoff
+        result = await response.handoff(
+            {"id": agent_id},
+            {
+                "message": message,
+                "sender": context.agent.id,
+                "timestamp": datetime.now().isoformat()
+            }
+        )
 
-        return response.json({
-            "message": "Message sent successfully",
-            "result": result
-        })
+        return result
     
     elif action == "broadcast":
         # Broadcast a message to all agents in the same project
         if not message:
             return response.json({"error": "Message is required"})
 
-        # Broadcast message to all agents
-        results = await context.agent.broadcast({
-            "message": message,
-            "sender": context.agent.id,
-            "timestamp": datetime.now().isoformat()
-        })
+        # Get all agents in the project
+        agents = context.agents
+        results = []
+
+        # Send message to each agent using handoff
+        for agent in agents:
+            # Skip sending to self
+            if agent.id == context.agent.id:
+                continue
+                
+            try:
+                # Send message to the agent
+                await response.handoff(
+                    {"id": agent.id},
+                    {
+                        "message": message,
+                        "sender": context.agent.id,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                )
+                results.append({"agent": agent.id, "status": "success"})
+            except Exception as e:
+                results.append({"agent": agent.id, "status": "error", "error": str(e)})
 
         return response.json({
             "message": "Broadcast sent successfully",
@@ -48,8 +64,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     
     elif action == "receive":
         # This is a handler for receiving messages from other agents
-        # The message is available in the request body
-        data = request.json()
+        data = request.data.json
         
         context.logger.info(f"Received message from agent {data.get('sender')}: {data.get('message')}")
         
