@@ -14,7 +14,7 @@ export default async function AgentHandler(
     ctx.logger.info(`Received greeting request for ${name}`);
     
     // Return a personalized greeting
-    return await resp.json({
+    return resp.json({
       message: `Hello, ${name}! Welcome to Agentuity.`,
       timestamp: new Date().toISOString()
     });
@@ -22,7 +22,7 @@ export default async function AgentHandler(
     // Handle errors
     ctx.logger.error('Error processing request', error);
     
-    return await resp.json({ 
+    return resp.json({ 
       error: 'Failed to process request',
       message: error instanceof Error ? error.message : 'Unknown error'
     });

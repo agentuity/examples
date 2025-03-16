@@ -11,11 +11,11 @@ export default async function handler(
     case 'send': {
       // Send a message to another agent
       if (!agentId) {
-        return await response.json({ error: 'Agent ID is required' });
+        return response.json({ error: 'Agent ID is required' });
       }
 
       if (!message) {
-        return await response.json({ error: 'Message is required' });
+        return response.json({ error: 'Message is required' });
       }
 
       // Get the agent by ID
@@ -30,7 +30,7 @@ export default async function handler(
         }
       });
 
-      return await response.json({
+      return response.json({
         message: 'Message sent successfully',
         result
       });
@@ -38,7 +38,7 @@ export default async function handler(
     case 'broadcast': {
       // Broadcast a message to all agents in the same project
       if (!message) {
-        return await response.json({ error: 'Message is required' });
+        return response.json({ error: 'Message is required' });
       }
 
       // Broadcast message to all agents
@@ -51,7 +51,7 @@ export default async function handler(
         }
       });
 
-      return await response.json({
+      return response.json({
         message: 'Broadcast sent successfully',
         results
       });
@@ -63,13 +63,13 @@ export default async function handler(
       context.logger.info(`Received message from agent ${data.sender}: ${data.message}`);
       
       // Process the received message
-      return await response.json({
+      return response.json({
         message: 'Message received and processed',
         echo: data.message,
         receivedAt: new Date().toISOString()
       });
     }
     default:
-      return await response.json({ error: 'Invalid action. Use "send", "broadcast", or "receive".' });
+      return response.json({ error: 'Invalid action. Use "send", "broadcast", or "receive".' });
   }
 }

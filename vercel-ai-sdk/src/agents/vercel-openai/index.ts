@@ -25,13 +25,13 @@ export default async function Agent(
     ctx.logger.info("Successfully generated response");
     
     // Return the generated text
-    return await resp.text(res.text);
+    return resp.text(res.text);
   } catch (error) {
     // Log any errors
     ctx.logger.error("Error generating text with OpenAI", error);
     
     // Return an error message
-    return await resp.status(500).text(
+    return resp.status(500).text(
       "Sorry, I encountered an error while generating a response. Please try again later."
     );
   }
