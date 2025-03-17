@@ -1,4 +1,5 @@
 import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+import * as opentelemetry from '@opentelemetry/api';
 
 export default async function handler(
   request: AgentRequest,
@@ -6,6 +7,14 @@ export default async function handler(
   context: AgentContext,
 ) {
   try {
+    // Get a meter for metrics recording
+    const meter = opentelemetry.metrics.getMeter('telemetry-example');
+    
+    // Create counter and histogram metrics
+    const requestsCounter = meter.createCounter('requests.processed');
+    const responseTimeHistogram = meter.createHistogram('response.generation.time');
+    const errorsCounter = meter.createCounter('errors');
+    
     // Start a telemetry span for the entire request
     const mainSpan = context.tracer.startSpan('process-request');
     
@@ -26,7 +35,7 @@ export default async function handler(
     await new Promise(resolve => setTimeout(resolve, 100));
     
     // Record a counter metric for processed requests
-    context.tracer.counter('requests.processed').add(1, {
+    requestsCounter.add(1, {
       'user.id': userId || 'anonymous',
       'request.type': 'query'
     });
@@ -41,7 +50,7 @@ export default async function handler(
     await new Promise(resolve => setTimeout(resolve, 50));
     
     // Record response generation time
-    context.tracer.histogram('response.generation.time').record(50, {
+    responseTimeHistogram.record(50, {
       'user.id': userId || 'anonymous'
     });
     
@@ -62,7 +71,7 @@ export default async function handler(
     });
   } catch (error) {
     // Record error in telemetry
-    context.tracer.counter('errors').add(1, {
+    errorsCounter.add(1, {
       'error.type': error instanceof Error ? error.name : 'unknown',
       'error.message': error instanceof Error ? error.message : 'Unknown error'
     });
