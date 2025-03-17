@@ -7,7 +7,7 @@ export default async function AgentHandler(
 ) {
   try {
     // Get the request data
-    const data = req.json();
+    const data = req.data.json;
     const name = data.name || 'Guest';
     
     // Log the request

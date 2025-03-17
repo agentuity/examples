@@ -5,7 +5,7 @@ export default async function handler(
   response: AgentResponse,
   context: AgentContext,
 ) {
-  const { action, message, agentId } = request.json();
+  const { action, message, agentId } = request.data.json;
 
   switch (action) {
     case 'send': {
@@ -18,11 +18,16 @@ export default async function handler(
         return response.json({ error: 'Message is required' });
       }
 
+      // Get the agent by ID
+      const agent = await context.getAgent({ id: agentId });
+      
       // Send message to the specified agent
-      const result = await context.agent.send(agentId, {
-        message,
-        sender: context.agent.id,
-        timestamp: new Date().toISOString()
+      const result = await agent.run({ 
+        data: { 
+          message,
+          sender: context.agent.id,
+          timestamp: new Date().toISOString()
+        }
       });
 
       return response.json({
@@ -37,10 +42,13 @@ export default async function handler(
       }
 
       // Broadcast message to all agents
+      // Note: This implementation may need to be adjusted based on the actual API
       const results = await context.agent.broadcast({
-        message,
-        sender: context.agent.id,
-        timestamp: new Date().toISOString()
+        data: {
+          message,
+          sender: context.agent.id,
+          timestamp: new Date().toISOString()
+        }
       });
 
       return response.json({
@@ -50,8 +58,7 @@ export default async function handler(
     }
     case 'receive': {
       // This is a handler for receiving messages from other agents
-      // The message is available in the request body
-      const data = request.json();
+      const data = request.data.json;
       
       context.logger.info(`Received message from agent ${data.sender}: ${data.message}`);
       

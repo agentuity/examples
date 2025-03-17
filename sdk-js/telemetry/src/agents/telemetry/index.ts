@@ -10,7 +10,7 @@ export default async function handler(
     const mainSpan = context.telemetry.startSpan('process-request');
     
     // Get the request data
-    const data = request.json();
+    const data = request.data.json;
     const { query, userId } = data;
     
     // Record user information as attributes

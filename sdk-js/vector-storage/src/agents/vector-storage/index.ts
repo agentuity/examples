@@ -5,7 +5,7 @@ export default async function handler(
   response: AgentResponse,
   context: AgentContext,
 ) {
-  const { action, query, products } = request.json();
+  const { action, query, products } = request.data.json;
 
   switch (action) {
     case 'index': {
