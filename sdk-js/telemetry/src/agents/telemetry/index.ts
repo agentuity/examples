@@ -7,7 +7,7 @@ export default async function handler(
 ) {
   try {
     // Start a telemetry span for the entire request
-    const mainSpan = context.telemetry.startSpan('process-request');
+    const mainSpan = context.tracer.startSpan('process-request');
     
     // Get the request data
     const data = request.data.json;
@@ -20,13 +20,13 @@ export default async function handler(
     context.logger.info(`Processing request for user: ${userId || 'anonymous'}`);
     
     // Start a child span for data processing
-    const processSpan = context.telemetry.startSpan('process-data', { parent: mainSpan });
+    const processSpan = context.tracer.startSpan('process-data', { parent: mainSpan });
     
     // Simulate some processing time
     await new Promise(resolve => setTimeout(resolve, 100));
     
     // Record a counter metric for processed requests
-    context.telemetry.counter('requests.processed').add(1, {
+    context.tracer.counter('requests.processed').add(1, {
       'user.id': userId || 'anonymous',
       'request.type': 'query'
     });
@@ -35,13 +35,13 @@ export default async function handler(
     processSpan.end();
     
     // Start a span for generating response
-    const responseSpan = context.telemetry.startSpan('generate-response', { parent: mainSpan });
+    const responseSpan = context.tracer.startSpan('generate-response', { parent: mainSpan });
     
     // Simulate response generation time
     await new Promise(resolve => setTimeout(resolve, 50));
     
     // Record response generation time
-    context.telemetry.histogram('response.generation.time').record(50, {
+    context.tracer.histogram('response.generation.time').record(50, {
       'user.id': userId || 'anonymous'
     });
     
@@ -62,7 +62,7 @@ export default async function handler(
     });
   } catch (error) {
     // Record error in telemetry
-    context.telemetry.counter('errors').add(1, {
+    context.tracer.counter('errors').add(1, {
       'error.type': error instanceof Error ? error.name : 'unknown',
       'error.message': error instanceof Error ? error.message : 'Unknown error'
     });
