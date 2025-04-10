@@ -5,21 +5,10 @@ This example demonstrates how to use streaming responses with the Agentuity Java
 
 ## How It Works
 The agent:
-1. Receives a JSON request with an optional `text` field
+1. Receives plain text
 2. Uses the AI SDK to stream text from an OpenAI model
 3. Returns the response as a stream to the client
 4. Demonstrates proper handling of streaming responses
-
-## Usage Example
-Send a JSON request with the following structure:
-
-```json
-{
-  "text": "Explain quantum computing"
-}
-```
-
-If no text is provided, the agent will use a default prompt ("Why is the sky blue?").
 
 ## Running Locally
 To run this agent locally:
