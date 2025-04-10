@@ -1,106 +1,49 @@
-<div align="center">
-    <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
-    <strong>Build Agents, Not Infrastructure</strong> <br/>
-<br />
-</div>
+# Streaming Response Example
 
-# 🤖 Bun Agent Project
+## Overview
+This example demonstrates how to use streaming responses with the Agentuity JavaScript SDK. It shows how to implement a streaming agent that can send real-time text responses to clients.
 
-Welcome to your Agentuity Bun Agent project! This README provides essential information to help you get started with developing, testing, and deploying your AI agents.
+## How It Works
+The agent:
+1. Receives a JSON request with an optional `text` field
+2. Uses the AI SDK to stream text from an OpenAI model
+3. Returns the response as a stream to the client
+4. Demonstrates proper handling of streaming responses
 
-## 📋 Prerequisites
+## Usage Example
+Send a JSON request with the following structure:
 
-Before you begin, ensure you have the following installed:
-
-- **Bun**: Version 1.2.4 or higher
-
-## 🚀 Getting Started
-
-### Authentication
-
-Before using Agentuity, you need to authenticate:
-
-```bash
-agentuity login
+```json
+{
+  "text": "Explain quantum computing"
+}
 ```
 
-This command will open a browser window where you can log in to your Agentuity account.
+If no text is provided, the agent will use a default prompt ("Why is the sky blue?").
 
-### Creating a New Agent
-
-To create a new agent in your project:
-
-```bash
-agentuity agent new
-```
-
-Follow the interactive prompts to configure your agent.
-
-### Development Mode
-
-Run your project in development mode with:
+## Running Locally
+To run this agent locally:
 
 ```bash
+# Navigate to the agent directory
+cd streaming-example
+
+# Install dependencies
+bun install
+
+# Run the agent locally
 agentuity dev
 ```
 
-This will start your project and open a new browser window connecting your Agent to the Agentuity Console in Live Mode, allowing you to test and debug your agent in real-time.
-
-## 🌐 Deployment
-
-When you're ready to deploy your agent to the Agentuity Cloud:
+## Deployment
+To deploy this agent to Agentuity Cloud:
 
 ```bash
+# Deploy the agent
 agentuity deploy
 ```
 
-This command will bundle your agent and deploy it to the cloud, making it accessible via the Agentuity platform.
+After deployment, you can access your agent through the Agentuity Cloud dashboard.
 
-## 📚 Project Structure
-
-```
-├── agents/             # Agent definitions and implementations
-├── node_modules/       # Dependencies
-├── .agentuity/         # Agentuity configuration files
-├── package.json        # Project dependencies and scripts
-└── agentuity.yaml      # Agentuity project configuration
-```
-
-## 🔧 Configuration
-
-Your project configuration is stored in `agentuity.yaml`. This file defines your agents, development settings, and deployment configuration.
-
-## 🛠️ Advanced Usage
-
-### Environment Variables
-
-You can set environment variables for your project:
-
-```bash
-agentuity env set KEY=VALUE
-```
-
-### Secrets Management
-
-For sensitive information, use secrets:
-
-```bash
-agentuity env set --secret KEY=VALUE
-```
-
-## 📖 Documentation
-
-For comprehensive documentation on the Agentuity JavaScript SDK, visit:
-[https://agentuity.dev/SDKs/javascript](https://agentuity.dev/SDKs/javascript)
-
-## 🆘 Troubleshooting
-
-If you encounter any issues:
-
-1. Check the [documentation](https://agentuity.dev/SDKs/javascript)
-2. Join our [Discord community](https://discord.com/invite/vtn3hgUfuc) for support
-3. Contact the Agentuity support team
-
-## 📝 License
-
-This project is licensed under the terms specified in the LICENSE file.
+## Additional Documentation
+For more information about Agentuity and its capabilities, visit [https://agentuity.dev/](https://agentuity.dev/).
