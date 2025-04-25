@@ -9,7 +9,7 @@ export default async function Agent(
 ) {
   try {
     // Get the prompt from the request or use a default
-    const prompt = req.data.text ?? "Why is the sky blue?";
+    const prompt = await req.data.text() ?? "Why is the sky blue?";
     
     // Log the incoming prompt
     ctx.logger.info(`Processing prompt: ${prompt}`);
