@@ -20,4 +20,4 @@ These examples demonstrate how to build and deploy agents using various framewor
 - [LangChain](langchain/README.md)
 - [LlamaIndex](llamaindex/README.md)
 - [Mastra](mastra/README.md)
-- [Vercel](vercal-ai-sdk/README.md)
+- [Vercel](vercel-ai-sdk/README.md)
