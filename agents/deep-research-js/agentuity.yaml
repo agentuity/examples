@@ -68,3 +68,9 @@ agents:
     name: orchestrator
     # The description of the Agent which is editable
     description: Orchestration agent
+  - id: agent_5bf58a044719678b313df1f91631af62
+    name: researcher
+    description: Deep research agent
+  - id: agent_617feb7a822ebba1bb0c11110ac28d74
+    name: author
+    description: Report authoring agent
