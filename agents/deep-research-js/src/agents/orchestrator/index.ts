@@ -1,17 +1,17 @@
-import type { AgentRequest, AgentResponse, AgentContext } from '@agentuity/sdk';
-import { generateText, tool } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
-import { SYSTEM_PROMPT } from '../../common/prompts';
-import { DeepResearchSchema, ResearchSchema } from '../../common/types';
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+import { generateText, tool } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { SYSTEM_PROMPT } from "../../common/prompts";
+import { DeepResearchSchema, ResearchSchema } from "../../common/types";
 
 export default async function Agent(
-  req: AgentRequest,
-  resp: AgentResponse,
-  ctx: AgentContext
+	req: AgentRequest,
+	resp: AgentResponse,
+	ctx: AgentContext,
 ) {
-const request = DeepResearchSchema.parse(await req.data.json());
+	const request = DeepResearchSchema.parse(await req.data.json());
 	const input = request.query;
-	const depth = request.deepth ?? 2;
+	const depth = request.depth ?? 2;
 	const breadth = request.breadth ?? 3;
 
 	const researcher = tool({
@@ -20,10 +20,7 @@ const request = DeepResearchSchema.parse(await req.data.json());
 		async execute() {
 			const researcher = await ctx.getAgent({ name: "researcher" });
 			if (!researcher) {
-				return resp.text("Researcher agent not found", {
-					status: 500,
-					statusText: "Agent Not Found",
-				});
+				throw new Error("Researcher agent not found");
 			}
 			console.log("Starting research...");
 			const researchResults = await researcher.run({
@@ -45,31 +42,36 @@ const request = DeepResearchSchema.parse(await req.data.json());
 		async execute(research) {
 			const author = await ctx.getAgent({ name: "author" });
 			if (!author) {
-				return resp.text("Author agent not found", {
-					status: 500,
-					statusText: "Agent Not Found",
-				});
+				throw new Error("Author agent not found");
 			}
-			console.log("Generating report...");
+			ctx.logger.info("Generating report...");
 			// Make a copy of research with all properties defined
 			const agentResult = await author.run({ data: research });
 			const report = await agentResult.data.text();
-			console.log("Report generated! report.md");
+			ctx.logger.info("Report generated! report.md");
 
 			return report;
 		},
 	});
 
-	const report = await generateText({
-		model: anthropic("claude-3-5-sonnet-latest"),
-		system: SYSTEM_PROMPT,
-		prompt: input,
-		maxSteps: 5,
-		tools: {
-			researcher,
-			author,
-		},
-	});
+	try {
+		const report = await generateText({
+			model: anthropic("claude-3-5-sonnet-latest"),
+			system: SYSTEM_PROMPT,
+			prompt: input,
+			maxSteps: 5,
+			tools: {
+				researcher,
+				author,
+			},
+		});
 
-	return resp.markdown(report.text);
+		return resp.markdown(report.text);
+	} catch (error) {
+		ctx.logger.error("Error generating report", error);
+		return resp.text(`Failed to generate report: ${error}`, {
+			status: 500,
+			statusText: "Report Generation Failed",
+		});
+	}
 }

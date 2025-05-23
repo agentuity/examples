@@ -1,4 +1,9 @@
-import type { AgentRequest, AgentResponse, AgentContext, RemoteAgent } from '@agentuity/sdk';
+import type {
+	AgentRequest,
+	AgentResponse,
+	AgentContext,
+	RemoteAgent,
+} from "@agentuity/sdk";
 import { generateObject } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
@@ -12,7 +17,7 @@ import {
 const REFLECTION_PROMPT = (
 	prompt: string,
 	queries: string,
-	learnings: { followUpQuestions: string[]; learning: string }
+	learnings: { followUpQuestions: string[]; learning: string },
 ) => `Overall research goal: ${prompt}\n\n
           Previous search queries: ${queries}\n\n
           Follow-up questions: ${learnings.followUpQuestions.join(", ")}
@@ -31,13 +36,14 @@ type Research = {
 	completedQueries: string[];
 };
 
-const accumulatedResearch: Research = {
+// Create a fresh accumulator per request instead of sharing state.
+const createAccumulator = (): Research => ({
 	query: "",
 	queries: [],
 	searchResults: [],
 	learnings: [],
 	completedQueries: [],
-};
+});
 
 const mainModel = anthropic("claude-3-5-sonnet-latest");
 
@@ -74,7 +80,11 @@ const generateLearnings = async (query: string, searchResult: SearchResult) => {
 	return object;
 };
 
-async function researchWeb(query: string, researcher: RemoteAgent) {
+async function researchWeb(
+	query: string,
+	researcher: RemoteAgent,
+	accumulatedResearch: Research,
+) {
 	const response = await researcher.run({
 		data: {
 			query,
@@ -89,8 +99,9 @@ async function researchWeb(query: string, researcher: RemoteAgent) {
 const deepResearch = async (
 	prompt: string,
 	researcher: RemoteAgent,
+	accumulatedResearch: Research,
 	depth = 2,
-	breadth = 3
+	breadth = 3,
 ) => {
 	if (accumulatedResearch.query.length === 0) {
 		accumulatedResearch.query = prompt;
@@ -106,7 +117,11 @@ const deepResearch = async (
 	for (const query of queries) {
 		console.log(`Searching the web for: ${query}`);
 
-		const searchResults = await researchWeb(query, researcher);
+		const searchResults = await researchWeb(
+			query,
+			researcher,
+			accumulatedResearch,
+		);
 
 		accumulatedResearch.searchResults.push(...searchResults);
 		for (const searchResult of searchResults) {
@@ -120,8 +135,9 @@ const deepResearch = async (
 			await deepResearch(
 				newQuery,
 				researcher,
+				accumulatedResearch,
 				depth - 1,
-				Math.ceil(breadth / 2)
+				Math.ceil(breadth / 2),
 			);
 		}
 	}
@@ -131,11 +147,11 @@ const deepResearch = async (
 export default async function Agent(
 	req: AgentRequest,
 	resp: AgentResponse,
-	ctx: AgentContext
+	ctx: AgentContext,
 ) {
 	const request = DeepResearchSchema.parse(await req.data.json());
 	const input = request.query;
-	const depth = request.deepth ?? 2;
+	const depth = request.depth ?? 2;
 	const breadth = request.breadth ?? 3;
 
 	const webSearch = await ctx.getAgent({ name: "web-search" });
@@ -145,7 +161,13 @@ export default async function Agent(
 			statusText: "Web Search agent Not Found",
 		});
 	}
-
-	const research = await deepResearch(input, webSearch, depth, breadth);
+	const accumulator = createAccumulator();
+	const research = await deepResearch(
+		input,
+		webSearch,
+		accumulator,
+		depth,
+		breadth,
+	);
 	return resp.json(research);
 }

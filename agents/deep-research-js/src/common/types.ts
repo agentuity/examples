@@ -26,7 +26,7 @@ export const ResearchSchema = z.object({
 
 export const DeepResearchSchema = z.object({
 	query: z.string().min(1),
-	deepth: z.number().min(1).max(5).optional(),
+	depth: z.number().min(1).max(5).optional(),
 	breadth: z.number().min(1).max(5).optional(),
 });
 
