@@ -29,6 +29,7 @@
   "dependencies": {
     "@agentuity/sdk": "^0.0.118",
     "@ai-sdk/anthropic": "^1.2.12",
-    "ai": "^4.3.16"
+    "ai": "^4.3.16",
+    "exa-js": "^1.7.2"
   }
 }

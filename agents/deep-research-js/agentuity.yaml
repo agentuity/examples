@@ -74,3 +74,6 @@ agents:
   - id: agent_617feb7a822ebba1bb0c11110ac28d74
     name: author
     description: Report authoring agent
+  - id: agent_608314fc164f30f25f79d26032b90f81
+    name: web-search
+    description: Web search agent with evaluator
