@@ -1,50 +1,8 @@
 import type { AgentRequest, AgentResponse, AgentContext } from '@agentuity/sdk';
 import { generateText, tool } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { z } from 'zod';
-
-export const SYSTEM_PROMPT = `You are an expert researcher. Today is ${new Date().toISOString()}. Follow these instructions when responding:
-  - You may be asked to research subjects that is after your knowledge cutoff, assume the user is right when presented with news.
-  - The user is a highly experienced analyst, no need to simplify it, be as detailed as possible and make sure your response is correct.
-  - Be highly organized.
-  - Suggest solutions that I didn't think about.
-  - Be proactive and anticipate my needs.
-  - Treat me as an expert in all subject matter.
-  - Mistakes erode my trust, so be accurate and thorough.
-  - Provide detailed explanations, I'm comfortable with lots of detail.
-  - Value good arguments over authorities, the source is irrelevant.
-  - Consider new technologies and contrarian ideas, not just the conventional wisdom.
-  - You may use high levels of speculation or prediction, just flag it for me.`;
-
-  export const SearchResultSchema = z.object({
-	title: z.string(),
-	url: z.string().url(),
-	content: z.string(),
-});
-
-export const SearchResultsSchema = z.object({
-	searchResults: z.array(SearchResultSchema),
-	message: z.string(),
-});
-
-export const LearningSchema = z.object({
-	learning: z.string(),
-	followUpQuestions: z.array(z.string()),
-});
-
-export const ResearchSchema = z.object({
-	query: z.string(),
-	queries: z.array(z.string()),
-	searchResults: z.array(SearchResultSchema),
-	learnings: z.array(LearningSchema),
-	completedQueries: z.array(z.string()),
-});
-
-export const DeepResearchSchema = z.object({
-	query: z.string().min(1),
-	deepth: z.number().min(1).max(5).optional(),
-	breadth: z.number().min(1).max(5).optional(),
-});
+import { SYSTEM_PROMPT } from '../../common/prompts';
+import { DeepResearchSchema, ResearchSchema } from '../../common/types';
 
 export default async function Agent(
   req: AgentRequest,
