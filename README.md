@@ -20,8 +20,6 @@ This repository contains a collection of examples that demonstrate how to build 
 
 For comprehensive documentation on Agentuity, visit our documentation site at [agentuity.dev](https://agentuity.dev).
 
-
-
 ## Getting Started
 
 For comprehensive documentation and getting started guides, please visit our documentation site at [agentuity.dev](https://agentuity.dev).
@@ -29,8 +27,6 @@ For comprehensive documentation and getting started guides, please visit our doc
 ## Contributing
 
 Contributions are welcome! If you have an example you'd like to add, please submit a pull request.
-
-
 
 ## License
 

@@ -1,65 +1,113 @@
-# LangChain Framework Example
+<div align="center">
+    <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
+    <strong>Build Agents, Not Infrastructure</strong> <br/>
+<br />
+</div>
 
-## Overview
-This example demonstrates how to integrate LangChain with Agentuity to create an AI agent that can process natural language requests.
+# 🤖 LangChain Framework Example
 
-## How It Works
-The agent uses LangChain's components to create a simple chain:
+A simple concierge-style agent that demonstrates the basics for using the LangChain framework with Agentuity.
 
-1. **LLM Setup**: Creates a ChatOpenAI instance using OpenAI's GPT-4o Mini model
-2. **Prompt Template**: Defines a system message and user input template
-3. **Output Parser**: Uses a string output parser to format the response
-4. **Chain Creation**: Combines the prompt, LLM, and parser into a processing chain
-5. **Request Processing**: Processes incoming text requests through the LangChain chain
-6. **Response Generation**: Returns the generated text to the user
+## 📋 Prerequisites
 
-## Environment Setup
-To run this example, you'll need to set up the following environment variables:
+Before you begin, ensure you have the following installed:
 
-```
-OPENAI_API_KEY=your_openai_api_key
-```
+- **Python**: Version 3.10 or higher
+- **UV**: Version 0.5.25 or higher ([Documentation](https://docs.astral.sh/uv/))
 
-## Running Locally
-To run this agent locally:
+## 🚀 Getting Started
+
+### Authentication
+
+Before using Agentuity, you need to authenticate:
 
 ```bash
-# Navigate to the agent directory
-cd py-langchain
-
-# Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -e .
-
-# Run the agent locally
-agentuity run
+agentuity login
 ```
 
-## Deployment
-To deploy this agent to Agentuity Cloud:
+This command will open a browser window where you can log in to your Agentuity account.
+
+### Creating a New Agent
+
+To create a new agent in your project:
 
 ```bash
-# Navigate to the agent directory
-cd py-langchain
+agentuity agent new
+```
 
-# Deploy the agent
+Follow the interactive prompts to configure your agent.
+
+### Development Mode
+
+Run your project in development mode with:
+
+```bash
+agentuity dev
+```
+
+This will start your project and open a new browser window connecting your Agent to the Agentuity Console in Live Mode, allowing you to test and debug your agent in real-time.
+
+You can also start your project in development mode without connecting to the Agentuity Console:
+
+```bash
+uv run server.py
+```
+
+## 🌐 Deployment
+
+When you're ready to deploy your agent to the Agentuity Cloud:
+
+```bash
 agentuity deploy
 ```
 
-After deployment, you can access your agent through the Agentuity Cloud dashboard.
+This command will bundle your agent and deploy it to the cloud, making it accessible via the Agentuity platform.
 
-## Example Usage
-You can interact with the agent by sending text requests:
+## 📚 Project Structure
 
 ```
-What are the main features of LangChain?
+├── agents/             # Agent definitions and implementations
+├── .venv/              # Virtual environment (created by UV)
+├── pyproject.toml      # Project dependencies and metadata
+├── server.py           # Server entry point
+└── agentuity.yaml      # Agentuity project configuration
 ```
 
-The agent will process your request and return a detailed response about LangChain's features.
+## 🔧 Configuration
 
-## Additional Documentation
-- [LangChain Documentation](https://python.langchain.com/docs/get_started/introduction)
-- [Agentuity Documentation](https://agentuity.dev/)
+Your project configuration is stored in `agentuity.yaml`. This file defines your agents, development settings, and deployment configuration.
+
+## 🛠️ Advanced Usage
+
+### Environment Variables
+
+You can set environment variables for your project:
+
+```bash
+agentuity env set KEY VALUE
+```
+
+### Secrets Management
+
+For sensitive information, use secrets:
+
+```bash
+agentuity env set --secret KEY VALUE
+```
+
+## 📖 Documentation
+
+For comprehensive documentation on the Agentuity Python SDK, visit:
+[https://agentuity.dev/SDKs/python](https://agentuity.dev/SDKs/python)
+
+## 🆘 Troubleshooting
+
+If you encounter any issues:
+
+1. Check the [documentation](https://agentuity.dev/SDKs/python)
+2. Join our [Discord community](https://discord.com/invite/vtn3hgUfuc) for support
+3. Contact the Agentuity support team
+
+## 📝 License
+
+This project is licensed under the terms specified in the LICENSE file.
