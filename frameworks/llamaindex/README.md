@@ -1,67 +1,121 @@
-# LlamaIndex Framework Example
+<div align="center">
+    <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
+    <strong>Build Agents, Not Infrastructure</strong> <br/>
+<br />
+</div>
 
-## Overview
-This example demonstrates how to integrate LlamaIndex with Agentuity to create an AI agent that can perform calculations using tools.
+# 🤖 LlamaIndex Framework Example
 
-## How It Works
-The agent uses LlamaIndex's `AgentWorkflow` to create a workflow with a calculator tool:
+A simple concierge-style agent that demonstrates the basics for using the LlamaIndex framework with Agentuity.
 
-1. **Tool Definition**: Defines a simple `multiply` function that multiplies two numbers
-2. **Agent Creation**: Creates an agent workflow using the tool and OpenAI's GPT-4o Mini model
-3. **Request Processing**: Processes incoming text requests through the LlamaIndex agent
-4. **Response Generation**: Returns the agent's response to the user
+### How It Works
 
-## Environment Setup
-To run this example, you'll need to set up the following environment variables:
+The user's request is parsed by an LLM to determine the type of question (intent) they're asking, and the request is forwarded to the most appropriate agent to handle the response.
 
-```
-OPENAI_API_KEY=your_openai_api_key
-```
+In this example, we just have a "Local Guide" agent that can answer questions about entertainment, sightseeing, and dining options for a specific city.
 
-## Running Locally
-To run this agent locally:
+This example demonstrates in the most simple terms an LLM integration, agent-to-agent communication, and how to store user requests in key-value storage.
 
-```bash
-# Navigate to the agent directory
-cd py-llamaindex
+## 📋 Prerequisites
 
-# Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+Before you begin, ensure you have the following installed:
 
-# Install dependencies
-pip install -e .
+- **Python**: Version 3.10 or higher
+- **UV**: Version 0.5.25 or higher ([Documentation](https://docs.astral.sh/uv/))
 
-# Run the agent locally
-agentuity run
-```
+## 🚀 Getting Started
 
-## Deployment
-To deploy this agent to Agentuity Cloud:
+### Authentication
+
+Before using Agentuity, you need to authenticate:
 
 ```bash
-# Navigate to the agent directory
-cd py-llamaindex
+agentuity login
+```
 
-# Deploy the agent
+This command will open a browser window where you can log in to your Agentuity account.
+
+### Creating a New Agent
+
+To create a new agent in your project:
+
+```bash
+agentuity agent new
+```
+
+Follow the interactive prompts to configure your agent.
+
+### Development Mode
+
+Run your project in development mode with:
+
+```bash
+agentuity dev
+```
+
+This will start your project and open a new browser window connecting your Agent to the Agentuity Console in Live Mode, allowing you to test and debug your agent in real-time.
+
+You can also start your project in development mode without connecting to the Agentuity Console:
+
+```bash
+uv run server.py
+```
+
+## 🌐 Deployment
+
+When you're ready to deploy your agent to the Agentuity Cloud:
+
+```bash
 agentuity deploy
 ```
 
-After deployment, you can access your agent through the Agentuity Cloud dashboard.
+This command will bundle your agent and deploy it to the cloud, making it accessible via the Agentuity platform.
 
-## Example Usage
-You can interact with the agent by sending text requests:
-
-```
-What is 123 * 456?
-```
-
-The agent will use its multiply tool to calculate the result and return:
+## 📚 Project Structure
 
 ```
-123 * 456 = 56088
+├── agents/             # Agent definitions and implementations
+├── .venv/              # Virtual environment (created by UV)
+├── pyproject.toml      # Project dependencies and metadata
+├── server.py           # Server entry point
+└── agentuity.yaml      # Agentuity project configuration
 ```
 
-## Additional Documentation
-- [LlamaIndex Documentation](https://docs.llamaindex.ai/)
-- [Agentuity Documentation](https://agentuity.dev/)
+## 🔧 Configuration
+
+Your project configuration is stored in `agentuity.yaml`. This file defines your agents, development settings, and deployment configuration.
+
+## 🛠️ Advanced Usage
+
+### Environment Variables
+
+You can set environment variables for your project:
+
+```bash
+agentuity env set KEY VALUE
+```
+
+### Secrets Management
+
+For sensitive information, use secrets:
+
+```bash
+agentuity env set --secret KEY VALUE
+```
+
+## 📖 Documentation
+
+For comprehensive documentation on the Agentuity Python SDK, visit:
+[https://agentuity.dev/SDKs/python](https://agentuity.dev/SDKs/python)
+
+## 🆘 Troubleshooting
+
+If you encounter any issues:
+
+1. Check the [documentation](https://agentuity.dev/SDKs/python)
+2. Join our [Discord community](https://discord.gg/agentuity) for support
+3. Contact the Agentuity support team
+
+## 📝 License
+
+This project is licensed under the terms specified in the LICENSE file.

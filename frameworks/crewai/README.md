@@ -1,73 +1,121 @@
-# CrewAI Framework Example
+<div align="center">
+    <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
+    <strong>Build Agents, Not Infrastructure</strong> <br/>
+<br />
+</div>
 
-## Overview
-This example demonstrates how to integrate CrewAI with Agentuity to create a multi-agent system that can research topics and generate reports.
+# 🤖 CrewAI Framework Example
 
-## How It Works
-The agent uses CrewAI to create a crew of specialized agents:
+A simple concierge-style agent that demonstrates the basics for using the CrewAI framework with Agentuity.
 
-1. **Researcher Agent**: Specializes in finding information about a given topic
-   - Configured with a role, goal, and backstory from YAML
-   - Uses OpenAI's GPT-4o Mini model
+### How It Works
 
-2. **Reporting Analyst Agent**: Specializes in creating detailed reports
-   - Configured with a role, goal, and backstory from YAML
-   - Uses OpenAI's GPT-4o Mini model
+The user's request is parsed by an LLM to determine the type of question (intent) they're asking, and the request is forwarded to the most appropriate agent to handle the response.
 
-3. **Sequential Process**: The agents work in sequence
-   - First, the researcher gathers information
-   - Then, the reporting analyst creates a detailed report
+In this example, we just have a "Local Guide" agent that can answer questions about entertainment, sightseeing, and dining options for a specific city.
 
-## Environment Setup
-To run this example, you'll need to set up the following environment variables:
+This example demonstrates in the most simple terms an LLM integration, agent-to-agent communication, and how to store user requests in key-value storage.
 
-```
-OPENAI_API_KEY=your_openai_api_key
-```
+## 📋 Prerequisites
 
-## Running Locally
-To run this agent locally:
+Before you begin, ensure you have the following installed:
 
-```bash
-# Navigate to the agent directory
-cd py-crewai
+- **Python**: Version 3.10 or higher
+- **UV**: Version 0.5.25 or higher ([Documentation](https://docs.astral.sh/uv/))
 
-# Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+## 🚀 Getting Started
 
-# Install dependencies
-pip install -e .
+### Authentication
 
-# Run the agent locally
-agentuity run
-```
-
-## Deployment
-To deploy this agent to Agentuity Cloud:
+Before using Agentuity, you need to authenticate:
 
 ```bash
-# Navigate to the agent directory
-cd py-crewai
+agentuity login
+```
 
-# Deploy the agent
+This command will open a browser window where you can log in to your Agentuity account.
+
+### Creating a New Agent
+
+To create a new agent in your project:
+
+```bash
+agentuity agent new
+```
+
+Follow the interactive prompts to configure your agent.
+
+### Development Mode
+
+Run your project in development mode with:
+
+```bash
+agentuity dev
+```
+
+This will start your project and open a new browser window connecting your Agent to the Agentuity Console in Live Mode, allowing you to test and debug your agent in real-time.
+
+You can also start your project in development mode without connecting to the Agentuity Console:
+
+```bash
+uv run server.py
+```
+
+## 🌐 Deployment
+
+When you're ready to deploy your agent to the Agentuity Cloud:
+
+```bash
 agentuity deploy
 ```
 
-After deployment, you can access your agent through the Agentuity Cloud dashboard.
+This command will bundle your agent and deploy it to the cloud, making it accessible via the Agentuity platform.
 
-## Example Usage
-You can interact with the agent by sending text requests:
+## 📚 Project Structure
 
 ```
-Research and create a report on quantum computing
+├── agents/             # Agent definitions and implementations
+├── .venv/              # Virtual environment (created by UV)
+├── pyproject.toml      # Project dependencies and metadata
+├── server.py           # Server entry point
+└── agentuity.yaml      # Agentuity project configuration
 ```
 
-The agent will:
-1. Use the researcher agent to gather information about quantum computing
-2. Use the reporting analyst to create a detailed report
-3. Return the final report as the response
+## 🔧 Configuration
 
-## Additional Documentation
-- [CrewAI Documentation](https://docs.crewai.com/)
-- [Agentuity Documentation](https://agentuity.dev/)
+Your project configuration is stored in `agentuity.yaml`. This file defines your agents, development settings, and deployment configuration.
+
+## 🛠️ Advanced Usage
+
+### Environment Variables
+
+You can set environment variables for your project:
+
+```bash
+agentuity env set KEY VALUE
+```
+
+### Secrets Management
+
+For sensitive information, use secrets:
+
+```bash
+agentuity env set --secret KEY VALUE
+```
+
+## 📖 Documentation
+
+For comprehensive documentation on the Agentuity Python SDK, visit:
+[https://agentuity.dev/SDKs/python](https://agentuity.dev/SDKs/python)
+
+## 🆘 Troubleshooting
+
+If you encounter any issues:
+
+1. Check the [documentation](https://agentuity.dev/SDKs/python)
+2. Join our [Discord community](https://discord.gg/agentuity) for support
+3. Contact the Agentuity support team
+
+## 📝 License
+
+This project is licensed under the terms specified in the LICENSE file.
