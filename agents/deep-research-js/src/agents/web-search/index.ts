@@ -6,8 +6,6 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { SearchResultSchema, type SearchResult } from "../../common/types";
 import { SYSTEM_PROMPT } from "../../common/prompts";
 
-const mainModel = anthropic("claude-3-5-sonnet-latest");
-
 const SearchProcessParametersSchema = z.object({
 	query: z.string().min(1),
 	accumulatedSources: z.array(SearchResultSchema),
@@ -37,12 +35,12 @@ const searchTool = (exa: Exa) =>
 const evaluateTool = (
 	query: string,
 	accumulatedSources: SearchResult[],
-	finalSearchResults: SearchResult[],
+	finalSearchResults: SearchResult[]
 ) => {
 	const EVAL_PROMPT = (
 		query: string,
 		pendingResult: SearchResult,
-		results: SearchResult[],
+		results: SearchResult[]
 	) => `Evaluate whether the search results are relevant and will help answer the following query: ${query}. If the page already exists in the existing results, mark it as irrelevant.
    
 	<search_results>
@@ -65,7 +63,7 @@ const evaluateTool = (
 
 			if (pendingResult) {
 				const { object: evaluation } = await generateObject({
-					model: mainModel,
+					model: anthropic("claude-4-sonnet-20250514"),
 					prompt: EVAL_PROMPT(query, pendingResult, accumulatedSources),
 					output: "enum",
 					enum: ["relevant", "irrelevant"],
@@ -93,13 +91,13 @@ const exa = new Exa(process.env.EXA_API_KEY);
 
 export default async function Agent(req: AgentRequest, resp: AgentResponse) {
 	const { query, accumulatedSources } = SearchProcessParametersSchema.parse(
-		await req.data.json(),
+		await req.data.json()
 	);
 
 	const searchResults: SearchResult[] = [];
 
 	await generateText({
-		model: mainModel,
+		model: anthropic("claude-4-sonnet-20250514"),
 		prompt: `Search the web for information about ${query}`,
 		system: SYSTEM_PROMPT,
 		maxSteps: 5,

@@ -7,7 +7,7 @@ import { DeepResearchSchema, ResearchSchema } from "../../common/types";
 export default async function Agent(
 	req: AgentRequest,
 	resp: AgentResponse,
-	ctx: AgentContext,
+	ctx: AgentContext
 ) {
 	const request = DeepResearchSchema.parse(await req.data.json());
 	const input = request.query;
@@ -22,7 +22,7 @@ export default async function Agent(
 			if (!researcher) {
 				throw new Error("Researcher agent not found");
 			}
-			console.log("Starting research...");
+			ctx.logger.info("Starting research...");
 			const researchResults = await researcher.run({
 				data: {
 					query: input,
@@ -31,7 +31,7 @@ export default async function Agent(
 				},
 			});
 			const research = ResearchSchema.parse(await researchResults.data.json());
-			console.log("Research completed!");
+			ctx.logger.info("Research completed!");
 			return research;
 		},
 	});
@@ -56,7 +56,7 @@ export default async function Agent(
 
 	try {
 		const report = await generateText({
-			model: anthropic("claude-3-5-sonnet-latest"),
+			model: anthropic("claude-4-sonnet-20250514"),
 			system: SYSTEM_PROMPT,
 			prompt: input,
 			maxSteps: 5,

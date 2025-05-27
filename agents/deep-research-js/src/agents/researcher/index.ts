@@ -17,7 +17,7 @@ import {
 const REFLECTION_PROMPT = (
 	prompt: string,
 	queries: string,
-	learnings: { followUpQuestions: string[]; learning: string },
+	learnings: { followUpQuestions: string[]; learning: string }
 ) => `Overall research goal: ${prompt}\n\n
           Previous search queries: ${queries}\n\n
           Follow-up questions: ${learnings.followUpQuestions.join(", ")}
@@ -45,7 +45,7 @@ const createAccumulator = (): Research => ({
 	completedQueries: [],
 });
 
-const mainModel = anthropic("claude-3-5-sonnet-latest");
+const mainModel = anthropic("claude-4-sonnet-20250514");
 
 const generateSearchQueries = async (query: string, n = 3) => {
 	const {
@@ -83,7 +83,7 @@ const generateLearnings = async (query: string, searchResult: SearchResult) => {
 async function researchWeb(
 	query: string,
 	researcher: RemoteAgent,
-	accumulatedResearch: Research,
+	accumulatedResearch: Research
 ) {
 	const response = await researcher.run({
 		data: {
@@ -101,7 +101,7 @@ const deepResearch = async (
 	researcher: RemoteAgent,
 	accumulatedResearch: Research,
 	depth = 2,
-	breadth = 3,
+	breadth = 3
 ) => {
 	if (accumulatedResearch.query.length === 0) {
 		accumulatedResearch.query = prompt;
@@ -120,7 +120,7 @@ const deepResearch = async (
 		const searchResults = await researchWeb(
 			query,
 			researcher,
-			accumulatedResearch,
+			accumulatedResearch
 		);
 
 		accumulatedResearch.searchResults.push(...searchResults);
@@ -137,7 +137,7 @@ const deepResearch = async (
 				researcher,
 				accumulatedResearch,
 				depth - 1,
-				Math.ceil(breadth / 2),
+				Math.ceil(breadth / 2)
 			);
 		}
 	}
@@ -147,7 +147,7 @@ const deepResearch = async (
 export default async function Agent(
 	req: AgentRequest,
 	resp: AgentResponse,
-	ctx: AgentContext,
+	ctx: AgentContext
 ) {
 	const request = DeepResearchSchema.parse(await req.data.json());
 	const input = request.query;
@@ -167,7 +167,7 @@ export default async function Agent(
 		webSearch,
 		accumulator,
 		depth,
-		breadth,
+		breadth
 	);
 	return resp.json(research);
 }
