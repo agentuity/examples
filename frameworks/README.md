@@ -12,12 +12,5 @@
 # AI Frameworks
 
 This directory contains examples of different AI frameworks used in the Agentuity platform.
+
 These examples demonstrate how to build and deploy agents using various frameworks, including LangChain, LlamaIndex, and others. Each example is designed to help you get started with the respective framework and provide reference implementations that you can use, copy, or adapt for your own projects.
-
-## Examples
-
-- [crewai](crewai/README.md)
-- [LangChain](langchain/README.md)
-- [LlamaIndex](llamaindex/README.md)
-- [Mastra](mastra/README.md)
-- [Vercel](vercel-ai-sdk/README.md)

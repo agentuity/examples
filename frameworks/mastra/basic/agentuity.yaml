@@ -6,13 +6,13 @@
 # ------------------------------------------------
 
 # The version semver range required to run this project
-version: '>=0.0.131'
+version: '>=0.0.130'
 # The ID of the project which is automatically generated
-project_id: proj_1ff3b82a156b7275e87bfab996e58678
+project_id: proj_02eeb42256a976ad4e8dc7e68c0ce8dd
 # The name of the project which is editable
-name: framework-langchain-py
+name: mastra-basic
 # The description of the project which is editable
-description: "A simple concierge-style agent that demonstrates the basics for using the LangChain framework with Agentuity."
+description: "A simple concierge-style agent that demonstrates the basics for using the Mastra framework with Agentuity."
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -22,20 +22,29 @@ development:
     enabled: true
     # Rules for files to watch for changes
     files:
-      - agents/**
+      - src/**
   # The command to run the development server
-  command: uv
+  command: bun
   # The arguments to pass to the development server
   args:
     - run
-    - --env-file
-    - .env
-    - server.py
+    - --silent
+    - .agentuity/index.js
 deployment:
-  command: uv
+  command: bun
   args:
     - run
-    - server.py
+    - --no-install
+    - --prefer-offline
+    - --silent
+    - --no-macros
+    - --no-global-search-paths
+    - --report-uncaught-exception
+    - --disable-sigusr1
+    - --disallow-code-generation-from-strings
+    - --no-addons
+    - --no-deprecation
+    - .agentuity/index.js
   # You should tune the resources for the deployment
   resources:
     # The memory requirements
@@ -47,18 +56,20 @@ deployment:
 # You should not need to change these value
 bundler:
   enabled: true
-  identifier: python-uv
-  language: python
-  runtime: uv
+  identifier: bunjs
+  language: javascript
+  runtime: bunjs
   agents:
-    dir: agents
+    dir: src/agents
   ignore:
-    - '**/__pycache__/**'
+    - node_modules/**
+    - dist/**
+    - src/**
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_3ab60c1a34b6c69c2b810e14bb5f4cab
+    id: agent_7766a63f18f2b7dc434b276c430344a3
     # The name of the Agent which is editable
     name: Concierge
-  - id: agent_7ad6f5147d762ebae0e9d9114cc4fd43
+  - id: agent_575363d7f6a3fb47f5ef6e07bab3d9cb
     name: LocalGuide

@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.131'
 # The ID of the project which is automatically generated
-project_id: proj_8d8946732769bfcbeebad698ba34e2dd
+project_id: proj_93023b142a072ed849f1997dd9c049da
 # The name of the project which is editable
-name: framework-crewai
+name: pydantic-basic
 # The description of the project which is editable
-description: "A simple concierge-style agent that demonstrates the basics for using the CrewAI framework with Agentuity."
+description: "A simple concierge-style agent that demonstrates the basics for using the Pydantic framework with Agentuity."
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -57,6 +57,8 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_b437830dcc614515780948e6878c15b8
+    id: agent_d4176489446a6fc0c03cd322d7bbd216
     # The name of the Agent which is editable
     name: Concierge
+  - id: agent_b76ae41e6a83f4dd8fef28483a69889e
+    name: LocalGuide

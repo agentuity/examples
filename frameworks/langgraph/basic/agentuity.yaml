@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.131'
 # The ID of the project which is automatically generated
-project_id: proj_93023b142a072ed849f1997dd9c049da
+project_id: proj_ac7a050d854203075c535bed3d0623ab
 # The name of the project which is editable
-name: framework-pydantic
+name: langgraph-js-basic
 # The description of the project which is editable
-description: "A simple concierge-style agent that demonstrates the basics for using the Pydantic framework with Agentuity."
+description: "A simple concierge-style agent that demonstrates the basics for using the LangGraph framework with Agentuity."
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -22,20 +22,29 @@ development:
     enabled: true
     # Rules for files to watch for changes
     files:
-      - agents/**
+      - src/**
   # The command to run the development server
-  command: uv
+  command: bun
   # The arguments to pass to the development server
   args:
     - run
-    - --env-file
-    - .env
-    - server.py
+    - --silent
+    - .agentuity/index.js
 deployment:
-  command: uv
+  command: bun
   args:
     - run
-    - server.py
+    - --no-install
+    - --prefer-offline
+    - --silent
+    - --no-macros
+    - --no-global-search-paths
+    - --report-uncaught-exception
+    - --disable-sigusr1
+    - --disallow-code-generation-from-strings
+    - --no-addons
+    - --no-deprecation
+    - .agentuity/index.js
   # You should tune the resources for the deployment
   resources:
     # The memory requirements
@@ -47,18 +56,20 @@ deployment:
 # You should not need to change these value
 bundler:
   enabled: true
-  identifier: python-uv
-  language: python
-  runtime: uv
+  identifier: bunjs
+  language: javascript
+  runtime: bunjs
   agents:
-    dir: agents
+    dir: src/agents
   ignore:
-    - '**/__pycache__/**'
+    - node_modules/**
+    - dist/**
+    - src/**
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_d4176489446a6fc0c03cd322d7bbd216
+    id: agent_c78013a9dffa5fbdbf9e4fc7b586218a
     # The name of the Agent which is editable
     name: Concierge
-  - id: agent_b76ae41e6a83f4dd8fef28483a69889e
+  - id: agent_266b2a6d6c2a478348bfa3712c3604bb
     name: LocalGuide

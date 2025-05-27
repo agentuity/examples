@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.131'
 # The ID of the project which is automatically generated
-project_id: proj_b3345fc06d90bf408e0ccb8c0cb62f00
+project_id: proj_8d8946732769bfcbeebad698ba34e2dd
 # The name of the project which is editable
-name: framework-llamaindex
+name: crewai-basic
 # The description of the project which is editable
-description: "A simple concierge-style agent that demonstrates the basics for using the LlamaIndex framework with Agentuity."
+description: "A simple concierge-style agent that demonstrates the basics for using the CrewAI framework with Agentuity."
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -57,8 +57,6 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_02abb0c343dbf36343ccf8fd56e94213
+    id: agent_b437830dcc614515780948e6878c15b8
     # The name of the Agent which is editable
     name: Concierge
-  - id: agent_c5f2e645885b2fac527c195ff6f7a70b
-    name: LocalGuide
