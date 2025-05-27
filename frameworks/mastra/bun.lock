@@ -5,11 +5,10 @@
       "name": "sample-bun-mastra",
       "dependencies": {
         "@agentuity/sdk": "^0.0.116",
-        "@ai-sdk/openai": "^1.3.22",
+        "@ai-sdk/anthropic": "^1.2.11",
         "@mastra/core": "^0.9.4",
         "ai": "^4.3.16",
         "mastra": "^0.6.3",
-        "zod": "^3.25.7",
       },
       "devDependencies": {
         "@biomejs/biome": "^1.9.4",
@@ -23,7 +22,7 @@
   "packages": {
     "@agentuity/sdk": ["@agentuity/sdk@0.0.116", "", { "dependencies": { "@opentelemetry/api": "^1.9.0", "@opentelemetry/api-logs": "^0.57.2", "@opentelemetry/auto-instrumentations-node": "^0.56.1", "@opentelemetry/core": "^1.21.0", "@opentelemetry/exporter-logs-otlp-http": "^0.57.2", "@opentelemetry/exporter-metrics-otlp-http": "^0.57.2", "@opentelemetry/exporter-trace-otlp-http": "^0.57.2", "@opentelemetry/host-metrics": "^0.35.5", "@opentelemetry/resources": "^1.30.1", "@opentelemetry/sdk-logs": "^0.57.2", "@opentelemetry/sdk-metrics": "^1.30.1", "@opentelemetry/sdk-node": "^0.57.2", "@opentelemetry/semantic-conventions": "^1.30.0", "js-yaml": "^4.1.0" }, "peerDependencies": { "typescript": "^5" } }, "sha512-VQ5BwxJQek4UOSi3hotojL1wnsJ1PFgnA2DcHndhJaXMQJwyV0Uh0x+LlZy1XlKYvLXwClbYOgBiLJ2mLOqAXw=="],
 
-    "@ai-sdk/openai": ["@ai-sdk/openai@1.3.22", "", { "dependencies": { "@ai-sdk/provider": "1.1.3", "@ai-sdk/provider-utils": "2.2.8" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-QwA+2EkG0QyjVR+7h6FE7iOu2ivNqAVMm9UJZkVxxTk5OIq5fFJDTEI/zICEMuHImTTXR2JjsL6EirJ28Jc4cw=="],
+    "@ai-sdk/anthropic": ["@ai-sdk/anthropic@1.2.12", "", { "dependencies": { "@ai-sdk/provider": "1.1.3", "@ai-sdk/provider-utils": "2.2.8" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-YSzjlko7JvuiyQFmI9RN1tNZdEiZxc+6xld/0tq/VkJaHpEzGAb1yiNxxvmYVcjvfu/PcvCxAAYXmTYQQ63IHQ=="],
 
     "@ai-sdk/provider": ["@ai-sdk/provider@1.1.3", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-qZMxYJ0qqX/RfnuIaab+zp8UAeJn/ygXXAffR5I4N0n1IrvA6qBsjc8hXLmBiMV2zoXlifkacF7sEFnYnjBcqg=="],
 
