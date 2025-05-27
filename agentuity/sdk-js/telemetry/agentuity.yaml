@@ -6,7 +6,7 @@
 # The ID of the project which is automatically generated
 project_id: proj_telemetry_example
 # The name of the project which is editable
-name: telemetry
+name: js-telemetry
 # The description of the project which is editable
 description: "Telemetry example for Agentuity JavaScript SDK"
 # The version semver range required to run this project

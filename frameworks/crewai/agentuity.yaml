@@ -10,7 +10,7 @@ version: '>=0.0.131'
 # The ID of the project which is automatically generated
 project_id: proj_8d8946732769bfcbeebad698ba34e2dd
 # The name of the project which is editable
-name: sample-uv-crewai
+name: framework-crewai
 # The description of the project which is editable
 description: "A simple concierge-style agent that demonstrates the basics for using the CrewAI framework with Agentuity."
 # The development configuration for the project

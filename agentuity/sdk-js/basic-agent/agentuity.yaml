@@ -6,7 +6,7 @@
 # The ID of the project which is automatically generated
 project_id: proj_basic_agent_example
 # The name of the project which is editable
-name: basic-agent
+name: js-basic-agent
 # The description of the project which is editable
 description: "Basic agent example for Agentuity JavaScript SDK"
 # The version semver range required to run this project

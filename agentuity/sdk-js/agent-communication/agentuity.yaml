@@ -6,7 +6,7 @@
 # The ID of the project which is automatically generated
 project_id: proj_agent_communication_example
 # The name of the project which is editable
-name: agent-communication
+name: js-agent-communication
 # The description of the project which is editable
 description: "Agent communication example for Agentuity JavaScript SDK"
 # The version semver range required to run this project

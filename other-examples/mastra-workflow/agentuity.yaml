@@ -6,7 +6,7 @@
 # The ID of the project which is automatically generated
 project_id: proj_FWtYf7z5im67c8a60bi1i0eKjDN2rxpa
 # The name of the project which is editable
-name: mastra-weather-workflow
+name: mastra-workflow
 # The description of the project which is editable
 description: ""
 # The version semver range required to run this project

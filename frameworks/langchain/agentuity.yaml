@@ -10,7 +10,7 @@ version: '>=0.0.131'
 # The ID of the project which is automatically generated
 project_id: proj_1ff3b82a156b7275e87bfab996e58678
 # The name of the project which is editable
-name: sample-uv-langchain
+name: framework-langchain-py
 # The description of the project which is editable
 description: "A simple concierge-style agent that demonstrates the basics for using the LangChain framework with Agentuity."
 # The development configuration for the project

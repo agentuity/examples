@@ -10,7 +10,7 @@ version: ">=0.0.89"
 # The ID of the project which is automatically generated
 project_id: proj_5e84697074605908551e33e8ed95a182
 # The name of the project which is editable
-name: StreamingExample
+name: js-streaming
 # The description of the project which is editable
 description: ""
 # The development configuration for the project

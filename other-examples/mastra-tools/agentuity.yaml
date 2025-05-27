@@ -6,7 +6,7 @@
 # The ID of the project which is automatically generated
 project_id: proj_X67c8a1fd4058DyO2ZwqF4k3HtHVkGI1
 # The name of the project which is editable
-name: mastra-simple-weather
+name: mastra-tools
 # The description of the project which is editable
 description: ""
 # The version semver range required to run this project

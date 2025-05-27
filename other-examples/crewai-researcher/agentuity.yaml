@@ -6,7 +6,7 @@
 # The ID of the project which is automatically generated
 project_id: proj_crewai_example
 # The name of the project which is editable
-name: crewai
+name: crewai-researcher
 # The description of the project which is editable
 description: "CrewAI framework example for Agentuity Python SDK"
 # The version semver range required to run this project

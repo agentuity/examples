@@ -10,7 +10,7 @@ version: '>=0.0.130'
 # The ID of the project which is automatically generated
 project_id: proj_02eeb42256a976ad4e8dc7e68c0ce8dd
 # The name of the project which is editable
-name: sample-bun-mastra
+name: framework-mastra
 # The description of the project which is editable
 description: "A simple concierge-style agent that demonstrates the basics for using the Mastra framework with Agentuity."
 # The development configuration for the project

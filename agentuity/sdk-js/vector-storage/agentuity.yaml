@@ -6,7 +6,7 @@
 # The ID of the project which is automatically generated
 project_id: proj_vector_storage_example
 # The name of the project which is editable
-name: vector-storage
+name: js-vector-storage
 # The description of the project which is editable
 description: "Vector storage example for Agentuity JavaScript SDK"
 # The version semver range required to run this project

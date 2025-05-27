@@ -6,7 +6,7 @@
 # The ID of the project which is automatically generated
 project_id: proj_llamaindex_example
 # The name of the project which is editable
-name: llamaindex
+name: llamaindex-tools
 # The description of the project which is editable
 description: "LlamaIndex framework example for Agentuity Python SDK"
 # The version semver range required to run this project

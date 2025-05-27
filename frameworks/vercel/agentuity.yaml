@@ -10,7 +10,7 @@ version: '>=0.0.128'
 # The ID of the project which is automatically generated
 project_id: proj_fa5aa92b5973d158d580f0520d792356
 # The name of the project which is editable
-name: sample-bun-vercel
+name: framework-vercel
 # The description of the project which is editable
 description: "A simple concierge-style agent that demonstrates the basics for using the Vercel AI SDK with Agentuity."
 # The development configuration for the project

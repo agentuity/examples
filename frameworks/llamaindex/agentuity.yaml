@@ -10,7 +10,7 @@ version: '>=0.0.131'
 # The ID of the project which is automatically generated
 project_id: proj_b3345fc06d90bf408e0ccb8c0cb62f00
 # The name of the project which is editable
-name: sample-uv-llamaindex
+name: framework-llamaindex
 # The description of the project which is editable
 description: "A simple concierge-style agent that demonstrates the basics for using the LlamaIndex framework with Agentuity."
 # The development configuration for the project
