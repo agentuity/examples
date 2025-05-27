@@ -8,6 +8,14 @@
 
 A simple concierge-style agent that demonstrates the basics for using the LangChain framework with Agentuity.
 
+### How It Works
+
+The user's request is parsed by an LLM to determine the type of question (intent) they're asking, and the request is forwarded to the most appropriate agent to handle the response.
+
+In this example, we just have a "Local Guide" agent that can answer questions about entertainment, sightseeing, and dining options for a specific city.
+
+This example demonstrates in the most simple terms an LLM integration, agent-to-agent communication, and how to store user requests in key-value storage.
+
 ## 📋 Prerequisites
 
 Before you begin, ensure you have the following installed:

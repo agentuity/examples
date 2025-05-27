@@ -12,7 +12,7 @@ project_id: proj_93023b142a072ed849f1997dd9c049da
 # The name of the project which is editable
 name: sample-uv-pydantic
 # The description of the project which is editable
-description: ""
+description: "A simple concierge-style agent that demonstrates the basics for using the Pydantic framework with Agentuity."
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable

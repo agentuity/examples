@@ -12,7 +12,7 @@ project_id: proj_b3345fc06d90bf408e0ccb8c0cb62f00
 # The name of the project which is editable
 name: sample-uv-llamaindex
 # The description of the project which is editable
-description: ""
+description: "A simple concierge-style agent that demonstrates the basics for using the LlamaIndex framework with Agentuity."
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable

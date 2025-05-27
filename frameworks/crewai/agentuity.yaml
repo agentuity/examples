@@ -12,7 +12,7 @@ project_id: proj_8d8946732769bfcbeebad698ba34e2dd
 # The name of the project which is editable
 name: sample-uv-crewai
 # The description of the project which is editable
-description: ""
+description: "A simple concierge-style agent that demonstrates the basics for using the CrewAI framework with Agentuity."
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable

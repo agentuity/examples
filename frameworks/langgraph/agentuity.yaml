@@ -12,7 +12,7 @@ project_id: proj_ac7a050d854203075c535bed3d0623ab
 # The name of the project which is editable
 name: sample-bun-langgraph
 # The description of the project which is editable
-description: ""
+description: "A simple concierge-style agent that demonstrates the basics for using the LangGraph framework with Agentuity."
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
