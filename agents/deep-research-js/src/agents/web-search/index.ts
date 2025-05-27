@@ -34,8 +34,7 @@ const searchTool = (exa: Exa) =>
 
 const evaluateTool = (
 	query: string,
-	accumulatedSources: SearchResult[],
-	finalSearchResults: SearchResult[]
+	accumulatedSources: SearchResult[]
 ) => {
 	const EVAL_PROMPT = (
 		query: string,
@@ -68,15 +67,14 @@ const evaluateTool = (
 					output: "enum",
 					enum: ["relevant", "irrelevant"],
 				});
-				if (evaluation === "relevant") {
-					finalSearchResults.push(pendingResult);
-				}
 
 				console.log("Found:", pendingResult.url);
 				console.log("Evaluation completed:", evaluation);
-				return evaluation === "irrelevant"
-					? "Search results are irrelevant. Please search again with a more specific query."
-					: "Search results are relevant. End research for this query.";
+				
+				return {
+					evaluation,
+					pendingResult
+				};
 			}
 
 			return "No more search results to evaluate.";
@@ -96,16 +94,33 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse) {
 
 	const searchResults: SearchResult[] = [];
 
-	await generateText({
+	const { steps } = await generateText({
 		model: anthropic("claude-4-sonnet-20250514"),
 		prompt: `Search the web for information about ${query}`,
 		system: SYSTEM_PROMPT,
 		maxSteps: 5,
 		tools: {
 			searchWeb: searchTool(exa),
-			evaluate: evaluateTool(query, accumulatedSources, searchResults),
+			evaluate: evaluateTool(query, accumulatedSources),
 		},
 	});
+
+	// Process tool results to add relevant search results
+	for (const step of steps) {
+		if (step.toolCalls) {
+			for (const toolCall of step.toolCalls) {
+				if (toolCall.toolName === 'evaluate' && step.toolResults) {
+					const toolResult = step.toolResults.find(r => r.toolCallId === toolCall.toolCallId);
+					if (toolResult?.result && typeof toolResult.result === 'object') {
+						const evalResult = toolResult.result as { evaluation: string; pendingResult: SearchResult };
+						if (evalResult.evaluation === 'relevant' && evalResult.pendingResult) {
+							searchResults.push(evalResult.pendingResult);
+						}
+					}
+				}
+			}
+		}
+	}
 
 	const payload = {
 		searchResults,
