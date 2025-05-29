@@ -76,6 +76,17 @@ agents:
     # The description of the Agent which is editable
     description: 'Agent that turns any YouTube link into a bite-size brief: summary, key timestamps, and highlight notes in seconds.'
     # The entry point of the Agent which is editable
-    entry: agents/YoutubeAgent/youtube_agent.py
+    entry: agents/YoutubeAgent/agent.py
+    # The runtime of the Agent which is editable
+    runtime: python
+
+  - # The ID of the Agent which is automatically generated
+    id: agent_492853e81cfea3e73e5f67e5763ef1b1
+    # The name of the Agent which is editable
+    name: RecipeAgent
+    # The description of the Agent which is editable
+    description: A culinary AI that crafts personalized, step-by-step recipes based on your ingredients, dietary needs, and available cooking time.
+    # The entry point of the Agent which is editable
+    entry: agents/RecipeAgent/agent.py
     # The runtime of the Agent which is editable
     runtime: python
