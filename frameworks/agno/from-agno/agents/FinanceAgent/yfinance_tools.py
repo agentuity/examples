@@ -30,7 +30,7 @@ class YFinanceTools:
                 return f"${num / 1e6:.2f}M"
             else:
                 return f"${num:.2f}"
-        except:
+        except(TypeError, ValueError):
             return "N/A"
 
     def get_analyst_summary(self, info):
@@ -41,7 +41,7 @@ class YFinanceTools:
 - **Number of Analysts**: {info.get('numberOfAnalystOpinions', 'N/A')}
 - **Rating Change Date**: {info.get('upgradeDowngradeDate', 'N/A')}
 """
-        except:
+        except(KeyError, TypeError, AttributeError):
             return "- Analyst summary unavailable."
 
     async def run(self, tickers, context=None):
@@ -90,7 +90,7 @@ class YFinanceTools:
                                 section.append(f"- [{title}]({link})")
                     except Exception as e:
                         if context:
-                            context.logger.warn(f"News error: {e}")
+                            context.logger.warning(f"News error: {e}")
                         section.append("- News unavailable.")
 
                 reports.append("\n".join(section))

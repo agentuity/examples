@@ -348,7 +348,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agentuity", specifier = ">=0.0.87" },
+    { name = "agentuity", specifier = ">=0.0.16" },
     { name = "openai", specifier = ">=1.82.0" },
 ]
 

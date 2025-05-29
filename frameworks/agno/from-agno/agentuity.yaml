@@ -64,3 +64,18 @@ agents:
     name: FinanceAgent
     # The description of the Agent which is editable
     description: Analyst-grade financial reports with live market data
+    # The entry point of the Agent which is editable
+    entry: agents/FinanceAgent/agent.py
+    # The runtime of the Agent which is editable
+    runtime: python
+  
+  - # The ID of the Agent which is automatically generated
+    id: agent_c2e529f48a5ec3728240d9b0787b9793
+    # The name of the Agent which is editable
+    name: YoutubeAgent
+    # The description of the Agent which is editable
+    description: 'Agent that turns any YouTube link into a bite-size brief: summary, key timestamps, and highlight notes in seconds.'
+    # The entry point of the Agent which is editable
+    entry: agents/YoutubeAgent/youtube_agent.py
+    # The runtime of the Agent which is editable
+    runtime: python

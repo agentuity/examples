@@ -178,3 +178,8 @@ cython_debug/
 # Agentuity
 .agentuity
 .agentuity-crash-*.json
+
+.cursor/
+.python-version
+agents/YoutubeAgent
+frameworks/agno/from-agno/examples/

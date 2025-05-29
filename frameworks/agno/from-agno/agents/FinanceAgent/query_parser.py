@@ -1,7 +1,14 @@
+import os
+import logging
 from openai import AsyncOpenAI
 from textwrap import dedent
 import json
 import re
+
+logger = logging.getLogger(__name__)
+
+if not os.getenv("OPENAI_API_KEY"):
+    raise ValueError("OPENAI_API_KEY environment variable is required")
 
 client = AsyncOpenAI()
 
@@ -29,12 +36,21 @@ async def parse_user_query(user_query: str):
             messages=messages,
             temperature=0
         )
+        if not response.choices or not response.choices[0].message.content:
+            raise ValueError("Empty response from OpenAI")
 
         text = response.choices[0].message.content
-        json_text = re.search(r'\{.*\}', text, re.DOTALL)[0]
-        parsed = json.loads(json_text)
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if not match:
+            raise ValueError("No JSON found in response")
+
+        parsed = json.loads(match.group(0))
         return parsed
 
+    except (ValueError, json.JSONDecodeError, KeyError) as e:
+        logger.warning(f"Query parsing failed: {e}")
+        return {"tickers": ["AAPL"], "intent": "general financial analysis"}
+
     except Exception as e:
-        print(f"Parsing error: {e}")
+        logger.error(f"Unexpected error in query parsing: {e}", exc_info=True)
         return {"tickers": ["AAPL"], "intent": "general financial analysis"}

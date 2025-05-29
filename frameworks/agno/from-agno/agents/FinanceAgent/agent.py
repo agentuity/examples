@@ -65,7 +65,6 @@ class FinanceAgent:
 
             parsed = await parse_user_query(user_input)
             tickers = parsed.get("tickers", ["AAPL"])
-            intent = parsed.get("intent", "market outlook")
 
             # Append date to instructions
             date_note = f"(Date: {datetime.now().strftime('%B %d, %Y')})\n\n"
