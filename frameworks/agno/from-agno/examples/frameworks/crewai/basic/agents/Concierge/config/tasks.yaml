@@ -1,4 +1,0 @@
-local_guide_task:
-  description: "Answer the user's city or travel question: {query}"
-  expected_output: "A helpful, concise answer to the user's city-related question."
-  agent: local_guide
