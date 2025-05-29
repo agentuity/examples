@@ -58,6 +58,7 @@ class FinanceAgent:
         self.show_tool_calls = True
         self.markdown = True
     
+    @staticmethod
     def sanitize_markdown(text):
         # strip any *italic*/**bold** tokens that slipped through
         text = re.sub(r'(?<!#)(\*{1,3}|_{1,3})([^*_]+?)\1', r'\2', text)
