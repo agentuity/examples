@@ -1,18 +1,16 @@
 from textwrap import dedent
 from openai import AsyncOpenAI
 from datetime import datetime
-
+import traceback
 from agentuity import AgentRequest, AgentResponse, AgentContext
 from agents.FinanceAgent.yfinance_tools import YFinanceTools
 from agents.FinanceAgent.query_parser import parse_user_query
 
 import re
 
-client = AsyncOpenAI()
-
 class FinanceAgent:
     def __init__(self):
-        self.model = client
+        self.model = AsyncOpenAI()
         self.tools = YFinanceTools(
             stock_price=True,
             analyst_recommendations=True,
@@ -59,7 +57,7 @@ class FinanceAgent:
         self.markdown = True
     
     @staticmethod
-    def sanitize_markdown(text):
+    def sanitize_markdown(text) -> str:
         # strip any *italic*/**bold** tokens that slipped through
         text = re.sub(r'(?<!#)(\*{1,3}|_{1,3})([^*_]+?)\1', r'\2', text)
 
@@ -80,7 +78,14 @@ class FinanceAgent:
             context.logger.info(f"Received input: {user_input}")
 
             parsed = await parse_user_query(user_input)
-            tickers = parsed.get("tickers", ["AAPL"])
+            raw_tickers = parsed.get("tickers", ["AAPL"])
+            # basic validation: must be non-empty strings ≤10 chars
+            validated = [
+                t.strip().upper()
+                for t in raw_tickers
+                if isinstance(t, str) and 0 < len(t.strip()) <= 10
+            ]
+            tickers = validated or ["AAPL"]
 
             # Append date to instructions
             date_note = f"(Date: {datetime.now().strftime('%B %d, %Y')})\n\n"
@@ -115,12 +120,18 @@ class FinanceAgent:
             )
 
             raw_output = result.choices[0].message.content
-            safe_output = self.sanitize_markdown(raw_output)
+            safe_output = FinanceAgent.sanitize_markdown(raw_output)
             return response.text(safe_output)
 
         except Exception as e:
             context.logger.error(f"FinanceAgent Error: {e}")
-            return response.text("❌ There was an error analyzing the request.")
+            context.logger.debug(traceback.format_exc())
+            msg = str(e).lower()
+            if "rate limit" in msg:
+                return response.text("❌ API rate limit exceeded. Please try again later.")
+            if "network" in msg:
+                return response.text("❌ Network error. Please check your internet connection and try again later.")
+            return response.text("❌ Unexpected error. Please try again later.")
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     agent = FinanceAgent()

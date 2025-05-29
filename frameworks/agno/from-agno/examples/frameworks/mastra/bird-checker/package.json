@@ -1,0 +1,36 @@
+{
+	"name": "mastra-bird-checker",
+	"description": "",
+	"version": "0.0.1",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"build": "agentuity build",
+		"prestart": "agentuity bundle",
+		"start": "node --env-file .env .agentuity/index.js",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [
+		"agentuity",
+		"agent",
+		"ai",
+		"ai agent",
+		"vercel",
+		"bun"
+	],
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@types/node": "^22.13.9",
+		"mastra": "^0.2.9-alpha.4",
+		"typescript": "^5.8.2"
+	},
+	"dependencies": {
+		"@agentuity/sdk": "^0.0.73",
+		"@ai-sdk/anthropic": "^1.1.15",
+		"@ai-sdk/openai": "^1.2.1",
+		"@mastra/core": "^0.5.0-alpha.4",
+		"ai": "^4.1.53",
+		"zod": "^3.24.2"
+	}
+}

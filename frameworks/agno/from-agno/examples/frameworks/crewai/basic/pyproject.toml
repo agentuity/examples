@@ -1,0 +1,10 @@
+[project]
+name = "sample-uv-crewai"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.10, <=3.12"
+dependencies = [
+    "agentuity>=0.0.85",
+    "crewai>=0.120.1",
+    "langchain-anthropic>=0.3.13",
+]
