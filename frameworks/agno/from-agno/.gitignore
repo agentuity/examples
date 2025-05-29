@@ -183,3 +183,4 @@ cython_debug/
 .python-version
 agents/YoutubeAgent
 frameworks/agno/from-agno/examples/
+.github/workflows/

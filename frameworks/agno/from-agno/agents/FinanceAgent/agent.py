@@ -57,6 +57,21 @@ class FinanceAgent:
         self.add_datetime_to_instructions = True
         self.show_tool_calls = True
         self.markdown = True
+    
+    def sanitize_markdown(text):
+        # strip any *italic*/**bold** tokens that slipped through
+        text = re.sub(r'(?<!#)(\*{1,3}|_{1,3})([^*_]+?)\1', r'\2', text)
+
+        # insert a newline if a heading and body ran together: "## Heading --- 1." → put newline
+        text = re.sub(r'(## .+?)\s*[-–]{2,}\s*', r'\1\n\n', text)
+
+        # fix joins (WeekHigh -> Week High)
+        text = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', text)
+
+        # collapse any 2+ spaces
+        text = re.sub(r'[ ]{2,}', ' ', text)
+
+        return text.strip()
 
     async def run(self, request: AgentRequest, response: AgentResponse, context: AgentContext):
         try:
@@ -97,36 +112,15 @@ class FinanceAgent:
                     {"role": "user", "content": prompt}
                 ]
             )
-            def sanitize_markdown(text):
-                # strip any *italic*/**bold** tokens that slipped through
-                text = re.sub(r'(?<!#)(\*{1,3}|_{1,3})([^*_]+?)\1', r'\2', text)
-
-                # insert a newline if a heading and body ran together: "## Heading --- 1." → put newline
-                text = re.sub(r'(## .+?)\s*[-–]{2,}\s*', r'\1\n\n', text)
-
-                # fix joins (WeekHigh -> Week High)
-                text = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', text)
-
-                # collapse any 2+ spaces
-                text = re.sub(r'[ ]{2,}', ' ', text)
-
-                return text.strip()
 
             raw_output = result.choices[0].message.content
-            safe_output = sanitize_markdown(raw_output)
+            safe_output = self.sanitize_markdown(raw_output)
             return response.text(safe_output)
 
         except Exception as e:
             context.logger.error(f"FinanceAgent Error: {e}")
             return response.text("❌ There was an error analyzing the request.")
 
-    async def print_response(self, prompt, context=None):
-        req = AgentRequest(data={"text": lambda: prompt})
-        resp = AgentResponse()
-        ctx = context or AgentContext()
-        await self.run(req, resp, ctx)
-
-finance_agent_instance = FinanceAgent()
-
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    return await finance_agent_instance.run(request, response, context)
+    agent = FinanceAgent()
+    return await agent.run(request, response, context)
