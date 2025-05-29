@@ -181,6 +181,5 @@ cython_debug/
 
 .cursor/
 .python-version
-agents/YoutubeAgent
 examples/
 .github/workflows/
