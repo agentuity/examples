@@ -1,0 +1,9 @@
+[project]
+name = "from-agno"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.10, <3.13"
+dependencies = [
+    "agentuity>=0.0.90",
+    "openai>=1.82.1",
+]
