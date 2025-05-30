@@ -12,8 +12,11 @@ if not os.getenv("OPENAI_API_KEY"):
 
 client = AsyncOpenAI()
 
-async def parse_user_query(user_query: str):
+async def parse_user_query(user_query: str) -> dict[str, str | list[str]]:
     """Returns extracted company tickers and analysis intent using GPT-4o"""
+    if not user_query or not user_query.strip():
+        logger.warning("Empty or whitespace-only query provided")
+        return {"tickers": ["AAPL"], "intent": "general financial analysis"}
     system_prompt = dedent("""\
     You are an intelligent parser designed to extract structured info from financial queries.
 
@@ -39,12 +42,16 @@ async def parse_user_query(user_query: str):
         if not response.choices or not response.choices[0].message.content:
             raise ValueError("Empty response from OpenAI")
 
-        text = response.choices[0].message.content
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        if not match:
-            raise ValueError("No JSON found in response")
+        text = response.choices[0].message.content.strip()
 
-        parsed = json.loads(match.group(0))
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            match = re.search(r"\{.*\}", text, re.DOTALL)
+            if not match:
+                raise ValueError("No JSON found in response")
+            parsed = json.loads(match.group(0))
+            
         return parsed
 
     except (ValueError, json.JSONDecodeError, KeyError) as e:

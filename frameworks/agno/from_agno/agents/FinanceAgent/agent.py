@@ -78,6 +78,9 @@ class FinanceAgent:
             context.logger.info(f"Received input: {user_input}")
 
             parsed = await parse_user_query(user_input)
+            if not isinstance(parsed, dict):
+                context.logger.error("Query parser returned invalid type")
+                parsed = {"tickers": ["AAPL"], "intent": "general financial analysis"}
             raw_tickers = parsed.get("tickers", ["AAPL"])
             # basic validation: must be non-empty strings ≤10 chars
             validated = [
@@ -118,6 +121,9 @@ class FinanceAgent:
                     {"role": "user", "content": prompt}
                 ]
             )
+            if not result.choices or not result.choices[0].message.content:
+                context.logger.error("Empty response from OpenAI")
+                return response.text("⚠️ No analysis could be generated. Please try again.")
 
             raw_output = result.choices[0].message.content
             safe_output = FinanceAgent.sanitize_markdown(raw_output)
