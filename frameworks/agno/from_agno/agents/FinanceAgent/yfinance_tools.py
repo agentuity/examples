@@ -36,11 +36,11 @@ class YFinanceTools:
     def get_analyst_summary(self, info):
         try:
             return f"""
-- **Buy**: {info.get('recommendationKey', 'N/A').capitalize()}
-- **Target Mean Price**: {self.format_number(info.get('targetMeanPrice', 0))}
-- **Number of Analysts**: {info.get('numberOfAnalystOpinions', 'N/A')}
-- **Rating Change Date**: {info.get('upgradeDowngradeDate', 'N/A')}
-"""
+            - **Buy**: {info.get('recommendationKey', 'N/A').capitalize()}
+            - **Target Mean Price**: {self.format_number(info.get('targetMeanPrice', 0))}
+            - **Number of Analysts**: {info.get('numberOfAnalystOpinions', 'N/A')}
+            - **Rating Change Date**: {info.get('upgradeDowngradeDate', 'N/A')}
+            """
         except(KeyError, TypeError, AttributeError):
             return "- Analyst summary unavailable."
 

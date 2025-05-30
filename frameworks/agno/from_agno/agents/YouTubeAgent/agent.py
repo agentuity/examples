@@ -4,17 +4,13 @@ import asyncio
 # Import the Agno agent
 from agents.YouTubeAgent.youtube_agent import youtube_agent
 
-# ──────────────────────────────────────────────────────────────
-# Optional greeting (no sample prompts so the input starts empty)
-# ──────────────────────────────────────────────────────────────
+#greeting
 def welcome():
     return {
         "welcome": "🎬  I’m a YouTube Content Analyzer. Paste any YouTube link and tell me what you need!",
     }
 
-# ──────────────────────────────────────────────────────────────
-# Async bridge  Agentuity ➜ (blocking) Agno YouTube agent
-# ──────────────────────────────────────────────────────────────
+# Async bridge Agentuity ➜ Agno YouTube agent
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     prompt = await request.data.text()
     context.logger.info(f"[YouTubeAgent] prompt: {prompt!r}")

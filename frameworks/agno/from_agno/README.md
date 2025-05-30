@@ -1,13 +1,19 @@
-# Agents added from agno:
-# Finance Agent
-# Ported from https://docs.agno.com/examples/agents/finance-agent
-# This agent first uses a query parser to understand the user’s request and extract the relevant stock tickers and intent, then pulls real-time pricing, fundamentals, analyst ratings, and news from Yahoo! Finance, and finally feeds all of that into GPT-4o to produce a structured, up-to-date market analysis.
-# Youtube Agent
-# Ported from https://docs.agno.com/examples/agents/youtube-agent
-# This agent fetches YouTube video transcripts, inspects video metadata and structure, generates precise, meaningful timestamps for key segments, groups related content, and leverages GPT-4o to produce comprehensive video breakdowns, summaries, and highlight notes—perfect for content creators, researchers, and viewers.
-# Recipe Agent
-# Ported from https://docs.agno.com/examples/agents/recipe-creator
-# This agent takes in ingredient lists or recipe preferences, performs a semantic search to find relevant recipes, and uses GPT-4o to generate a fully formatted, easy-to-follow recipe with instructions, ingredients, and cooking tips. It’s ideal for home cooks, meal planners, or anyone looking to create a dish from what they have on hand.
+# Agents added from Agno
+
+# This project includes three fully functional agents ported from the official Agno examples.
+# These agents were ported directly from Agno's official examples and added into the Agentuity framework. Each one was easy to integrate inside Agentuity by just dropping in the files, adding it to `agentuity.yaml`, and running the server. All agents are async and route requests through the Agentuity AI Gateway—no API keys or manual config needed.
+
+## Finance Agent  
+Ported from: https://docs.agno.com/examples/agents/finance-agent  
+This agent first uses a query parser to understand the user’s request and extract relevant stock tickers and intent, then pulls real-time pricing, fundamentals, analyst ratings, and news from Yahoo! Finance, and finally feeds all of that into GPT-4o to produce a structured, up-to-date market analysis.
+
+## YouTube Agent  
+Ported from: https://docs.agno.com/examples/agents/youtube-agent  
+This agent fetches YouTube video transcripts, inspects video metadata and structure, generates precise, meaningful timestamps for key segments, groups related content, and leverages GPT-4o to produce comprehensive video breakdowns, summaries, and highlight notes—perfect for content creators, researchers, and viewers.
+
+## Recipe Agent  
+Ported from: https://docs.agno.com/examples/agents/recipe-creator  
+This agent takes in ingredient lists or recipe preferences, performs a semantic search to find relevant recipes, and uses GPT-4o to generate a fully formatted, easy-to-follow recipe with instructions, ingredients, and cooking tips. It’s ideal for home cooks, meal planners, or anyone looking to create a dish from what they have on hand.
 
 
 
