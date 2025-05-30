@@ -52,7 +52,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         context.logger.info("Processing question: %s", user_question)  
           
         # Run the OpenAI Agents workflow  
-        result = await Runner.run(triage_agent, user_question)  
+        result = await Runner.run(triage_agent, user_question, context=context)  
           
         # Log the result  
         context.logger.info("Agent workflow completed successfully")  

@@ -60,7 +60,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 
         # Run your existing OpenAI Agents SDK workflow
         with trace("Orchestrator evaluator"):
-            orchestrator_result = await Runner.run(orchestrator_agent, user_message)
+            orchestrator_result = await Runner.run(orchestrator_agent, user_message, context=context)
             
             # Log intermediate steps using Agentuity's logger
             for item in orchestrator_result.new_items:
@@ -70,9 +70,9 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
                         context.logger.info(f"Translation step: {text}")
             
             synthesizer_result = await Runner.run(
-                synthesizer_agent, orchestrator_result.to_input_list()
+                synthesizer_agent, orchestrator_result.to_input_list(), context=context
             )
-            
+
         return response.text(str(synthesizer_result.final_output))
     except Exception as e:
         context.logger.exception("Translation workflow failed")
