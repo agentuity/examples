@@ -51,27 +51,29 @@ synthesizer_agent = Agent(
     instructions="You inspect translations, correct them if needed, and produce a final concatenated response.",  
 )  
   
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):  
-    # Get the user message from Agentuity request  
-    user_message = await request.data.text()  
-      
-    # Use Agentuity's logging  
-    context.logger.info(f"Processing translation request: {user_message}")  
-      
-    # Run your existing OpenAI Agents SDK workflow  
-    with trace("Orchestrator evaluator"):  
-        orchestrator_result = await Runner.run(orchestrator_agent, user_message)  
-          
-        # Log intermediate steps using Agentuity's logger  
-        for item in orchestrator_result.new_items:  
-            if isinstance(item, MessageOutputItem):  
-                text = ItemHelpers.text_message_output(item)  
-                if text:  
-                    context.logger.info(f"Translation step: {text}")  
-          
-        synthesizer_result = await Runner.run(  
-            synthesizer_agent, orchestrator_result.to_input_list()  
-        )  
-      
-    # Return the result through Agentuity's response system  
-    return response.text(synthesizer_result.final_output)
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    try:
+        user_message = await request.data.text()
+        
+        # Use Agentuity's logging
+        context.logger.info(f"Processing translation request: {user_message}")
+
+        # Run your existing OpenAI Agents SDK workflow
+        with trace("Orchestrator evaluator"):
+            orchestrator_result = await Runner.run(orchestrator_agent, user_message)
+            
+            # Log intermediate steps using Agentuity's logger
+            for item in orchestrator_result.new_items:
+                if isinstance(item, MessageOutputItem):
+                    text = ItemHelpers.text_message_output(item)
+                    if text:
+                        context.logger.info(f"Translation step: {text}")
+            
+            synthesizer_result = await Runner.run(
+                synthesizer_agent, orchestrator_result.to_input_list()
+            )
+            
+        return response.text(str(synthesizer_result.final_output))
+    except Exception as e:
+        context.logger.exception("Translation workflow failed")
+        return response.text(f"Sorry, I couldn't translate your message: {e}")

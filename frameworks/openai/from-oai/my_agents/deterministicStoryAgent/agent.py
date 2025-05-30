@@ -47,7 +47,15 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         )  
   
         # 3. Add a gate to stop if the outline is not good quality or not a scifi story  
-        assert isinstance(outline_checker_result.final_output, OutlineCheckerOutput)  
+        if not isinstance(outline_checker_result.final_output, OutlineCheckerOutput):
+            context.logger.error(
+                "Unexpected output type from outline_checker_agent: %s", 
+                type(outline_checker_result.final_output)
+            )
+            return response.json({
+                "status": "error",
+                "reason": "Invalid outline-checker output"
+            })
           
         if not outline_checker_result.final_output.good_quality:  
             context.logger.info("Outline is not good quality, stopping workflow")  

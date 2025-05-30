@@ -12,6 +12,13 @@ alwaysApply: true
 - All code should follow Python best practices and type hints
 - Use the provided logger from the `AgentContext` interface such as `context.logger.info("my message: %s", "hello")`
 
+---
+description: Guidelines for writing Agentuity AI Agents in Python
+globs: "agents/**/*.py"
+alwaysApply: true
+---
+
+
 ## Example Agent File
 
 ```python

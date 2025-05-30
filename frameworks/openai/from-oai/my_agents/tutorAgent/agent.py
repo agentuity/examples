@@ -27,7 +27,7 @@ history_tutor_agent = Agent(
 )  
   
 async def homework_guardrail(ctx, agent, input_data):  
-    result = await Runner.run(guardrail_agent, input_data, context=ctx.context)  
+    result = await Runner.run(guardrail_agent, input_data, context=ctx)  
     final_output = result.final_output_as(HomeworkOutput)  
     return GuardrailFunctionOutput(  
         output_info=final_output,  
@@ -58,7 +58,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         context.logger.info("Agent workflow completed successfully")  
           
         # Return the response from the OpenAI Agents workflow  
-        return response.text(result.final_output)  
+        return response.text(str(result.final_output))  
           
     except Exception as e:  
         context.logger.error("Error in agent workflow: %s", str(e))  
