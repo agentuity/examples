@@ -8,6 +8,36 @@
 
 Welcome to your Agentuity Python Agent project! This README provides essential information to help you get started with developing, testing, and deploying your AI agents.
 
+## 🔗 OpenAI Agent Framework Integration
+
+This project demonstrates how to seamlessly integrate [OpenAI's Agent Framework](https://github.com/openai/openai-agents) with Agentuity. The OpenAI Agent Framework provides powerful tools for building AI agents, and Agentuity makes it incredibly easy to deploy and scale them in production.
+
+With just a simple wrapper function, you can take any OpenAI Agent Framework workflow and deploy it to Agentuity's cloud platform:
+
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from agents import Agent, Runner
+
+# Define your OpenAI agents
+math_tutor = Agent(
+    name="Math Tutor",
+    instructions="You help students with math problems step by step."
+)
+
+# Agentuity handler - wraps your OpenAI Agent workflow
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # Get user input from Agentuity
+    user_question = await request.data.text()
+    
+    # Run your OpenAI Agent
+    result = await Runner.run(math_tutor, user_question)
+    
+    # Return response through Agentuity
+    return response.text(str(result.final_output))
+```
+
+This integration gives you the best of both worlds: OpenAI's powerful agent framework combined with Agentuity's enterprise-grade deployment, monitoring, and scaling capabilities.
+
 ## 📋 Prerequisites
 
 Before you begin, ensure you have the following installed:

@@ -2,10 +2,9 @@ import asyncio
 from agentuity import AgentRequest, AgentResponse, AgentContext  
 from pydantic import BaseModel  
   
-# Your existing OpenAI Agents SDK imports and setup  
 from agents import Agent, Runner, trace  
   
-# Keep your existing agent definitions exactly as they are  
+ 
 story_outline_agent = Agent(  
     name="story_outline_agent",  
     instructions="Generate a very short story outline based on the user's input.",  
@@ -92,7 +91,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
                     "is_scifi": outline_checker_result.final_output.is_scifi  
                 }  
             })
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  
         context.logger.error("Error in deterministic story workflow: %s", str(e), exc_info=True)
         return response.json({
             "status": "error",
