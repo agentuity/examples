@@ -1,6 +1,6 @@
 # Agents added from Agno
 
-# This project includes three fully functional agents ported from the official Agno examples.
+# This project includes fully functional agents ported from the official Agno examples.
 # These agents were ported directly from Agno's official examples and added into the Agentuity framework. Each one was easy to integrate inside Agentuity by just dropping in the files, adding it to `agentuity.yaml`, and running the server. All agents are async and route requests through the Agentuity AI Gateway—no API keys or manual config needed.
 
 ## Finance Agent  

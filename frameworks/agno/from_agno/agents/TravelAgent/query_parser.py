@@ -1,9 +1,18 @@
-import os
-import logging
-from openai import AsyncOpenAI
-from textwrap import dedent
+"""
+Travel query parser module for extracting structured data from natural language queries.
+
+Uses OpenAI GPT-4o to parse user travel requests into structured JSON format
+containing destination, dates, budget, and other travel details.
+"""
+
+import asyncio
 import json
+import logging
+import os
 import re
+from textwrap import dedent
+
+from openai import AsyncOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +70,7 @@ async def parse_user_query(user_query: str) -> dict:
         except json.JSONDecodeError:
             match = re.search(r"\{.*\}", text, re.DOTALL)
             if not match:
-                raise ValueError("No JSON found in response")
+                raise ValueError("No JSON found in response") from None
             parsed = json.loads(match.group(0))
 
         return parsed

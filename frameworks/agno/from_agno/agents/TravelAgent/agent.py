@@ -1,7 +1,16 @@
-from agentuity import AgentRequest, AgentResponse, AgentContext
+"""
+Travel Agent async interface module.
+
+Provides the async interface for the Travel Agent, handling query parsing,
+prompt formatting, and integration with the synchronous travel agent.
+"""
+
 import asyncio
+
+from agentuity import AgentRequest, AgentResponse, AgentContext
 from agents.TravelAgent.travel_agent import travel_agent
-from agents.TravelAgent.query_parser import parse_user_query  # <-- import your parser
+from agents.TravelAgent.query_parser import parse_user_query
+
 
 def welcome():
     return {
