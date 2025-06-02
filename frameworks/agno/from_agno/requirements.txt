@@ -1,0 +1,7 @@
+exa_py
+agno
+yfinance
+duckduckgo_search
+newspaper4k
+lxml_html_clean
+

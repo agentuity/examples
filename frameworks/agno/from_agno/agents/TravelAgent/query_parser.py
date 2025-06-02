@@ -68,15 +68,17 @@ async def parse_user_query(user_query: str) -> dict:
         try:
             parsed = json.loads(text)
         except json.JSONDecodeError:
-            match = re.search(r"\{.*\}", text, re.DOTALL)
+            match = re.search(r"\{.*?\}", text, re.DOTALL)
             if not match:
                 raise ValueError("No JSON found in response") from None
             parsed = json.loads(match.group(0))
 
         return parsed
 
-    except Exception as e:
-        logger.error(f"Travel query parsing failed: {e}", exc_info=True)
+    except json.JSONDecodeError as exc:
+        logger.error("Travel query parsing failed: %s", exc, exc_info=True)
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Unexpected failure while parsing travel query")
         return {
             "destination": "Mexico",
             "dates": "June 2025",

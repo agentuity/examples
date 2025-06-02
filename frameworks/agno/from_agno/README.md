@@ -1,3 +1,5 @@
+# REMEMBER TO INSTALL ALL DEPENDENCIES IN REQUIREMENTS.TXT
+
 # Agents added from Agno
 
 # This project includes fully functional agents ported from the official Agno examples.
@@ -30,6 +32,10 @@ This agent takes in a user’s travel goals—like destination, group size, trip
 ## Research Agent
 Ported from: https://docs.agno.com/examples/agents/research-agent
 This agent combines powerful web search (DuckDuckGo + Newspaper4k) with GPT-4o to produce professional, New York Times-style investigative reports. It performs multi-source research, cross-verifies facts, and delivers polished, objective long-form articles on any topic. Ideal for researchers, journalists, analysts, or anyone who needs in-depth reporting and synthesis.
+
+## Academic Research Agent  
+Ported from: https://docs.agno.com/examples/agents/research-agent-exa
+This agent is designed for scholarly research and academic reporting. It uses Exa’s academic search tools to find the latest peer-reviewed literature, synthesize insights across disciplines, and produce well-structured, citation-rich reports. It’s ideal for researchers, students, and professionals seeking rigorous academic analysis.
 
 <div align="center">
     <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
