@@ -70,3 +70,5 @@ agents:
     name: MovieAgent
   - id: agent_a47668df2d0cbceaf912e8fea989fc4b
     name: BookAgent
+  - id: agent_659175a13ca73ad44afba99faa159393
+    name: TravelAgent

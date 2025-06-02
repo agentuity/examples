@@ -23,6 +23,11 @@ This agent takes user preferences (genres, favorite movies, desired themes), per
 Ported from: https://docs.agno.com/examples/agents/books-recommender  
 This agent takes in favorite books, genres, and reading preferences, uses Exa for a semantic search of literary databases, and calls GPT-4o to deliver personalized book recommendations. Each suggestion includes title, author, rating, plot summary, and content tags—great for avid readers, book clubs, or anyone searching for their next great read.
 
+## Travel Agent  
+Ported from: https://docs.agno.com/examples/agents/travel-planner  
+This agent takes in a user’s travel goals—like destination, group size, trip type, and budget—and generates a detailed, multi-day itinerary using GPT-4o and Exa. It provides curated accommodation suggestions, activity planning, transportation logistics, and local tips. Ideal for individuals, families, or teams planning anything from vacations to offsites.
+
+
 <div align="center">
     <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
     <strong>Build Agents, Not Infrastructure</strong> <br/>
