@@ -66,3 +66,5 @@ agents:
     name: YouTubeAgent
   - id: agent_31c6556a017ff8f7c999d662ec085008
     name: RecipeAgent
+  - id: agent_391b042e7835c23d05d74f6e352b73d8
+    name: MovieAgent
