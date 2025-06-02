@@ -8,9 +8,9 @@
 # The version semver range required to run this project
 version: '>=0.0.89'
 # The ID of the project which is automatically generated
-project_id: proj_cc85839b138d1ef4f7a2b8d665823ee5
+project_id: proj_82aee190032ce85cc77b5bf571e49130
 # The name of the project which is editable
-name: js-streaming
+name: js-streaming3
 # The description of the project which is editable
 description: ""
 # The development configuration for the project
@@ -68,6 +68,6 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_21b7121e162948e3ad58ba151ed51a57
+    id: agent_7c6fac6d6d0b8cd5cdfd5b2a54b11e57
     # The name of the Agent which is editable
     name: Streaming1
