@@ -36,6 +36,7 @@ async def parse_user_query(user_query: str) -> dict[str, str | list[str]]:
     try:
         response = await client.chat.completions.create(
             model="gpt-4o", # No API key needed here — routed by Agentuity AI Gateway
+            messages=messages,
             temperature=0
         )
         if not response.choices or not response.choices[0].message.content:
