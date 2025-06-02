@@ -5,7 +5,7 @@ export default async function handler(
   response: AgentResponse,
   context: AgentContext
 ) {
-  const { action, message, agentId } = await request.data.json();
+  const { action, message, agentId } = request.data.json;
 
   switch (action) {
     case "send": {
@@ -58,7 +58,7 @@ export default async function handler(
     }
     case "receive": {
       // This is a handler for receiving messages from other agents
-      const data = await request.data.json();
+      const data = request.data.json;
 
       context.logger.info(
         `Received message from agent ${data.sender}: ${data.message}`
