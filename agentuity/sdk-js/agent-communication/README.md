@@ -1,5 +1,5 @@
 # Agent Communication Example
-
+[![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fagentuity%2Fexamples%2Ftree%2Fdeploy-buttons%2Fagentuity%2Fsdk-js%2Fagent-communication)
 ## Overview
 This example demonstrates how to use the agent communication API in the Agentuity JavaScript SDK to send messages between agents.
 
