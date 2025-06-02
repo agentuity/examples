@@ -27,6 +27,9 @@ This agent takes in favorite books, genres, and reading preferences, uses Exa fo
 Ported from: https://docs.agno.com/examples/agents/travel-planner  
 This agent takes in a user’s travel goals—like destination, group size, trip type, and budget—and generates a detailed, multi-day itinerary using GPT-4o and Exa. It provides curated accommodation suggestions, activity planning, transportation logistics, and local tips. Ideal for individuals, families, or teams planning anything from vacations to offsites.
 
+## Research Agent
+Ported from: https://docs.agno.com/examples/agents/research-agent
+This agent combines powerful web search (DuckDuckGo + Newspaper4k) with GPT-4o to produce professional, New York Times-style investigative reports. It performs multi-source research, cross-verifies facts, and delivers polished, objective long-form articles on any topic. Ideal for researchers, journalists, analysts, or anyone who needs in-depth reporting and synthesis.
 
 <div align="center">
     <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>

@@ -72,3 +72,5 @@ agents:
     name: BookAgent
   - id: agent_659175a13ca73ad44afba99faa159393
     name: TravelAgent
+  - id: agent_76b2e10761c6b4a05a7f2ff5907af477
+    name: ResearchAgent
