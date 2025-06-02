@@ -68,3 +68,5 @@ agents:
     name: RecipeAgent
   - id: agent_391b042e7835c23d05d74f6e352b73d8
     name: MovieAgent
+  - id: agent_a47668df2d0cbceaf912e8fea989fc4b
+    name: BookAgent

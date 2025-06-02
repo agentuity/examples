@@ -15,6 +15,13 @@ This agent fetches YouTube video transcripts, inspects video metadata and struct
 Ported from: https://docs.agno.com/examples/agents/recipe-creator  
 This agent takes in ingredient lists or recipe preferences, performs a semantic search to find relevant recipes, and uses GPT-4o to generate a fully formatted, easy-to-follow recipe with instructions, ingredients, and cooking tips. It’s ideal for home cooks, meal planners, or anyone looking to create a dish from what they have on hand.
 
+## Movie Agent  
+Ported from: https://docs.agno.com/examples/agents/movie-recommender  
+This agent takes user preferences (genres, favorite movies, desired themes), performs a semantic search using Exa, and leverages GPT-4o to generate personalized movie recommendations. It returns titles with release dates, genres, ratings, summaries, and more—ideal for film lovers, casual viewers, and anyone planning their next movie night.
+
+## Book Agent  
+Ported from: https://docs.agno.com/examples/agents/books-recommender  
+This agent takes in favorite books, genres, and reading preferences, uses Exa for a semantic search of literary databases, and calls GPT-4o to deliver personalized book recommendations. Each suggestion includes title, author, rating, plot summary, and content tags—great for avid readers, book clubs, or anyone searching for their next great read.
 
 <div align="center">
     <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
