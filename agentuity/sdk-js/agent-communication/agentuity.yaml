@@ -6,11 +6,11 @@
 # ------------------------------------------------
 
 # The version semver range required to run this project
-version: '>=0.0.0'
+version: ">=0.0.0"
 # The ID of the project which is automatically generated
 project_id: proj_f78cf0f802b1a1c81cf40fb8b20ce20d
 # The name of the project which is editable
-name: js-agent-communication-test7
+name: js-agent-communication
 # The description of the project which is editable
 description: Agent communication example for Agentuity JavaScript SDK
 # The development configuration for the project

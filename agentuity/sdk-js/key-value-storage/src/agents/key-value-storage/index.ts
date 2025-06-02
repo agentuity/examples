@@ -5,7 +5,7 @@ export default async function handler(
   response: AgentResponse,
   context: AgentContext
 ) {
-  const { action, userId, preferences } = await request.data.json();
+  const { action, userId, preferences } = request.data.json;
 
   switch (action) {
     case "get": {
