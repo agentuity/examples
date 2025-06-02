@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 if not os.getenv("OPENAI_API_KEY"):
     raise ValueError("OPENAI_API_KEY environment variable is required")
 
-client = AsyncOpenAI()
+client = AsyncOpenAI() # Using OpenAI Python SDK - routed through Agentuity’s AI Gateway automatically
 
 async def parse_user_query(user_query: str) -> dict[str, str | list[str]]:
     """Returns extracted company tickers and analysis intent using GPT-4o"""
@@ -35,8 +35,7 @@ async def parse_user_query(user_query: str) -> dict[str, str | list[str]]:
 
     try:
         response = await client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
+            model="gpt-4o", # No API key needed here — routed by Agentuity AI Gateway
             temperature=0
         )
         if not response.choices or not response.choices[0].message.content:
@@ -51,7 +50,7 @@ async def parse_user_query(user_query: str) -> dict[str, str | list[str]]:
             if not match:
                 raise ValueError("No JSON found in response")
             parsed = json.loads(match.group(0))
-            
+
         return parsed
 
     except (ValueError, json.JSONDecodeError, KeyError) as e:

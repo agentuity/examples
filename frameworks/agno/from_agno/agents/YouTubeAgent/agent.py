@@ -12,8 +12,8 @@ def welcome():
 
 # Async bridge Agentuity ➜ Agno YouTube agent
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    prompt = await request.data.text()
-    context.logger.info(f"[YouTubeAgent] prompt: {prompt!r}")
+    prompt = await request.data.text() # Agentuity provides access to user input via request.data.text()
+    context.logger.info(f"[YouTubeAgent] prompt: {prompt!r}") # Agentuity logger for structured logging
 
     try:
         loop = asyncio.get_running_loop()
@@ -31,12 +31,12 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         else:
             output = str(raw)          # __str__ usually returns markdown
 
-        # safety check
+        # Agentuity error logging and fallback message
         if not output.strip():
             context.logger.error("[YouTubeAgent] empty output")
             return response.text("⚠️ Analyzer produced no content.")
 
-        return response.text(output)
+        return response.text(output) # Agentuity formats and sends response
 
     except Exception as exc:
         context.logger.error(f"[YouTubeAgent] fatal error: {exc}", exc_info=True)

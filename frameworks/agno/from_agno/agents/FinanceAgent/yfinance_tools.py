@@ -90,14 +90,14 @@ class YFinanceTools:
                                 section.append(f"- [{title}]({link})")
                     except Exception as e:
                         if context:
-                            context.logger.warning(f"News error: {e}")
+                            context.logger.warning(f"News error: {e}") # Logging using Agentuity’s logger system if available
                         section.append("- News unavailable.")
 
                 reports.append("\n".join(section))
 
             except Exception as e:
                 if context:
-                    context.logger.error(f"Error fetching {ticker}: {e}")
+                    context.logger.error(f"Error fetching {ticker}: {e}") # Logging using Agentuity’s logger system if available
                 reports.append(f"## ⚠️ Could not retrieve data for {ticker}")
 
         return "\n\n---\n\n".join(reports)

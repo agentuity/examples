@@ -74,9 +74,9 @@ class FinanceAgent:
 
     async def run(self, request: AgentRequest, response: AgentResponse, context: AgentContext):
         try:
-            user_input = (await request.data.text()).strip()
-            context.logger.info(f"Received input: {user_input}")
-
+            user_input = (await request.data.text()).strip() # Agentuity provides the request data as an async text stream
+            context.logger.info(f"Received input: {user_input}") # Agentuity logger for structured logging
+            
             parsed = await parse_user_query(user_input)
             if not isinstance(parsed, dict):
                 context.logger.error("Query parser returned invalid type")

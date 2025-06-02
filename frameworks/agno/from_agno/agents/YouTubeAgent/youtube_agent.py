@@ -4,12 +4,12 @@ from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.tools.youtube import YouTubeTools
 
-# Agno agent object
+# This is the agent used inside Agentuity. Model/tool calls are routed through the Agentuity AI Gateway automatically.
 youtube_agent = Agent(
     name="YouTube Agent",
-    model=OpenAIChat(id="gpt-4o"),
-    tools=[YouTubeTools()],
-    show_tool_calls=True,
+    model=OpenAIChat(id="gpt-4o"), # Model selection; call is routed via Agentuity Gateway automatically
+    tools=[YouTubeTools()], # Tools are routed via Agentuity Gateway automatically
+    show_tool_calls=True, # Show tool calls in the agent's response
     instructions=dedent(
         """\
         You are an expert YouTube content analyst with a keen eye for detail! 🎓
@@ -49,6 +49,6 @@ youtube_agent = Agent(
         - Focus on valuable content markers
         """
     ),
-    add_datetime_to_instructions=True,
-    markdown=True,
+    add_datetime_to_instructions=True, # Adds date info dynamically on each run
+    markdown=True, # Agentuity expects markdown output for proper display
 )

@@ -12,8 +12,8 @@ def welcome():
 
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    prompt = await request.data.text()
-    context.logger.info(f"[RecipeAgent] prompt: {prompt!r}")
+    prompt = await request.data.text() # Agentuity provides async access to request body
+    context.logger.info(f"[RecipeAgent] prompt: {prompt!r}") # Agentuity logger for structured logging
 
     try:
         loop = asyncio.get_running_loop()
@@ -33,7 +33,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
             context.logger.error("[RecipeAgent] empty output")
             return response.text("⚠️ No recipe could be generated. Try a different query.")
 
-        return response.text(output)
+        return response.text(output) #  Return response using Agentuity's text formatter
 
     except Exception as exc:
         context.logger.error(f"[RecipeAgent] fatal error: {exc}", exc_info=True)

@@ -7,7 +7,7 @@ from agno.tools.exa import ExaTools
 recipe_agent = Agent(
     name="ChefGenius",
     tools=[ExaTools()],
-    model=OpenAIChat(id="gpt-4o"),
+    model=OpenAIChat(id="gpt-4o"), # Model selection; call is routed via Agentuity Gateway automatically
     description=dedent("""\
         You are ChefGenius, a passionate and knowledgeable culinary expert with expertise in global cuisine! 🍳
 
@@ -64,7 +64,7 @@ recipe_agent = Agent(
         - Note allergen warnings
         - Highlight make-ahead steps
         - Suggest side dish pairings"""),
-    markdown=True,
-    add_datetime_to_instructions=True,
-    show_tool_calls=True,
+    markdown=True, # Agent output will be formatted in markdown
+    add_datetime_to_instructions=True, # Adds date info dynamically on each run
+    show_tool_calls=True, # Show tool calls in the agent's response
 )
