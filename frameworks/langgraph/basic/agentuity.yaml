@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.131'
 # The ID of the project which is automatically generated
-project_id: proj_ac7a050d854203075c535bed3d0623ab
+project_id: proj_550e09cde1ab89f0317e673ba4225b29
 # The name of the project which is editable
 name: langgraph-js-basic
 # The description of the project which is editable
-description: "A simple concierge-style agent that demonstrates the basics for using the LangGraph framework with Agentuity."
+description: A simple concierge-style agent that demonstrates the basics for using the LangGraph framework with Agentuity.
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -68,8 +68,8 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_c78013a9dffa5fbdbf9e4fc7b586218a
+    id: agent_38318dd4025b63738efa9c02173b8386
     # The name of the Agent which is editable
     name: Concierge
-  - id: agent_266b2a6d6c2a478348bfa3712c3604bb
+  - id: agent_4528fa78419bee4ea76f01ea7176d2e0
     name: LocalGuide

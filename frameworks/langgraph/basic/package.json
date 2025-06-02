@@ -21,7 +21,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@agentuity/sdk": "^0.0.116",
+    "@agentuity/sdk": "^0.0.121",
     "@langchain/anthropic": "^0.3.20",
     "@langchain/langgraph": "^0.2.72"
   },

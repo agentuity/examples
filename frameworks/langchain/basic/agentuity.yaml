@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.131'
 # The ID of the project which is automatically generated
-project_id: proj_1ff3b82a156b7275e87bfab996e58678
+project_id: proj_592f8c776795fcf35f43515d7abf6cb0
 # The name of the project which is editable
 name: langchain-py-basic
 # The description of the project which is editable
-description: "A simple concierge-style agent that demonstrates the basics for using the LangChain framework with Agentuity."
+description: A simple concierge-style agent that demonstrates the basics for using the LangChain framework with Agentuity.
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -57,8 +57,8 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_3ab60c1a34b6c69c2b810e14bb5f4cab
+    id: agent_7ef86cda27a28d9b8569f1fba848f8d6
     # The name of the Agent which is editable
     name: Concierge
-  - id: agent_7ad6f5147d762ebae0e9d9114cc4fd43
+  - id: agent_485d00cc498cdb67a27828fd7063851c
     name: LocalGuide
