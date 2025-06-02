@@ -6,7 +6,7 @@
 # ------------------------------------------------
 
 # The version semver range required to run this project
-version: '>=0.0.131'
+version: ">=0.0.131"
 # The ID of the project which is automatically generated
 project_id: proj_86479fe4ccf357f65fb37c120f9e8f86
 # The name of the project which is editable
@@ -53,7 +53,7 @@ bundler:
   agents:
     dir: agents
   ignore:
-    - '**/__pycache__/**'
+    - "**/__pycache__/**"
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
