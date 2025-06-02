@@ -1,30 +1,32 @@
 {
-  "name": "agent-communication",
-  "description": "Agent communication example for Agentuity JavaScript SDK",
+  "name": "js-agent-communication",
+  "description": "",
   "version": "0.0.1",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "build": "agentuity build",
+    "dev": "agentuity dev",
+    "format": "biome format --write .",
+    "lint": "biome lint .",
     "prestart": "agentuity bundle",
-    "start": "node --env-file .env .agentuity/index.js",
+    "start": "node --env-file .env --no-deprecation .agentuity/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "agentuity",
     "agent",
     "ai",
-    "ai agent",
-    "vercel",
-    "bun"
+    "ai agent"
   ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^22.13.9",
-    "typescript": "^5.8.2"
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.15.21",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@agentuity/sdk": "^0.0.73"
+    "@agentuity/sdk": "^0.0.121"
   }
 }
