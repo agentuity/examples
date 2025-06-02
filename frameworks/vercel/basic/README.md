@@ -6,6 +6,8 @@
 
 # 🤖 Vercel AI SDK Example
 
+[![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
+
 A simple concierge-style agent that demonstrates the basics for using the Vercel AI SDK with Agentuity.
 
 ### How It Works

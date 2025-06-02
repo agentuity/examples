@@ -6,6 +6,8 @@
 
 # 🤖 Pydantic Framework Example
 
+[![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
+
 A simple concierge-style agent that demonstrates the basics for using the Pydantic framework with Agentuity.
 
 ### How It Works
