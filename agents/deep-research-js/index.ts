@@ -17,7 +17,7 @@ if (!process.env.AGENTUITY_URL) {
   console.warn(
     '\x1b[31m[WARN] You are running this agent outside of the Agentuity environment. Any automatic Agentuity features will be disabled.\x1b[0m'
   );
-  if (process.isBun) {
+  if ('isBun' in process) {
     console.warn(
       '\x1b[31m[WARN] Recommend running `agentuity dev` to run your project locally instead of bun run start.\x1b[0m'
     );

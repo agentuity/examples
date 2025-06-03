@@ -63,7 +63,7 @@ const generateSearchQueries = async (query: string, n = 3) => {
 
 const generateLearnings = async (query: string, searchResult: SearchResult) => {
 	const { object } = await generateObject({
-		model: mainModel,
+		model: anthropic("claude-3-5-sonnet-latest"),
 		system: SYSTEM_PROMPT,
 		prompt: `The user is researching "${query}". The following search result were deemed relevant.
       Generate a learning and a follow-up question from the following search result:
@@ -101,7 +101,8 @@ const deepResearch = async (
 	researcher: RemoteAgent,
 	accumulatedResearch: Research,
 	depth = 2,
-	breadth = 3
+	breadth = 3,
+	maxResults = 20
 ) => {
 	if (accumulatedResearch.query.length === 0) {
 		accumulatedResearch.query = prompt;
@@ -109,10 +110,19 @@ const deepResearch = async (
 
 	if (depth === 0) {
 		return accumulatedResearch;
+	} else if (accumulatedResearch.searchResults.length >= maxResults) {
+		console.log(
+			`Researcher: Reached maximum search results limit. Stopping further research.`
+		);
+		return accumulatedResearch;
 	}
+
+	console.log(`Researcher: current depth: ${depth}`);
 
 	const queries = await generateSearchQueries(prompt, breadth);
 	accumulatedResearch.queries = queries;
+
+	console.log(`Researcher: Generated search queries: ${queries.length}`);
 
 	for (const query of queries) {
 		console.log(`Searching the web for: ${query}`);
@@ -121,6 +131,13 @@ const deepResearch = async (
 			query,
 			researcher,
 			accumulatedResearch
+		);
+
+		console.log(
+			`Researcher: Found ${searchResults.length} search results for: ${query}`
+		);
+		console.log(
+			`Researcher: Accumulated results: ${accumulatedResearch.searchResults.length}`
 		);
 
 		accumulatedResearch.searchResults.push(...searchResults);
@@ -153,6 +170,7 @@ export default async function Agent(
 	const input = request.query;
 	const depth = request.depth ?? 2;
 	const breadth = request.breadth ?? 3;
+	const maxResults = request.maxResults ?? 20;
 
 	const webSearch = await ctx.getAgent({ name: "web-search" });
 	if (!webSearch) {
@@ -167,7 +185,12 @@ export default async function Agent(
 		webSearch,
 		accumulator,
 		depth,
-		breadth
+		breadth,
+		maxResults
+	);
+	ctx.logger.info("Deep research completed!");
+	ctx.logger.info(
+		`Research results: ${research.searchResults.length} search results, ${research.learnings.length} learnings`
 	);
 	return resp.json(research);
 }

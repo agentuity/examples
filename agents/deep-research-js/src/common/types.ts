@@ -1,9 +1,14 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const SearchResultSchema = z.object({
 	title: z.string(),
 	url: z.string().url(),
 	content: z.string(),
+});
+
+export const SearchProcessParametersSchema = z.object({
+	query: z.string().min(1),
+	accumulatedSources: z.array(SearchResultSchema),
 });
 
 export const SearchResultsSchema = z.object({
@@ -28,6 +33,7 @@ export const DeepResearchSchema = z.object({
 	query: z.string().min(1),
 	depth: z.number().min(1).max(5).optional(),
 	breadth: z.number().min(1).max(5).optional(),
+	maxResults: z.number().min(5).max(100).optional(),
 });
 
 export type SearchResult = z.infer<typeof SearchResultSchema>;
