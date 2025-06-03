@@ -10,7 +10,7 @@ version: ">=0.0.131"
 # The ID of the project which is automatically generated
 project_id: proj_86479fe4ccf357f65fb37c120f9e8f86
 # The name of the project which is editable
-name: crewai-basic-test1
+name: crewai-basic
 # The description of the project which is editable
 description: A simple concierge-style agent that demonstrates the basics for using the CrewAI framework with Agentuity.
 # The development configuration for the project

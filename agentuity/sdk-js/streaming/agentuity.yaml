@@ -10,7 +10,7 @@ version: '>=0.0.89'
 # The ID of the project which is automatically generated
 project_id: proj_82aee190032ce85cc77b5bf571e49130
 # The name of the project which is editable
-name: js-streaming3
+name: js-streaming
 # The description of the project which is editable
 description: ""
 # The development configuration for the project
@@ -70,4 +70,4 @@ agents:
   - # The ID of the Agent which is automatically generated
     id: agent_7c6fac6d6d0b8cd5cdfd5b2a54b11e57
     # The name of the Agent which is editable
-    name: Streaming1
+    name: Streaming
