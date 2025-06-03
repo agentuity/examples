@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.130'
 # The ID of the project which is automatically generated
-project_id: proj_02eeb42256a976ad4e8dc7e68c0ce8dd
+project_id: proj_51884d1d68b11c4e8bd6530119d47680
 # The name of the project which is editable
 name: mastra-basic
 # The description of the project which is editable
-description: "A simple concierge-style agent that demonstrates the basics for using the Mastra framework with Agentuity."
+description: A simple concierge-style agent that demonstrates the basics for using the Mastra framework with Agentuity.
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -68,8 +68,8 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_7766a63f18f2b7dc434b276c430344a3
+    id: agent_56fcb9783d7ed911a472f85714e4a3fa
     # The name of the Agent which is editable
     name: Concierge
-  - id: agent_575363d7f6a3fb47f5ef6e07bab3d9cb
+  - id: agent_87f56e299e08a1ce9ec7af1aa7bac908
     name: LocalGuide

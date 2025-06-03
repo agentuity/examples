@@ -1,16 +1,22 @@
 # Key-Value Storage Example
 
+[![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
+
 ## Overview
+
 This example demonstrates how to use the key-value storage API in the Agentuity JavaScript SDK to store and retrieve user preferences.
 
 ## How It Works
+
 The agent provides three operations:
 
 1. **Get Preferences**: Retrieves stored user preferences
+
    - Accepts a `userId` parameter
    - Returns the stored preferences or a "not found" message
 
 2. **Set Preferences**: Stores user preferences
+
    - Accepts `userId` and `preferences` parameters
    - Stores the preferences with a 30-day TTL (Time To Live)
    - Returns a success message
@@ -20,6 +26,7 @@ The agent provides three operations:
    - Returns a success message
 
 ## Usage Example
+
 Send a JSON request with the following structure:
 
 ```json
@@ -48,6 +55,7 @@ Send a JSON request with the following structure:
 ```
 
 ## Running Locally
+
 To run this agent locally:
 
 ```bash
@@ -62,6 +70,7 @@ agentuity run
 ```
 
 ## Deployment
+
 To deploy this agent to Agentuity Cloud:
 
 ```bash
@@ -75,4 +84,5 @@ agentuity deploy
 After deployment, you can access your agent through the Agentuity Cloud dashboard.
 
 ## Additional Documentation
+
 For more information about Agentuity and its capabilities, visit [https://agentuity.dev/](https://agentuity.dev/).

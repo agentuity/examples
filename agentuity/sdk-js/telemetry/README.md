@@ -1,16 +1,22 @@
 # Telemetry Example
 
+[![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
+
 ## Overview
+
 This example demonstrates how to use the telemetry API in the Agentuity JavaScript SDK to monitor and measure agent performance and behavior.
 
 ## How It Works
+
 The agent implements telemetry best practices:
 
 1. **Spans**: Creates hierarchical spans to track different phases of request processing
+
    - Main span for the entire request
    - Child spans for specific operations (data processing, response generation)
 
 2. **Metrics**: Records various metrics to monitor agent behavior
+
    - Counter for processed requests
    - Histogram for response generation time
    - Counter for errors
@@ -21,6 +27,7 @@ The agent implements telemetry best practices:
    - Error information
 
 ## Usage Example
+
 Send a JSON request with the following structure:
 
 ```json
@@ -44,6 +51,7 @@ The agent will process the request and return a response with timing information
 ```
 
 ## Running Locally
+
 To run this agent locally:
 
 ```bash
@@ -58,6 +66,7 @@ agentuity run
 ```
 
 ## Deployment
+
 To deploy this agent to Agentuity Cloud:
 
 ```bash
@@ -71,4 +80,5 @@ agentuity deploy
 After deployment, you can access your agent through the Agentuity Cloud dashboard.
 
 ## Additional Documentation
+
 For more information about Agentuity and its capabilities, visit [https://agentuity.dev/](https://agentuity.dev/).
