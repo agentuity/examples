@@ -6,7 +6,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-search_tool = SerperDevTool(api_key=os.getenv("SERPER_API_KEY"))
+serper_api_key = os.getenv("SERPER_API_KEY")
+if not serper_api_key:
+    raise ValueError("SERPER_API_KEY environment variable is required but not set")
+
+search_tool = SerperDevTool(api_key=serper_api_key)
 scraper_tool = ScrapeWebsiteTool()
 
 def build_crew(topic, company_name, company_description, style_description):
