@@ -10,7 +10,7 @@ version: '>=0.0.131'
 # The ID of the project which is automatically generated
 project_id: proj_d9627b411dba11cfaf9499f8c869e71a
 # The name of the project which is editable
-name: llmAsJury2
+name: llmAsJury
 # The description of the project which is editable
 description: ""
 # The development configuration for the project
