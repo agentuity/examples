@@ -1,0 +1,19 @@
+{
+  "id": "9d783938-dd40-46f4-9b15-b3d9ea22330b",
+  "timestamp": "2025-06-09T10:13:09-04:00",
+  "error": "project not found",
+  "error_type": {
+   "code": "CLI-0006",
+   "message": "Invalid configuration"
+  },
+  "username": "joelsamuel",
+  "message": "Failed to validate project (proj_d9627b411dba11cfaf9499f8c869e71a). This is most likely due to the API key being invalid or the project has been deleted.\n\nYou can import this project using the following command:\n\n\u001b[38;2;0;255;255magentuity project import\u001b[0m",
+  "os_name": "darwin",
+  "os_arch": "arm64",
+  "cli_version": "0.0.144",
+  "attributes": {
+   "message": "Failed to get project: project not found",
+   "user_id": "user_2x2nsA9Sdl3RqeddmYJf74psxB8"
+  },
+  "stack_trace": "goroutine 1 [running]:\nruntime/debug.Stack()\n\t/home/runner/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.2.linux-amd64/src/runtime/debug/stack.go:26 +0x64\ngithub.com/agentuity/cli/internal/errsystem.(*errSystem).ShowErrorAndExit(0x14000389c70)\n\t/home/runner/_work/cli/cli/internal/errsystem/console.go:103 +0x80\ngithub.com/agentuity/cli/cmd.init.func30(0x105ac9da0, {0x105b100c0?, 0x4?, 0x104c8cd89?})\n\t/home/runner/_work/cli/cli/cmd/dev.go:68 +0x45c\ngithub.com/spf13/cobra.(*Command).execute(0x105ac9da0, {0x105b100c0, 0x0, 0x0})\n\t/home/runner/go/pkg/mod/github.com/spf13/cobra@v1.9.1/command.go:1019 +0x810\ngithub.com/spf13/cobra.(*Command).ExecuteC(0x105acbbe0)\n\t/home/runner/go/pkg/mod/github.com/spf13/cobra@v1.9.1/command.go:1148 +0x350\ngithub.com/spf13/cobra.(*Command).Execute(...)\n\t/home/runner/go/pkg/mod/github.com/spf13/cobra@v1.9.1/command.go:1071\ngithub.com/agentuity/cli/cmd.Execute()\n\t/home/runner/_work/cli/cli/cmd/root.go:77 +0x24\nmain.main()\n\t/home/runner/_work/cli/cli/main.go:47 +0x21c\n"
+ }
