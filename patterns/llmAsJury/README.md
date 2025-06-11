@@ -4,7 +4,10 @@
 <br />
 </div>
 
+
 # 🤖 LLM as Jury System
+
+[![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
 
 This project uses Agentuity to create a multi-agent system where one AI agent (ContentWriter) creates blog posts, and another AI agent (Jury) evaluates them on multiple criteria using different AI models.
 
