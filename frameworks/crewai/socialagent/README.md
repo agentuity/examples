@@ -20,7 +20,7 @@ The **CrewAI Social Agent** is a multi-agent app that takes a topic and generate
 To run this agent, you’ll need:
 
 - Python 3.11+
-- [Agentuity CLI](https://docs.agentuity.com/getting-started/quickstart)
+- [Agentuity CLI](https://agentuity.dev/Introduction/getting-started)
 - API Key from [Serper.dev](https://serper.dev/) (used for Google Search)
 - The following Python packages installed:
   - `crewai`
