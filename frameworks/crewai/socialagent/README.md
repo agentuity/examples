@@ -1,3 +1,60 @@
+# 🧠 CrewAI Social Agent
+
+This project is adapted from [MxMnr/crew-ai-simple-social-template](https://github.com/MxMnr/crew-ai-simple-social-template) and restructured to work with [Agentuity](https://agentuity.com).
+
+The **CrewAI Social Agent** is a multi-agent app that takes a topic and generates LinkedIn-ready social media content. It uses a structured CrewAI workflow with three roles: researcher, writer, and editor.
+
+## What It Does
+
+- Takes in a user-defined topic (e.g., "Why small teams outperform incumbents")
+- Searches for relevant articles using web tools
+- Summarizes insights and extracts key quotes
+- Generates polished LinkedIn posts in a consistent format
+- Each run includes:
+  - A few complete LinkedIn posts
+  - A summary of each article
+  - Reference links
+
+## 🔧 Requirements
+
+To run this agent, you’ll need:
+
+- Python 3.11+
+- [Agentuity CLI](https://docs.agentuity.com/getting-started/quickstart)
+- API Key from [Serper.dev](https://serper.dev/) (used for Google Search)
+- The following Python packages installed:
+  - `crewai`
+  - `crewai-tools`
+  - `python-dotenv`
+
+You can install them manually with:
+```bash
+pip install crewai crewai-tools python-dotenv
+```
+
+## 🔑 Environment Setup
+
+In your `.env` file in the project root and add your Serper API key:
+
+```
+SERPER_API_KEY=your-key-here
+```
+
+## 🚀 Run the Agent
+
+agentuity dev
+
+When prompted in the UI, enter a topic like:
+
+"How small teams out-execute large incumbents"
+
+The agent will output a markdown file in the `outputs/` directory with everything you need.
+
+To make your agent available in the cloud, use:
+
+agentuity deploy
+
+
 <div align="center">
     <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
     <strong>Build Agents, Not Infrastructure</strong> <br/>
