@@ -6,11 +6,13 @@
 
 # 🤖 Python Agent Project
 
+[![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
+
 Welcome to your Agentuity Python Agent project! This README provides essential information to help you get started with developing, testing, and deploying your AI agents.
 
 ## 🔗 OpenAI Agent Framework Integration
 
-This project demonstrates how to seamlessly integrate [OpenAI's Agent Framework](https://github.com/openai/openai-agents) with Agentuity. The OpenAI Agent Framework provides powerful tools for building AI agents, and Agentuity makes it incredibly easy to deploy and scale them in production.
+This project demonstrates how to seamlessly integrate [OpenAI's Agent SDK](https://openai.github.io/openai-agents-python/) with Agentuity. The OpenAI Agent Framework provides powerful tools for building AI agents, and Agentuity makes it incredibly easy to deploy and scale them in production.
 
 With just a simple wrapper function, you can take any OpenAI Agent Framework workflow and deploy it to Agentuity's cloud platform:
 
