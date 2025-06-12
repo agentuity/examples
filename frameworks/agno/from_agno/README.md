@@ -1,5 +1,3 @@
-# REMEMBER TO INSTALL ALL DEPENDENCIES IN REQUIREMENTS.TXT
-
 <div align="center">
     <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
     <strong>Build Agents, Not Infrastructure</strong> <br/>
@@ -53,6 +51,7 @@ Before you begin, ensure you have the following installed:
 
 - **Python**: Version 3.10 or higher
 - **UV**: Version 0.5.25 or higher ([Documentation](https://docs.astral.sh/uv/))
+- REMEMBER TO INSTALL ALL DEPENDENCIES IN REQUIREMENTS.TXT
 
 ## 📖 Documentation
 
