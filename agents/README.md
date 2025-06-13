@@ -13,11 +13,3 @@
 
 This folder contains a collection of examples that demonstrate how to use the Agentuity SDK deployed to the Agentuity platform. These examples are fully functional and can be used as a starting point for your own projects. They are designed to help you get started with Agentuity and provide reference implementations that you can use, copy, or adapt for your own projects.
 
-## Examples
-
-- [Deep Research](./deep-research): A deep research agent that can answer questions and provide information on a wide range of topics.
-
-## Backlog
-
-- [Web Search](./web-search): A web search agent that can search the web for information and provide relevant results.
-- [Web Scraper](./web-scraper): A web scraper agent that can extract data from websites and provide structured results.
