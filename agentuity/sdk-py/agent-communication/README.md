@@ -1,16 +1,22 @@
 # Agent Communication Example (Python)
 
+[![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
+
 ## Overview
+
 This example demonstrates how to use the agent communication API in the Agentuity Python SDK to send messages between agents.
 
 ## How It Works
+
 The agent provides three operations:
 
 1. **Send Message**: Sends a message to a specific agent
+
    - Accepts `agentId` and `message` parameters
    - Returns a confirmation of the message delivery
 
 2. **Broadcast Message**: Sends a message to all agents in the same project
+
    - Accepts a `message` parameter
    - Returns confirmations from all receiving agents
 
@@ -19,6 +25,7 @@ The agent provides three operations:
    - Returns an acknowledgment with an echo of the received message
 
 ## Usage Example
+
 Send a JSON request with the following structure:
 
 ```json
@@ -44,6 +51,7 @@ Send a JSON request with the following structure:
 ```
 
 ## Running Locally
+
 To run this agent locally:
 
 ```bash
@@ -62,6 +70,7 @@ agentuity run
 ```
 
 ## Deployment
+
 To deploy this agent to Agentuity Cloud:
 
 ```bash
@@ -75,4 +84,5 @@ agentuity deploy
 After deployment, you can access your agent through the Agentuity Cloud dashboard.
 
 ## Additional Documentation
+
 For more information about Agentuity and its capabilities, visit [https://agentuity.dev/](https://agentuity.dev/).

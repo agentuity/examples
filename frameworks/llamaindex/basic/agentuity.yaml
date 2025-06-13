@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.131'
 # The ID of the project which is automatically generated
-project_id: proj_b3345fc06d90bf408e0ccb8c0cb62f00
+project_id: proj_4b73de52967b97ba22bb88f4bcffd3e9
 # The name of the project which is editable
 name: llamaindex-basic
 # The description of the project which is editable
-description: "A simple concierge-style agent that demonstrates the basics for using the LlamaIndex framework with Agentuity."
+description: A simple concierge-style agent that demonstrates the basics for using the LlamaIndex framework with Agentuity.
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -57,8 +57,8 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_02abb0c343dbf36343ccf8fd56e94213
+    id: agent_ade29e3b68df8ca41f02c574b31647e0
     # The name of the Agent which is editable
     name: Concierge
-  - id: agent_c5f2e645885b2fac527c195ff6f7a70b
+  - id: agent_fac3a1f777e438d8a5f7929462017ef5
     name: LocalGuide
