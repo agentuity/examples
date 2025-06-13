@@ -1,60 +1,5 @@
 # 🧠 CrewAI Social Agent
 
-This project is adapted from [MxMnr/crew-ai-simple-social-template](https://github.com/MxMnr/crew-ai-simple-social-template) and restructured to work with [Agentuity](https://agentuity.com).
-
-The **CrewAI Social Agent** is a multi-agent app that takes a topic and generates LinkedIn-ready social media content. It uses a structured CrewAI workflow with three roles: researcher, writer, and editor.
-
-## What It Does
-
-- Takes in a user-defined topic (e.g., "Why small teams outperform incumbents")
-- Searches for relevant articles using web tools
-- Summarizes insights and extracts key quotes
-- Generates polished LinkedIn posts in a consistent format
-- Each run includes:
-  - A few complete LinkedIn posts
-  - A summary of each article
-  - Reference links
-
-## 🔧 Requirements
-
-To run this agent, you’ll need:
-
-- Python 3.10+
-- [Agentuity CLI](https://agentuity.dev/Introduction/getting-started)
-- API Key from [Serper.dev](https://serper.dev/) (used for Google Search)
-- The following Python packages installed:
-  - `crewai`
-  - `crewai-tools`
-  - `python-dotenv`
-
-You can install them manually with:
-```bash
-pip install crewai crewai-tools python-dotenv
-```
-
-## 🔑 Environment Setup
-
-In your `.env` file in the project root and add your Serper API key:
-
-```
-SERPER_API_KEY=your-key-here
-```
-
-## 🚀 Run the Agent
-
-agentuity dev
-
-When prompted in the UI, enter a topic like:
-
-"How small teams out-execute large incumbents"
-
-The agent will output a markdown file in the `outputs/` directory with everything you need.
-
-To make your agent available in the cloud, use:
-
-agentuity deploy
-
-
 <div align="center">
     <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
     <strong>Build Agents, Not Infrastructure</strong> <br/>
@@ -65,7 +10,96 @@ agentuity deploy
     <br />
 </div>
 
-# 🤖 Python Agent Project
+This project is adapted from [MxMnr/crew-ai-simple-social-template](https://github.com/MxMnr/crew-ai-simple-social-template) and restructured to work with [Agentuity](https://agentuity.com).
+
+The **CrewAI Social Agent** is a multi-agent app that takes a topic and generates LinkedIn-ready social media content. It uses a structured CrewAI workflow with three roles: **researcher**, **writer**, and **editor**.
+
+---
+
+## 📌 What It Does
+
+- Accepts a user-defined topic (e.g., _"Why small teams outperform incumbents"_)
+- Searches for relevant articles using a web search tool
+- Summarizes insights and extracts key quotes
+- Generates polished LinkedIn-style posts using markdown formatting
+
+Each run produces:
+- ✅ A few complete LinkedIn posts
+- 📝 Summaries of each article
+- 🔗 Reference links to the sources
+
+---
+
+## 🔧 Requirements
+
+To run this agent, you’ll need:
+
+- ✅ An API key from [Serper.dev](https://serper.dev/) (used for Google Search)
+
+---
+
+## 🔑 Environment Setup
+
+Create a `.env` file in the project root and add your Serper API key:
+
+SERPER_API_KEY=your-key-here
+
+## 🚀 How to Run the Agent
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/dhilanfye34/examples.git
+cd examples/frameworks/crewai/socialagent
+```
+
+### 2. Set Up Environment & Dependencies
+
+Create and activate a virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Install required Python packages:
+
+```bash
+pip install crewai crewai-tools python-dotenv python uv
+```
+
+### 3. Run in Development Mode
+
+Start the agent in dev mode:
+
+```bash
+agentuity dev
+```
+
+When prompted in the UI, enter a topic like:
+
+```
+How small teams out-execute large corporations
+```
+
+The agent will generate:
+- A markdown file in the `outputs/` folder
+- LinkedIn-ready content
+- Article summaries
+- Reference links
+
+---
+
+## ☁️ Deploy to Agentuity Cloud
+
+To deploy your agent:
+
+```bash
+agentuity deploy
+```
+
+
+# Agentuity CLI Help
 
 Welcome to your Agentuity Python Agent project! This README provides essential information to help you get started with developing, testing, and deploying your AI agents.
 
