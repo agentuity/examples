@@ -27,31 +27,55 @@ The agent processes search queries by:
 2. Processing the query using Grok's advanced search capabilities
 3. Returning relevant, ranked results in real-time
 
-Example implementation:
+Example implementation (As seen in agent.py):
 
 ```python
-from agentuity import AgentRequest, AgentResponse, AgentContext
-from grok_search import GrokSearchClient  # You'll need to implement this
-
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    # Get the search query
-    search_query = await request.data.text()
-    
-    # Log the search request
-    context.logger.info(f"Processing search query: {search_query}")
-    
-    # Initialize Grok search client
-    grok_client = GrokSearchClient()
-    
-    # Perform the search
-    search_results = await grok_client.search(search_query)
-    
-    # Return formatted results
-    return response.json({
-        "status": "success",
-        "query": search_query,
-        "results": search_results
-    })
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):  
+    try:  
+        if not XAI_API_KEY:  
+            context.logger.error("XAI_API_KEY environment variable not set")  
+            return response.text("Error: XAI_API_KEY not configured")  
+          
+        # Get user input from request  
+        user_content = await request.data.text() or "Provide me a digest of world news in the last 24 hours."  
+        # X.AI API configuration  
+        url = "https://api.x.ai/v1/chat/completions"  
+        headers = {  
+            "Content-Type": "application/json",  
+            "Authorization": f"Bearer {XAI_API_KEY}"  
+        }  
+          
+        # Create payload with user input  
+        payload = {  
+            "messages": [  
+                {  
+                    "role": "user",  
+                    "content": user_content  
+                }  
+            ],  
+            "search_parameters": {  
+                "mode": "auto",  
+                "return_citations": True  
+            },  
+            "model": "grok-3-latest"  
+        }  
+          
+        # Send request to X.AI  
+        api_response = requests.post(url, headers=headers, json=payload)  
+        api_response.raise_for_status()  
+          
+        result = api_response.json()  
+          
+        # Extract the response content  
+        if 'choices' in result and len(result['choices']) > 0:  
+            content = result['choices'][0]['message']['content']  
+            return response.text(content)  
+        else:  
+            return response.text("No response received from X.AI API")  
+              
+    except Exception as e:  
+        context.logger.error(f"Error running X.AI agent: {e}")  
+        return response.text("Sorry, there was an error processing your request.")
 ```
 
 ## 📋 Prerequisites
@@ -83,25 +107,11 @@ Before you begin, ensure you have:
 
 ```
 ├── agents/
-│   └── GrokSearch/
+│   └── grokLiveSearch/
 │       ├── __init__.py
 │       ├── agent.py           # Main agent implementation
-│       └── grok_client.py     # Grok API integration
-├── tests/                     # Test cases
 ├── pyproject.toml            # Dependencies
 └── agentuity.yaml           # Agent configuration
-```
-
-## 🔧 Configuration
-
-In your `agentuity.yaml`, configure:
-```yaml
-agents:
-  GrokSearch:
-    settings:
-      search_limit: 10
-      include_metadata: true
-      response_format: "detailed"
 ```
 
 ## 🛠️ Advanced Features
@@ -114,7 +124,7 @@ agents:
 ## 📖 Documentation
 
 - [Agentuity Python SDK](https://agentuity.dev/SDKs/python)
-- [Grok API Documentation](https://grok.com/docs)
+- [Grok API Documentation]([https://grok.com/docs](https://docs.x.ai/docs/guides/live-search))
 
 ## 🆘 Support
 
