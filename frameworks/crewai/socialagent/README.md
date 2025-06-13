@@ -65,7 +65,7 @@ source .venv/bin/activate
 Install required Python packages:
 
 ```bash
-pip install crewai crewai-tools python-dotenv python uv
+pip install crewai crewai-tools python-dotenv uv
 ```
 
 ### 3. Run in Development Mode
