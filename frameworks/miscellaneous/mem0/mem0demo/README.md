@@ -8,20 +8,25 @@
     <br />
 </div>
 
-# 🧠 Mem0 Demo Agent - Best Buy Electronics Assistant
+#  Mem0 Demo Agent - Best Buy Electronics Assistant
 
 Welcome to the Mem0 Demo Agent! This intelligent assistant demonstrates the power of **persistent memory** in AI agents by acting as a personalized Best Buy electronics expert that remembers your preferences across conversations.
 
-## 🎯 What This Agent Does
+### Setup:
+- You will need to create an account at their website: [Mem0](https://app.mem0.ai)
+- From here you can view your Dashboard and get your API Key
+- You can also view requests you made, users you made, and memories you created
+
+##  What This Agent Does
 
 This agent is a **Best Buy customer service assistant** that:
 
-- 🛍️ **Provides personalized product recommendations** for laptops, TVs, and phones
-- 🧠 **Remembers your preferences** using Mem0's memory capabilities
-- 💰 **Considers your budget** and specific use cases
-- 🔍 **Explains WHY** each product fits your needs
-- 📊 **Compares products** with detailed pros and cons
-- 💬 **Maintains conversation context** across multiple interactions
+-  **Provides personalized product recommendations** for laptops, TVs, and phones
+-  **Remembers your preferences** using Mem0's memory capabilities
+-  **Considers your budget** and specific use cases
+-  **Explains WHY** each product fits your needs
+-  **Compares products** with detailed pros and cons
+-  **Maintains conversation context** across multiple interactions
 
 ### Key Features:
 - **Persistent Memory**: Remembers your past conversations, preferences, and requirements
@@ -30,7 +35,7 @@ This agent is a **Best Buy customer service assistant** that:
 - **Budget-Aware**: Finds options within your price range
 - **Use Case Matching**: Matches products to your intended use (gaming, work, student, etc.)
 
-## 🧠 How Memory Works
+##  How Memory Works
 
 The agent uses **Mem0** to create a persistent memory layer that:
 
@@ -44,13 +49,31 @@ Example memory scenarios:
 - "Based on our previous conversation about gaming, here are some updated options"
 - "You preferred laptops with good battery life last time, so I've prioritized that"
 
-## 📋 Prerequisites
+## Code 
+
+- Swap out USER_ID for your user to store information
+
+```
+#Creates a memory instance 
+memory_client = MemoryClient() 
+
+#Searches for memory based off of user question within the users storage (based off of the user_id)
+memory_client.search(user_question, user_id=user_id)
+
+#Store interaction in memory for future context  
+new_interaction = [  
+	{"role": "user", "content": user_question},  
+	{"role": "assistant", "content": answer}  
+]  
+memory_client.add(messages=new_interaction, user_id=user_id)  
+
+```
+
 
 Before you begin, ensure you have:
 
 - **Python**: Version 3.10 or higher
 - **UV**: Version 0.5.25 or higher ([Documentation](https://docs.astral.sh/uv/))
-- **OpenAI API Key**: For AI responses
 - **Mem0 API Key**: For memory functionality
 
 ## 🚀 Getting Started
@@ -67,19 +90,14 @@ This command will open a browser window where you can log in to your Agentuity a
 
 ### 2. Set Up Environment Variables
 
-Create a `.env` file with your API keys:
+Within the `.env` file (Has Agentuity Keys in it), add your mem0 API Key:
 ```bash
 # Required API Keys
-OPENAI_API_KEY=your_openai_api_key_here
 MEM0_API_KEY=your_mem0_api_key_here
-
-# Optional: Customize the user ID for memory storage
-USER_ID=mem0-demo-agent
 ```
 
 Or set them using Agentuity:
 ```bash
-agentuity env set --secret OPENAI_API_KEY your_openai_api_key
 agentuity env set --secret MEM0_API_KEY your_mem0_api_key
 ```
 
@@ -119,7 +137,7 @@ agentuity agent new
 
 Follow the interactive prompts to configure your agent.
 
-## 🛍️ Available Products
+## Available Products
 
 The agent has knowledge of current Best Buy inventory:
 
@@ -171,18 +189,18 @@ The agent will be available via API endpoints and can be integrated into:
 - Customer service platforms
 - E-commerce sites
 
-## 📚 Project Structure
+##  Project Structure
 
 ```
 ├── agentuity-agents/
 │   └── mem0DemoAgent/
 │       ├── __init__.py
 │       └── agent.py          # Main agent with memory integration
-├── .venv/                    # Virtual environment (created by UV)
-├── .env                      # API keys (create this)
+├── .uv.lock/                    # Virtual environment (created by UV)
+├── .env                      # API keys 
 ├── pyproject.toml           # Dependencies (agentuity, openai, mem0ai)
-├── agentuity.yaml          # Agentuity project configuration
-└── server.py               # Development server
+├── agentuity.yaml
+└── server.py           
 ```
 
 ## 🔧 Configuration
@@ -215,27 +233,6 @@ For sensitive information, use secrets:
 
 ```bash
 agentuity env set --secret KEY VALUE
-```
-
-### Memory Features
-
-#### Memory Search
-The agent searches previous conversations for relevant context:
-```python
-relevant_memories = memory_client.search(user_question, user_id=user_id)
-```
-
-#### Product Filtering
-Smart product matching based on:
-- Budget constraints
-- Use case requirements
-- Category preferences
-- Feature priorities
-
-#### Conversation Continuity
-Each interaction is stored for future reference:
-```python
-memory_client.add(messages=new_interaction, user_id=user_id)
 ```
 
 ## 📖 Documentation
