@@ -1,10 +1,10 @@
 [project]
 name = "mem0demo"
 version = "0.1.0"
-description = ""
+description = "Mem0 demo – Agentuity example project demonstrating persistent-memory recommendations"
 requires-python = ">=3.10, <3.13"
 dependencies = [
     "agentuity>=0.0.94",
     "openai>=1.86.0",
-    "mem0ai",
+    "mem0ai>=0.1.0,<1.0.0",
 ]
