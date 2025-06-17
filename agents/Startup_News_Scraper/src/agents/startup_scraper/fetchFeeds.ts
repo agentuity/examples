@@ -23,13 +23,20 @@ export async function getStartupLinks(perFeed = 3): Promise<StartupLink[]> {
   const results: StartupLink[] = [];
 
   const feeds = await Promise.all(
-    Object.values(FEEDS).map(u => parser.parseURL(u).catch(() => null)),
+    Object.values(FEEDS).map(async (u) => {
+        try {
+            return await parser.parseURL(u);
+        } catch (err) {
+            console.warn(`Failed to parse RSS feed: ${u}:`, err);
+            return null;
+        }
+    }),
   );
 
   for (const feed of feeds) {
     if (!feed) continue;
 
-    const latest = feed.items
+    const latest = (feed.items ?? [])
       .filter(i => i.title && i.link)
       .filter(i => {
         const haystack = (i.title + ' ' + (i.contentSnippet ?? '')).toLowerCase();
