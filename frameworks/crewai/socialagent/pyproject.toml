@@ -1,0 +1,9 @@
+[project]
+name = "socialagent"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.10, <3.13"
+dependencies = [
+    "agentuity>=0.0.91",
+    "openai>=1.83.0",
+]
