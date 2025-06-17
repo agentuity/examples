@@ -8,8 +8,6 @@
 
 [![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
 
-Welcome to your Agentuity Python Agent project! This README provides essential information to help you get started with developing, testing, and deploying your AI agents.
-
 ## 🔗 OpenAI Agent Framework Integration
 
 This project demonstrates how to seamlessly integrate [OpenAI's Agent SDK](https://openai.github.io/openai-agents-python/) with Agentuity. The OpenAI Agent Framework provides powerful tools for building AI agents, and Agentuity makes it incredibly easy to deploy and scale them in production.
@@ -59,16 +57,6 @@ agentuity login
 
 This command will open a browser window where you can log in to your Agentuity account.
 
-### Creating a New Agent
-
-To create a new agent in your project:
-
-```bash
-agentuity agent new
-```
-
-Follow the interactive prompts to configure your agent.
-
 ### Development Mode
 
 Run your project in development mode with:
@@ -78,12 +66,6 @@ agentuity dev
 ```
 
 This will start your project and open a new browser window connecting your Agent to the Agentuity Console in Live Mode, allowing you to test and debug your agent in real-time.
-
-You can also start your project in development mode without connecting to the Agentuity Console:
-
-```bash
-uv run server.py
-```
 
 ## 🌐 Deployment
 
