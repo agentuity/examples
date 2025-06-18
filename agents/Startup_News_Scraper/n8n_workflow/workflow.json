@@ -1,0 +1,174 @@
+{
+    "name": "Startup News Scraper",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 7
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -660,
+          180
+        ],
+        "id": "8f62574e-2471-4727-acce-aeb388884154",
+        "name": "Schedule Trigger"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -440,
+          180
+        ],
+        "id": "a1f3a427-c810-49d6-b3c6-dd1ce4fdda16",
+        "name": "HTTP Request"
+      },
+      {
+        "parameters": {
+          "subject": "=📬 Daily Startup Digest – {{ new Date().toLocaleDateString() }}\n",
+          "emailFormat": "=html",
+          "html": "={{$json[\"html\"]}}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "85ae94e0-7bee-487d-80b1-4651efd03a8e",
+        "name": "Send Email",
+        "webhookId": "2b23c872-f4e2-4fb2-b500-ae36240b148d",
+        "credentials": {
+          "smtp": {
+            "id": "aHhv8yVEUfVyLlmi",
+            "name": "SMTP account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const startups = items[0].json.startups;\n\nlet html = `\n  <h2>🚀 Daily Startup Digest</h2>\n  <p>Here are today’s top startup highlights:</p>\n`;\n\nfor (const s of startups) {\n  html += `\n    <hr>\n    <h3>${s.name}</h3>\n    <p><strong>Industry:</strong> ${s.industry || 'N/A'}</p>\n    <p><strong>Summary:</strong><br>${s.summary}</p>\n    ${s.why_it_matters ? `<p><strong>Why it matters:</strong><br>${s.why_it_matters}</p>` : ''}\n    ${s.founders ? `<p><strong>Founders:</strong> ${s.founders}</p>` : ''}\n    <p><strong>Source:</strong> <a href=\"${s.source}\" target=\"_blank\">${s.source}</a></p>\n  `;\n}\n\nreturn [{ json: { html } }];\n"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -220,
+          180
+        ],
+        "id": "b670839b-7e95-4af4-a2d8-e6aa956e709e",
+        "name": "Code"
+      },
+      {
+        "parameters": {
+          "authentication": "oAuth2",
+          "messageType": "={{ $json[\"html\"] }}",
+          "attachments": [],
+          "otherOptions": {}
+        },
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.3,
+        "position": [
+          0,
+          180
+        ],
+        "id": "f9990146-5d8f-4b8e-a4e5-82da77fc27c7",
+        "name": "Slack",
+        "webhookId": "ed627fc0-be49-433a-b885-83063bccaf41"
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "guildId": {
+            "__rl": true,
+            "mode": "list",
+            "value": ""
+          },
+          "channelId": {
+            "__rl": true,
+            "mode": "list",
+            "value": ""
+          },
+          "content": "={{$json[\"html\"]}}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.discord",
+        "typeVersion": 2,
+        "position": [
+          0,
+          360
+        ],
+        "id": "de7532f2-0232-44c3-8aca-d08679d2b7c4",
+        "name": "Discord",
+        "webhookId": "5bfb6ccc-0aab-43ef-ace4-60cd89cb97c2"
+      }
+    ],
+    "pinData": {},
+    "connections": {
+      "Schedule Trigger": {
+        "main": [
+          [
+            {
+              "node": "HTTP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP Request": {
+        "main": [
+          [
+            {
+              "node": "Code",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code": {
+        "main": [
+          [
+            {
+              "node": "Slack",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Send Email",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Discord",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "active": false,
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "versionId": "73b4cce6-0915-4ec3-a939-d5527453c12d",
+    "meta": {
+      "instanceId": "6a3d16f65f3c2d7f56d9a74df77209a74bd822461f5bb4373e305f0ef0be2879"
+    },
+    "id": "WVZ4DShTeEWMo104",
+    "tags": []
+  }
+  
