@@ -1,16 +1,10 @@
 [project]
 name = "py-llamaindex"
-version = "0.0.1"
-description = "LlamaIndex framework example for Agentuity Python SDK"
-readme = "README.md"
+version = "0.1.0"
+description = ""
 requires-python = ">=3.10"
-license = { file = "LICENSE.md" }
 dependencies = [
-    "agentuity>=0.0.1",
-    "llama-index-core>=0.10.0",
-    "llama-index-llms-openai>=0.1.0",
+    "agentuity>=0.0.91",
+    "llama-index-core>=0.12.39",
+    "llama-index-llms-openai>=0.4.1",
 ]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
