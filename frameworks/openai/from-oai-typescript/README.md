@@ -8,13 +8,13 @@
     <br />
 </div>
 
-# 🤖 OpenAI Agents Integration with Agentuity
+# OpenAI Agents Integration with Agentuity
 
 This project demonstrates how to integrate OpenAI's multi-agent framework with Agentuity, featuring two sophisticated agent implementations that showcase different patterns for AI agent development.
 
-## 🎯 Featured Agents
+## Featured Agents
 
-### 1. 📚 **Tutor Agent** - Multi-Agent Handoff Pattern
+### 1. **Tutor Agent** - Multi-Agent Handoff Pattern
 An intelligent tutoring system that routes questions to specialized agents based on subject matter.
 
 **Key Features:**
@@ -23,7 +23,7 @@ An intelligent tutoring system that routes questions to specialized agents based
 - **Agent Handoffs**: Seamless delegation between agents for optimal responses
 - **Educational Focus**: Explains reasoning and provides step-by-step solutions
 
-### 2. 🛡️ **Human-in-the-Loop Agent** - Approval Workflow Pattern
+### 2. **Human-in-the-Loop Agent** - Approval Workflow Pattern
 A weather agent that demonstrates controlled AI execution with human oversight for sensitive operations.
 
 **Key Features:**
@@ -33,15 +33,24 @@ A weather agent that demonstrates controlled AI execution with human oversight f
 - **Resume Capability**: Continues exactly where it left off after approval
 - **Clean Architecture**: Robust error handling and state management
 
-## 📋 Prerequisites
+## Installation and Setup
 
-Before you begin, ensure you have the following installed:
+### Step 1: Clone the Repository
 
-- **Node.js**: Version 18 or higher
-- **Bun** or **npm**: For package management
-- **OpenAI API Key**: Set as environment variable
+```bash
+git clone https://github.com/agentuity/examples.git
+cd examples/frameworks/openai/from-oai-typescript
+```
 
-## 🚀 Getting Started
+### Step 2: Install Dependencies
+
+**Using Bun (recommended):**
+```bash
+bun install
+```
+
+
+## Getting Started
 
 ### Authentication
 
@@ -49,14 +58,6 @@ First, authenticate with Agentuity:
 
 ```bash
 agentuity login
-```
-
-### Environment Setup
-
-Set your OpenAI API key:
-
-```bash
-agentuity env set OPENAI_API_KEY your_api_key_here
 ```
 
 ### Development Mode
@@ -69,7 +70,7 @@ agentuity dev
 
 This opens the Agentuity Console where you can test both agents interactively.
 
-## 🧑‍🏫 Tutor Agent Usage
+## Tutor Agent Usage
 
 The Tutor Agent handles educational questions with intelligent routing:
 
@@ -119,7 +120,7 @@ graph TD
     E --> G[Mathematical Solution]
 ```
 
-## 🛡️ Human-in-the-Loop Agent Usage
+## Human-in-the-Loop Agent Usage
 
 The Human-in-the-Loop Agent demonstrates controlled execution with approval workflows:
 
@@ -173,8 +174,8 @@ The Human-in-the-Loop Agent demonstrates controlled execution with approval work
 
 ### Approval Logic
 
-- **Oakland**: ✅ No approval needed (runs automatically)
-- **San Francisco**: ⚠️ Requires human approval (pauses execution)
+- **Oakland**: No approval needed (runs automatically)
+- **San Francisco**: Requires human approval (pauses execution)
 - **State Persistence**: Agent state saved in KV store during approval wait
 - **Resume**: Continues from exact point after approval decision
 
@@ -194,7 +195,7 @@ frameworks/openai/from-oai-typescript/
 └── README.md                        # This file
 ```
 
-## 🔧 Technical Implementation
+## Technical Implementation
 
 ### Tutor Agent Features
 
@@ -218,7 +219,7 @@ frameworks/openai/from-oai-typescript/
 - **Agentuity SDK**: Cloud-native agent platform integration
 - **Zod**: Runtime type validation and schema definition
 
-## 🌐 Deployment
+## Deployment
 
 Deploy both agents to the Agentuity Cloud:
 
@@ -230,78 +231,18 @@ After deployment, both agents will be available as HTTP endpoints:
 - `/agents/tutorAgent` - The educational tutoring system
 - `/agents/human-in-the-loop` - The approval workflow agent
 
-## 📚 Learning Resources
+## Learning Resources
 
 ### OpenAI Agents Documentation
-- [OpenAI Agents Framework](https://github.com/openai/agents)
-- [Multi-Agent Patterns](https://platform.openai.com/docs/agents)
+- [OpenAI Agents Examples](https://github.com/openai/openai-agents-js/tree/main/examples)
+- [OpenAI Agents SDK Docs](https://openai.github.io/openai-agents-js/)
 
 ### Agentuity Documentation  
 - [JavaScript SDK](https://agentuity.dev/SDKs/javascript)
-- [KV Store Guide](https://agentuity.dev/storage/kv-store)
+- [KV Store Guide](https://agentuity.dev/SDKs/javascript/core-concepts#agent-context)
+-
 - [Agent Communication](https://agentuity.dev/concepts/agent-communication)
 
-## 🛠️ Advanced Usage
-
-### Environment Variables
-
-Set additional configuration:
-
-```bash
-agentuity env set OPENAI_MODEL gpt-4o-mini
-agentuity env set MAX_TOKENS 1000
-```
-
-### Secrets Management
-
-For sensitive information:
-
-```bash
-agentuity env set --secret OPENAI_API_KEY your_key_here
-```
-
-### Custom Agent Creation
-
-Create additional agents:
-
-```bash
-agentuity agent create my-custom-agent --description "Custom agent description" --auth-type bearer
-```
-
-## 🎯 Use Cases
-
-### Tutor Agent Applications
-- **Educational Platforms**: Automated tutoring systems
-- **Content Creation**: Subject-specific content generation  
-- **Assessment Tools**: Intelligent question routing and grading
-- **Learning Management**: Personalized educational experiences
-
-### Human-in-the-Loop Applications
-- **Financial Systems**: Transaction approval workflows
-- **Content Moderation**: Human oversight for sensitive decisions
-- **Data Processing**: Approval gates for data modifications
-- **Compliance**: Regulated operations requiring human verification
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-**OpenAI API Errors:**
-```bash
-# Check your API key is set
-agentuity env list
-```
-
-**Agent State Issues:**
-- States expire after 1 hour for security
-- Check KV store connectivity in logs
-- Verify state IDs match between requests
-
-**TypeScript Errors:**
-```bash
-# Rebuild the project
-npm run build
-```
 
 ### Getting Help
 
