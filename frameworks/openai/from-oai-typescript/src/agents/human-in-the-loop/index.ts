@@ -58,7 +58,7 @@ const mainAgent = new Agent({
 // Utility functions
 function generateStateId(): string {
   const timestamp = Date.now();
-  const random = Math.random().toString(36).substr(2, 9);
+  const random = Math.random().toString(36).substring(2, 11);
   return `approval_${timestamp}_${random}`;
 }
 
@@ -197,6 +197,10 @@ async function handleApprovalRequest(
 
     // Apply user decisions
     if (result.interruptions) {
+      if (decisions.length !== result.interruptions.length) {
+        context.logger.warn('Decisions count mismatch: expected %d, got %d', 
+        result.interruptions.length, decisions.length);
+        }
       result.interruptions.forEach((interruption, index) => {
         const decision = decisions[index];
         if (decision) {
