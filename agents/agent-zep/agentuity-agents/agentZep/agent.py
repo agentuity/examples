@@ -62,24 +62,25 @@ def welcome():
         ]
     }
 
+
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     data = await request.data.json()
     action = data["action"]
     # In this example, you can send a request with {"action": "setup"} to give Zep some data about Jane Painter, a customer.
     if action == "setup":
         await setup(zep)
-    
+
     # {"action": "message"} is used to send a message to the agent.
     elif action == "message":
         try:
             content = data["content"]
-        except:
+        except KeyError:
             return response.text("Missing 'content' in request.")
 
         # Try to get the session if it exists, otherwise add it.
         try:
             await zep.memory.get_session(session_id=content["session_id"])
-        except Exception as e:
+        except Exception:
             try:
                 await zep.memory.add_session(
                     user_id=content["user_id"],
@@ -88,7 +89,6 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
             except Exception as e:
                 context.logger.error(f"Error finding/adding session: {e}")
                 return response.text(f"Error finding/adding session: {e}")
-        
         # Validate required fields
         required_fields = ["user_id", "session_id", "user_message"]
         for field in required_fields:
