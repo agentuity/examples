@@ -87,19 +87,42 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
                 context.logger.error(f"Error finding/adding session: {e}")
                 return response.text(f"Error finding/adding session: {e}")
         
-        # Add the user'smessage to Zep's memory.
-        await zep.memory.add(
-            session_id=content["session_id"],
-            messages=[Message(role_type="user", role=content["user_id"], content=content["user_message"])]
+        # Validate required fields
+        required_fields = ["user_id", "session_id", "user_message"]
+        for field in required_fields:
+            if field not in content or not content[field]:
+                return response.text(f"Missing or empty required field: {field}")
 
-        )
+        # Add the user's message to Zep's memory.
+        try:
+            await zep.memory.add(
+                session_id=content["session_id"],
+                messages=[
+                    Message(
+                        role_type="user",
+                        role=content["user_id"],
+                        content=content["user_message"]
+                    )
+                ]
+            )
+        except Exception as e:
+            context.logger.error(f"Error adding message to Zep memory: {e}")
+            return response.text(f"Error adding message to memory: {e}")
 
         # Get the memory about the user (with info relevant to the session prioritized).
-        memory = await zep.memory.get(session_id=content["session_id"])
+        try:
+            memory = await zep.memory.get(session_id=content["session_id"])
+        except Exception as e:
+            context.logger.error(f"Error retrieving memory: {e}")
+            return response.text(f"Error retrieving memory: {e}")
+
         messages = [
             {
                 "role": "system",
-                "content": "You are a people expert. You use the information you are given about them to have a conversation with them.",
+                "content": (
+                    "You are a people expert. You use the information you are "
+                    "given about them to have a conversation with them."
+                ),
             },
             {
                 "role": "assistant",
@@ -112,17 +135,31 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         ]
 
         # Generate a response from the agent.
-        agent_response = await client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            temperature=0,
-        )
+        try:
+            agent_response = await client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                temperature=0,
+            )
+        except Exception as e:
+            context.logger.error(f"Error generating OpenAI response: {e}")
+            return response.text(f"Error generating response: {e}")
 
         # Add the agent's response to Zep's memory.
-        await zep.memory.add(
-            session_id=content["session_id"],
-            messages=[Message(role_type="assistant", role="assistant", content=agent_response.choices[0].message.content or "")]
-        )
+        try:
+            await zep.memory.add(
+                session_id=content["session_id"],
+                messages=[
+                    Message(
+                        role_type="assistant",
+                        role="assistant",
+                        content=agent_response.choices[0].message.content or ""
+                    )
+                ]
+            )
+        except Exception as e:
+            context.logger.error(f"Error storing response in Zep memory: {e}")
+            # Continue since response was generated successfully
 
         return response.text(agent_response.choices[0].message.content or "Error generating response.")
     
