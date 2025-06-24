@@ -166,7 +166,7 @@ The Most Recent User Message is: ${JSON.stringify(userMessage)}
 			if (analysis.done) {
 				let agent = await ctx.getAgent({ name: "rfpGenerator" });
 				let result = await agent.run({
-					data: jsonObject,
+					data: updatedJsonObject,
 				});
 				filledTemplate = await result.data.text();
 			}
