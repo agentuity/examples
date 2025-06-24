@@ -109,9 +109,8 @@ Your output must be a **valid and complete JSON object**, with all original keys
 			let updatedJsonObject;
 			try {
 				const content = result1.choices?.[0]?.message?.content;
-				updatedJsonObject = typeof content === "string"
-					? JSON.parse(content)
-					: content;
+				updatedJsonObject =
+					typeof content === "string" ? JSON.parse(content) : content;
 			} catch (error) {
 				ctx.logger.error("Failed to parse OpenAI response:", error);
 				throw new Error("Invalid response format from AI model");
@@ -163,10 +162,14 @@ The Most Recent User Message is: ${JSON.stringify(userMessage)}
 			});
 
 			// Parse the result2 output, this should now contain the question to ask the user if needed.
-			const analysis =
-				typeof result2.choices?.[0]?.message?.content === "string"
-					? JSON.parse(result2.choices[0].message.content)
-					: result2.choices[0].message.content;
+			let analysis;
+			try {
+				const content = result2.choices?.[0]?.message?.content;
+				analysis = typeof content === "string" ? JSON.parse(content) : content;
+			} catch (error) {
+				ctx.logger.error("Failed to parse OpenAI response:", error);
+				throw new Error("Invalid response format from AI model");
+			}
 
 			// Store the latest template and updatedJsonObject in the session
 			await ctx.kv.set("sessions", data.sessionId, {
