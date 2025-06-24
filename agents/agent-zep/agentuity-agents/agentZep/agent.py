@@ -169,18 +169,23 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     elif action == "addUser":
         try:
             content = data["content"]
-        except:
+        except KeyError:
             return response.text("Missing 'content' in request.")
+        
+        # Validate required user_id field
+        if "user_id" not in content or not content["user_id"]:
+            return response.text("Missing or empty required field: user_id")
+        
         try:
             user = await zep.user.add(
                 user_id=content["user_id"],
-                first_name=content["user_first_name"] or "",
-                last_name=content["user_last_name"] or "",
-                email=content["user_email"] or ""
+                first_name=content.get("user_first_name", ""),
+                last_name=content.get("user_last_name", ""),
+                email=content.get("user_email", "")
             )
             return response.text(f"User added successfully. User ID: {user.user_id}")
         except Exception as e:
+            context.logger.error(f"Error adding user: {e}")
             return response.text(f"Error adding user: {e}")
     else:
-        return response.text("Invalid action. Currently supported actions: ['setup', 'message']")
-   
+        return response.text("Invalid action. Currently supported actions: ['setup', 'message', 'addUser']")
