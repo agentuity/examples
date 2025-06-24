@@ -15,6 +15,8 @@ from zepSetup import setup
 load_dotenv(find_dotenv())
 
 API_KEY = os.getenv("ZEP_API_KEY")
+if not API_KEY:
+    raise ValueError("ZEP_API_KEY environment variable is required")
 
 client = AsyncOpenAI()
 
