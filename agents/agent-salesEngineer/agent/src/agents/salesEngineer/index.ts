@@ -49,8 +49,15 @@ export default async function Agent(
 			jsonObject = prevData.jsonObject;
 			history = prevData.history;
 		} else {
-			template = data.template as string;
-			let buf = Buffer.from(template, "base64");
+			if (!data.template) {
+				throw new Error("Template is required for new sessions");
+			}
+			let buf: Buffer;
+			try {
+				buf = Buffer.from(data.template, "base64");
+			} catch (error) {
+				throw new Error("Invalid base64 template encoding");
+			}
 			let agent = await ctx.getAgent({ name: "rfpSchema" });
 			let result = await agent.run({
 				data: buf,
