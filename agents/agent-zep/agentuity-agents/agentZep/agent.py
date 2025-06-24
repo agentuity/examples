@@ -66,9 +66,10 @@ def welcome():
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     data = await request.data.json()
     action = data["action"]
-    # In this example, you can send a request with {"action": "setup"} to give Zep some data about Jane Painter, a customer.
-    if action == "setup":
+    # In this example, you can send a request with {"action": "seed"} to give Zep some data about Jane Painter, a customer.
+    if action == "seed":
         await setup(zep)
+        return response.text("Zep database seeded successfully.")
 
     # {"action": "message"} is used to send a message to the agent.
     elif action == "message":
@@ -188,4 +189,4 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
             context.logger.error(f"Error adding user: {e}")
             return response.text(f"Error adding user: {e}")
     else:
-        return response.text("Invalid action. Currently supported actions: ['setup', 'message', 'addUser']")
+        return response.text("Invalid action. Currently supported actions: ['seed', 'message', 'addUser']")
