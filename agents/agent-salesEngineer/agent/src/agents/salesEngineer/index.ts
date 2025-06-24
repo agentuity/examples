@@ -106,10 +106,16 @@ Your output must be a **valid and complete JSON object**, with all original keys
 			});
 
 			// Parse the updated JSON object from result1, this should now contain the most up to date JSON object, accounting for the user message.
-			const updatedJsonObject =
-				typeof result1.choices?.[0]?.message?.content === "string"
-					? JSON.parse(result1.choices[0].message.content)
-					: result1.choices[0].message.content;
+			let updatedJsonObject;
+			try {
+				const content = result1.choices?.[0]?.message?.content;
+				updatedJsonObject = typeof content === "string"
+					? JSON.parse(content)
+					: content;
+			} catch (error) {
+				ctx.logger.error("Failed to parse OpenAI response:", error);
+				throw new Error("Invalid response format from AI model");
+			}
 
 			ctx.logger.info("New JSON Object:", updatedJsonObject);
 
