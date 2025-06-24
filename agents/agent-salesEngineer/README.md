@@ -49,7 +49,7 @@ And responds with a message of the format:
 {
   "message": "Hello, I need help with my RFP",
   "done": false,
-  "filledTemplate": "base64EncodedStringHere (only required if done is true)"
+  "filledTemplate": "only filled when done"
 }
 ```
 
