@@ -78,6 +78,12 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         except KeyError:
             return response.text("Missing 'content' in request.")
 
+        # Validate required fields
+        required_fields = ["user_id", "session_id", "user_message"]
+        for field in required_fields:
+            if field not in content or not content[field]:
+                return response.text(f"Missing or empty required field: {field}")
+                
         # Try to get the session if it exists, otherwise add it.
         try:
             await zep.memory.get_session(session_id=content["session_id"])
@@ -90,11 +96,6 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
             except Exception as e:
                 context.logger.error(f"Error finding/adding session: {e}")
                 return response.text(f"Error finding/adding session: {e}")
-        # Validate required fields
-        required_fields = ["user_id", "session_id", "user_message"]
-        for field in required_fields:
-            if field not in content or not content[field]:
-                return response.text(f"Missing or empty required field: {field}")
 
         # Add the user's message to Zep's memory.
         try:
