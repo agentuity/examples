@@ -15,17 +15,21 @@ def welcome():
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     try:
-
+        ## Get the prompt and session from the request.
         data = await request.data.json()    
         prompt = data["prompt"]
         session = data["session"]
 
+        ## Get the conversation history from the KV store.
         historyDataResult = await context.kv.get("claude-code-sessions", session)   
         if historyDataResult.exists and historyDataResult.data is not None:
             history = await historyDataResult.data.text()
+            history += f"User: {prompt}\n\n"
         else:
-            history = f"User: {prompt}\n"
+            history = f"User: {prompt}\n\n"
 
+
+        ## Send the prompt to the Claude Code.
         result = ""
         async for message in query(
             prompt = f"""
@@ -44,13 +48,14 @@ Conversation history:
                 allowed_tools=["Read", "Write", "Bash"],
                 )
         ):
-            print(message)
-            if(type(message) == ResultMessage):
-                result += message.result or ""
-                history += f"Assistant: {message.result}\n"
-            elif(type(message)==AssistantMessage):
-                history += "".join(f"Assistant: {msg}\n" for msg in message.content)
+            # print(message)
 
+            ## If the message is a ResultMessage, that means the assistant has finished executing and we can return the result to the user.
+            if(isinstance(message, ResultMessage)):
+                result += message.result or ""
+                history += f"Assistant: {message.result}\n\n"
+
+        ## Save the conversation history to the KV store.
         await context.kv.set("claude-code-sessions", session, history)
         return response.text(result or "No result.")
 
