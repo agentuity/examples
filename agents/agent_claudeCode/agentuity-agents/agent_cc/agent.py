@@ -1,5 +1,6 @@
 from agentuity import AgentRequest, AgentResponse, AgentContext
 from claude_code_sdk import AssistantMessage, ResultMessage, query, ClaudeCodeOptions
+from pathlib import Path
 
 def welcome():
     return {
@@ -36,7 +37,12 @@ User prompt:
 Conversation history:
 {history}
 """,
-            options=ClaudeCodeOptions(max_turns=5, permission_mode="acceptEdits")
+            options=ClaudeCodeOptions(
+                max_turns=5, 
+                permission_mode="acceptEdits",
+                cwd=Path("claude-references/"), # This directory contains a list of example files for Claude Code to interact with.
+                allowed_tools=["Read", "Write", "Bash"],
+                )
         ):
             print(message)
             if(type(message) == ResultMessage):

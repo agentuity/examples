@@ -1,117 +1,34 @@
-<div align="center">
-    <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
-    <strong>Build Agents, Not Infrastructure</strong> <br/>
-    <br/>
-        <a target="_blank" href="https://app.agentuity.com/deploy" alt="Agentuity">
-            <img src="https://app.agentuity.com/img/deploy.svg" /> 
-        </a>
-    <br />
-</div>
+# Claude Code SDK in Agentuity
 
-# 🤖 Python Agent Project
+[![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
 
-Welcome to your Agentuity Python Agent project! This README provides essential information to help you get started with developing, testing, and deploying your AI agents.
+This project showcases how the Claude Code SDK can be used in an Agentuity agent.
+With Agentuity's AI Gateway, you can use Clause Code SDK without setting up your own API keys, just right out of the box!
 
-## 📋 Prerequisites
+There a few sample Python files in the `claude-references` folder which you can use to test the agent.
 
-Before you begin, ensure you have the following installed:
+You can interact with this agent conversationally to get it to interact with the codebase, it will remember your convsersation history by session.
 
-- **Python**: Version 3.10 or higher
-- **UV**: Version 0.5.25 or higher ([Documentation](https://docs.astral.sh/uv/))
+## Quick Start
 
-## 🚀 Getting Started
+1. Clone this repository.
+2. Make sure you have installed the Agentuity CLI (`curl -fsS https://agentuity.sh | sh`)
+3. Run `agentuity project import` to import the project into your Agentuity account.
+4. Install Claude Code SDK (`npm install @anthropic-ai/claude-code-sdk`)
 
-### Authentication
+- You will also need npm installed to do this.
 
-Before using Agentuity, you need to authenticate:
+5. Run `agentuity dev` to start the local development server.
+6. Send the agent requests of the format:
 
-```bash
-agentuity login
+```json
+{
+  "session": "session_id",
+  "prompt": "prompt"
+}
 ```
 
-This command will open a browser window where you can log in to your Agentuity account.
+## Implementation
 
-### Creating a New Agent
-
-To create a new agent in your project:
-
-```bash
-agentuity agent new
-```
-
-Follow the interactive prompts to configure your agent.
-
-### Development Mode
-
-Run your project in development mode with:
-
-```bash
-agentuity dev
-```
-
-This will start your project and open a new browser window connecting your agent to the Agentuity Console in DevMode, allowing you to test and debug your agent in real-time.
-
-You can also start your project in development mode without connecting to the Agentuity Console:
-
-```bash
-uv run server.py
-```
-
-## 🌐 Deployment
-
-When you're ready to deploy your agent to the Agentuity Cloud:
-
-```bash
-agentuity deploy
-```
-
-This command will bundle your agent and deploy it to the cloud, making it accessible via the Agentuity platform.
-
-## 📚 Project Structure
-
-```
-├── agents/             # Agent definitions and implementations
-├── .venv/              # Virtual environment (created by UV)
-├── pyproject.toml      # Project dependencies and metadata
-├── server.py           # Server entry point
-└── agentuity.yaml      # Agentuity project configuration
-```
-
-## 🔧 Configuration
-
-Your project configuration is stored in `agentuity.yaml`. This file defines your agents, development settings, and deployment configuration.
-
-## 🛠️ Advanced Usage
-
-### Environment Variables
-
-You can set environment variables for your project:
-
-```bash
-agentuity env set KEY VALUE
-```
-
-### Secrets Management
-
-For sensitive information, use secrets:
-
-```bash
-agentuity env set --secret KEY VALUE
-```
-
-## 📖 Documentation
-
-For comprehensive documentation on the Agentuity Python SDK, visit:
-[https://agentuity.dev/SDKs/python](https://agentuity.dev/SDKs/python)
-
-## 🆘 Troubleshooting
-
-If you encounter any issues:
-
-1. Check the [documentation](https://agentuity.dev/SDKs/python)
-2. Join our [Discord community](https://discord.gg/agentuity) for support
-3. Contact the Agentuity support team
-
-## 📝 License
-
-This project is licensed under the terms specified in the LICENSE file.
+The agent uses the `query` function to send requests to Claude Code SDK. The Claude Code SDK supports all the features of the Claude Code CLI, so it can read, write, and execute code.
+It also uses Agentuity's KV store to remember the conversation history by session.
