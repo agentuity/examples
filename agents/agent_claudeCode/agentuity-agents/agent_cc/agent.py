@@ -1,18 +1,12 @@
 from agentuity import AgentRequest, AgentResponse, AgentContext
-from anthropic import AsyncAnthropic
-
-client = AsyncAnthropic()
+from claude_code_sdk import AssistantMessage, ResultMessage, query, ClaudeCodeOptions
 
 def welcome():
     return {
-        "welcome": "Welcome to the Anthropic Python Agent! I can help you build AI-powered applications using Claude models.",
+        "welcome": "Welcome to the Claude Code Agent! I can help you build AI-powered applications using the Claude Code SDK!",
         "prompts": [
             {
-                "data": "How do I implement streaming responses with Claude models?",
-                "contentType": "text/plain"
-            },
-            {
-                "data": "What are the best practices for prompt engineering with Claude?",
+                "data": {"session": "sess_123", "prompt": "Write a haiku about dog.py"},
                 "contentType": "text/plain"
             }
         ]
@@ -20,22 +14,40 @@ def welcome():
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     try:
-        result = await client.messages.create(
-            model="claude-3-7-sonnet-latest",
-            max_tokens=1024,
-            messages=[
-                {
-                    "role": "user",
-                    "content": await request.data.text() or "Hello, Claude",
-                }
-            ],
-        )
 
-        if result.content[0].type == "text":
-            return response.text(result.content[0].text)
+        data = await request.data.json()    
+        prompt = data["prompt"]
+        session = data["session"]
+
+        historyDataResult = await context.kv.get("claude-code-sessions", session)   
+        if historyDataResult.exists and historyDataResult.data is not None:
+            history = await historyDataResult.data.text()
         else:
-            return response.text("Something went wrong")
+            history = f"User: {prompt}\n"
+
+        result = ""
+        async for message in query(
+            prompt = f"""
+You are a helpful coding assistant with access to the codebase. You can read files, make changes, and run commands.
+
+User prompt:
+{prompt}
+
+Conversation history:
+{history}
+""",
+            options=ClaudeCodeOptions(max_turns=5, permission_mode="acceptEdits")
+        ):
+            print(message)
+            if(type(message) == ResultMessage):
+                result += message.result or ""
+                history += f"Assistant: {message.result}\n"
+            elif(type(message)==AssistantMessage):
+                history += "".join(f"Assistant: {msg}\n" for msg in message.content)
+
+        await context.kv.set("claude-code-sessions", session, history)
+        return response.text(result or "No result.")
+
     except Exception as e:
         context.logger.error(f"Error running agent: {e}")
-
         return response.text("Sorry, there was an error processing your request.")
