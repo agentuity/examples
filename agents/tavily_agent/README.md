@@ -1,4 +1,4 @@
-# 🔍 Tavily Research Agent
+# Tavily Research Agent
 
 <div align="center">
     <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
@@ -10,37 +10,30 @@
     <br />
 </div>
 
-## 🎯 What This Agent Does
+## What This Agent Does
 
 The **Tavily Research Agent** is a powerful hybrid research system that combines:
 
-- 🌐 **Real-time web search** using Tavily's advanced search, extract, and crawl tools
-- 📊 **Internal vector search** through your company's CRM data 
-- 🤖 **LangGraph ReAct workflow** for intelligent multi-step research
-- 📝 **Comprehensive responses** with proper citations and sources
+- **Real-time web search** using Tavily's advanced search, extract, and crawl tools
+- **Internal vector search** through your company's CRM data 
+- **LangGraph ReAct workflow** for intelligent multi-step research
+- **Comprehensive responses** with proper citations and sources
 
 Perfect for **business intelligence**, **competitive analysis**, and **research tasks** that need both public web information and internal enterprise knowledge.
 
-## 🚀 Quick Start Guide
+## Quick Start Guide
 
 ### Step 1: Prerequisites
 
 Before you begin, ensure you have:
 
 - **Python**: Version 3.10 or higher
-- **UV**: Version 0.5.25 or higher ([Install UV](https://docs.astral.sh/uv/))
-- **Agentuity CLI**: Install with `pip install agentuity-cli`
+- **UV**: Version 0.5.25 or higher ([Install UV](https://docs.astral.sh/uv/getting-started/installation/))
+- **Agentuity CLI**: ([Install Agentuity CLI](https://agentuity.com/))
 
 ### Step 2: Get API Keys
 
-You'll need the following API keys:
-
-#### 1. **OpenAI API Key**
-- Go to [OpenAI Platform](https://platform.openai.com/api-keys)
-- Create a new API key
-- Copy and save it securely
-
-#### 2. **Tavily API Key** 
+#### 1. **Tavily API Key** 
 - Go to [Tavily](https://tavily.com)
 - Sign up for an account
 - Get your API key from the dashboard
@@ -55,21 +48,7 @@ agentuity login
 
 This opens a browser for you to log in to your Agentuity account.
 
-### Step 4: Set Up Environment Variables
-
-Create a `.env` file in the project root with your API keys:
-
-```bash
-# Create .env file
-cat > .env << EOF
-OPENAI_API_KEY=sk-your-openai-key-here
-TAVILY_API_KEY=tvly-your-tavily-key-here
-EOF
-```
-
-**⚠️ Security Note**: Never commit your `.env` file to version control. It's already included in `.gitignore`.
-
-### Step 5: Install Dependencies
+### Step 4: Install Dependencies
 
 The project uses UV for dependency management:
 
@@ -99,7 +78,7 @@ This will:
 - Open the **Agentuity DevMode** in your browser
 - Provide a public URL for testing
 
-## 🎮 How to Use
+## How to Use
 
 ### Via DevMode (Recommended)
 
@@ -130,7 +109,7 @@ Try these example queries to see the agent in action:
 - **"What are Google's recent enterprise AI announcements?"**
 - **"Compare Tesla's autonomous driving progress with competitors"**
 
-## 🏗️ How It Works
+## How It Works
 
 ### Research Workflow
 
@@ -156,45 +135,20 @@ Try these example queries to see the agent in action:
               └──────────┘ └──────┘ └─────────┘
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 tavily_agent/
 ├── agentuity-agents/           # Agent implementations
 │   └── my_agent/
-│       └── agent.py           # Main agent code
-├── supplemental/              # Supporting data
-│   └── db/                   # Vector database (CRM data)
+│       └── agent.py           # Main agent code                 
 ├── .env                      # Environment variables (create this)
-├── .env.development          # Development environment variables
 ├── pyproject.toml           # Python dependencies
 ├── agentuity.yaml          # Agentuity configuration
 ├── server.py               # Server entry point
 └── README.md              # This file
 ```
 
-## 🔧 Customization
-
-### Adding CRM Data
-
-To add your own CRM data to the vector store:
-
-1. Place your data files in `supplemental/data/`
-2. Update the vector store loading code in `agent.py`
-3. Restart the agent
-
-### Modifying Search Parameters
-
-You can customize the Tavily search behavior:
-
-```python
-# In agent.py, modify these parameters:
-search = TavilySearch(
-    max_results=10,        # Number of search results
-    topic="general",       # Search topic filter
-    api_key=os.getenv("TAVILY_API_KEY")
-)
-```
 
 ### Changing the AI Model
 
@@ -208,7 +162,7 @@ model = ChatOpenAI(
 )
 ```
 
-## 🌐 Deployment
+## Deployment
 
 When ready to deploy to production:
 
@@ -221,32 +175,6 @@ This deploys your agent to the Agentuity Cloud, making it accessible via:
 - Agentuity Console
 - Integration with other services
 
-## 🔍 Troubleshooting
-
-### Common Issues
-
-#### **Import Errors / Yellow Squiggly Lines**
-```bash
-# Reinstall dependencies
-uv sync --reinstall
-```
-
-#### **Port 3500 Already in Use**
-```bash
-# Kill existing process
-lsof -ti:3500 | xargs kill -9
-```
-
-#### **Missing API Keys**
-- Check your `.env` file exists and has the correct keys
-- Verify API keys are valid and have sufficient credits
-
-#### **LangChain Instrumentation Warning**
-```
-[ERROR] Error instrumenting Langchain: cannot import name 'set_handler'
-```
-This is a **non-blocking warning** - your agent will still work fine.
-
 ### Getting Help
 
 If you encounter issues:
@@ -255,7 +183,7 @@ If you encounter issues:
 2. Join our [Discord Community](https://discord.gg/agentuity)
 3. Contact Agentuity support
 
-## 📊 Monitoring & Logs
+## Monitoring & Logs
 
 ### Development Logs
 
@@ -278,7 +206,7 @@ Once deployed, monitor your agent through the Agentuity Console:
 - Error tracking
 - Usage analytics
 
-## 🚀 Next Steps
+## Next Steps
 
 - **Customize the prompts** to match your specific research needs
 - **Add more data sources** to the vector store
