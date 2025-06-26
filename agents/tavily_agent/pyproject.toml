@@ -1,0 +1,15 @@
+[project]
+name = "tavily-agent"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.10, <3.13"
+dependencies = [
+    "agentuity>=0.0.98",
+    "langchain>=0.3.26",
+    "langchain-chroma>=0.2.4",
+    "langchain-community>=0.3.26",
+    "langchain-core>=0.3.66",
+    "langchain-openai>=0.3.25",
+    "langchain-tavily>=0.2.4",
+    "langgraph>=0.4.8",
+]
