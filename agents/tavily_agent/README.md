@@ -94,7 +94,7 @@ This will:
 You can also test via direct API calls:
 
 ```bash
-curl -X POST http://localhost:3500/agents/my_agent \
+curl -X POST http://localhost:3500/agents/tavily_agent \
   -H "Content-Type: application/json" \
   -d '{"message": "What are the latest developments in Microsoft Azure AI services?"}'
 ```
@@ -140,7 +140,7 @@ Try these example queries to see the agent in action:
 ```
 tavily_agent/
 ├── agentuity-agents/           # Agent implementations
-│   └── my_agent/
+│   └── tavilyAgent/
 │       └── agent.py           # Main agent code                 
 ├── .env                      # Environment variables (create this)
 ├── pyproject.toml           # Python dependencies

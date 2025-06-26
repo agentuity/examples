@@ -61,4 +61,4 @@ agents:
   - # The ID of the Agent which is automatically generated
     id: agent_0cc992f55ae7d048dd3cceba4d3c67dd
     # The name of the Agent which is editable
-    name: my agent
+    name: tavily agent
