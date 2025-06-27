@@ -21,7 +21,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@agentuity/sdk": "^0.0.118",
+    "@agentuity/sdk": "^0.0.121",
     "@ai-sdk/anthropic": "^1.2.11",
     "ai": "^4.3.16"
   },

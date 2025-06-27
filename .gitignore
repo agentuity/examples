@@ -32,5 +32,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
-# don't commit the agentuity build folder
+# Agentuity
 .agentuity
+.agentuity-crash-*.json
+.env.development
+.env.production

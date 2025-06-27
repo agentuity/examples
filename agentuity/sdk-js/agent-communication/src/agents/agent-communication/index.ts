@@ -3,42 +3,42 @@ import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
 export default async function handler(
   request: AgentRequest,
   response: AgentResponse,
-  context: AgentContext,
+  context: AgentContext
 ) {
   const { action, message, agentId } = request.data.json;
 
   switch (action) {
-    case 'send': {
+    case "send": {
       // Send a message to another agent
       if (!agentId) {
-        return response.json({ error: 'Agent ID is required' });
+        return response.json({ error: "Agent ID is required" });
       }
 
       if (!message) {
-        return response.json({ error: 'Message is required' });
+        return response.json({ error: "Message is required" });
       }
 
       // Get the agent by ID
       const agent = await context.getAgent({ id: agentId });
-      
+
       // Send message to the specified agent
-      const result = await agent.run({ 
-        data: { 
+      const result = await agent.run({
+        data: {
           message,
           sender: context.agent.id,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
 
       return response.json({
-        message: 'Message sent successfully',
-        result
+        message: "Message sent successfully",
+        result,
       });
     }
-    case 'broadcast': {
+    case "broadcast": {
       // Broadcast a message to all agents in the same project
       if (!message) {
-        return response.json({ error: 'Message is required' });
+        return response.json({ error: "Message is required" });
       }
 
       // Broadcast message to all agents
@@ -47,29 +47,33 @@ export default async function handler(
         data: {
           message,
           sender: context.agent.id,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
 
       return response.json({
-        message: 'Broadcast sent successfully',
-        results
+        message: "Broadcast sent successfully",
+        results,
       });
     }
-    case 'receive': {
+    case "receive": {
       // This is a handler for receiving messages from other agents
       const data = request.data.json;
-      
-      context.logger.info(`Received message from agent ${data.sender}: ${data.message}`);
-      
+
+      context.logger.info(
+        `Received message from agent ${data.sender}: ${data.message}`
+      );
+
       // Process the received message
       return response.json({
-        message: 'Message received and processed',
+        message: "Message received and processed",
         echo: data.message,
-        receivedAt: new Date().toISOString()
+        receivedAt: new Date().toISOString(),
       });
     }
     default:
-      return response.json({ error: 'Invalid action. Use "send", "broadcast", or "receive".' });
+      return response.json({
+        error: 'Invalid action. Use "send", "broadcast", or "receive".',
+      });
   }
 }

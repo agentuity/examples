@@ -3,17 +3,17 @@ import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
 export default async function handler(
   request: AgentRequest,
   response: AgentResponse,
-  context: AgentContext,
+  context: AgentContext
 ) {
   const { action, userId, preferences } = request.data.json;
 
   switch (action) {
-    case 'get': {
+    case "get": {
       // Retrieve user preferences
-      const data = await context.kv.get('user-preferences', userId);
+      const data = await context.kv.get("user-preferences", userId);
 
       if (!data) {
-        return response.json({ message: 'No preferences found' });
+        return response.json({ message: "No preferences found" });
       }
 
       // Convert ArrayBuffer to string and parse as JSON
@@ -22,25 +22,27 @@ export default async function handler(
 
       return response.json({ preferences: userPrefs });
     }
-    case 'set': {
+    case "set": {
       // Store user preferences
       await context.kv.set(
-        'user-preferences',
+        "user-preferences",
         userId,
         JSON.stringify(preferences),
         // Optional TTL (30 days in seconds)
         60 * 60 * 24 * 30
       );
 
-      return response.json({ message: 'Preferences saved successfully!' });
+      return response.json({ message: "Preferences saved successfully!" });
     }
-    case 'delete': {
+    case "delete": {
       // Delete user preferences
-      await context.kv.delete('user-preferences', userId);
-      
-      return response.json({ message: 'Preferences deleted successfully!' });
+      await context.kv.delete("user-preferences", userId);
+
+      return response.json({ message: "Preferences deleted successfully!" });
     }
     default:
-      return response.json({ error: 'Invalid action. Use "get", "set", or "delete".' });
+      return response.json({
+        error: 'Invalid action. Use "get", "set", or "delete".',
+      });
   }
 }

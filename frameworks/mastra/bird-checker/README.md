@@ -1,9 +1,13 @@
 # Mastra Bird Checker
 
+[![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
+
 ## Overview
+
 The Bird Checker agent analyzes images to determine if they contain birds, identify the species, and describe the location. It uses Claude 3 Haiku to analyze random bird-related images fetched from Unsplash.
 
 ## How It Works
+
 1. The agent fetches a random image from Unsplash using bird-related search terms (wildlife, feathers, flying, birds)
 2. It passes the image to Claude 3 Haiku with instructions to:
    - Determine if the image contains a bird
@@ -17,6 +21,7 @@ The Bird Checker agent analyzes images to determine if they contain birds, ident
 The agent uses structured output with Zod validation to ensure consistent response formatting.
 
 ## Running Locally
+
 To run this agent locally:
 
 ```bash
@@ -35,6 +40,7 @@ agentuity run
 ```
 
 ## Deployment
+
 To deploy this agent to Agentuity Cloud:
 
 ```bash
@@ -48,4 +54,5 @@ agentuity deploy
 After deployment, you can access your agent through the Agentuity Cloud dashboard.
 
 ## Additional Documentation
+
 For more information about Agentuity and its capabilities, visit [https://agentuity.dev/](https://agentuity.dev/).
