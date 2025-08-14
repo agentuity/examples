@@ -1,0 +1,71 @@
+filter_emails_task:
+  description: >
+    Analyze the incoming email and classify it based on the following criteria:
+    1. Urgency level (High, Medium, Low)
+    2. Category (Business inquiry, Support request, Spam, Personal, Newsletter, etc.)
+    3. Sender importance (VIP, Regular customer, Unknown, Potential spam)
+    4. Action required (Immediate response needed, Can wait, Auto-response appropriate, No response needed)
+    
+    Consider the email content: {email}
+    
+    Provide a detailed analysis including:
+    - Classification results
+    - Reasoning for the classification
+    - Recommended next steps
+    - Any red flags or special considerations
+  expected_output: >
+    A comprehensive email analysis report containing:
+    - Urgency classification with justification
+    - Category assignment with reasoning
+    - Sender assessment
+    - Recommended action plan
+    - Risk assessment if applicable
+
+action_required_emails_task:
+  description: >
+    Based on the email classification, determine the specific action required for this email.
+    Consider the analysis from the filter task and decide:
+    
+    1. Does this email require an immediate human response?
+    2. Can this be handled with an automated response?
+    3. Should this be escalated to a specific department or person?
+    4. What type of response is most appropriate?
+    5. Are there any follow-up actions needed?
+    
+    Take into account:
+    - Business hours and response time expectations
+    - The sender's relationship with the organization
+    - The complexity and sensitivity of the inquiry
+    - Available automated response templates
+  expected_output: >
+    A detailed action plan specifying:
+    - Primary action to be taken
+    - Response type and urgency
+    - Escalation requirements if any
+    - Timeline for response
+    - Any special handling instructions
+
+draft_responses_task:
+  description: >
+    Create an appropriate email response based on the classification and action plan.
+    The response should be:
+    
+    1. Professional and courteous in tone
+    2. Relevant to the original email content
+    3. Appropriate for the sender's relationship level
+    4. Clear and actionable
+    5. Aligned with business communication standards
+    
+    Consider the email content: {email}
+    
+    If an automated response is appropriate, draft a helpful reply.
+    If human intervention is needed, create a draft that can be reviewed and sent.
+    If no response is needed, explain why and suggest any alternative actions.
+    
+    Use the create_draft tool to generate the actual email draft when appropriate.
+  expected_output: >
+    Either:
+    - A complete email draft ready for sending (for automated responses)
+    - A draft template for human review and customization
+    - A recommendation for no response with clear reasoning
+    - Instructions for escalation with suggested talking points

@@ -1,0 +1,18 @@
+[project]
+name = "email-auto-responder"
+version = "0.1.0"
+description = "CrewAI Email Auto-Responder wrapped for Agentuity"
+requires-python = ">=3.10, <3.13"
+dependencies = [
+    "agentuity>=0.0.91",
+    "crewai[tools]>=0.80.0",
+    "langchain>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "google-api-python-client>=2.0.0",
+    "google-auth-oauthlib>=1.0.0",
+    "google-auth-httplib2>=0.2.0",
+    "python-dotenv>=1.0.0",
+    "tavily-python>=0.3.0",
+    "pydantic>=2.0.0"
+]
