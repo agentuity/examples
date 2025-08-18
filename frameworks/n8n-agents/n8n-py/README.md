@@ -8,96 +8,117 @@
     <br />
 </div>
 
-# 🤖 Python Agent Project
+# 🤖 Agentuity Workflow Examples
 
-Welcome to your Agentuity Python Agent project! This README provides essential information to help you get started with developing, testing, and deploying your AI agents.
+This project demonstrates how Agentuity can replace complex workflow tools with simple Python agents. It includes two example agents that showcase different use cases and integrations.
+
+## 🎯 Example Agents
+
+### 1. YouTube to Blog Agent (`youtube-to-blog`)
+
+Converts YouTube videos into well-structured blog posts using AI.
+
+**What it does:**
+
+- Extracts video ID from YouTube URLs
+- Fetches video transcripts
+- Uses OpenAI GPT-4 to convert transcripts into engaging blog posts
+- Creates compelling titles, organized content, and summaries
+
+**Setup required:** None - works out of the box!
+
+### 2. Shopify Order SMS Agent (`shopify-order-sms`)
+
+Processes Shopify orders and generates personalized SMS notifications for customers.
+
+**What it does:**
+
+- Receives Shopify webhook data
+- Stores order data in Pinecone vector database
+- Uses RAG (Retrieval-Augmented Generation) to personalize messages for returning customers
+- Generates SMS text with greeting, loyalty recognition, and itemized receipt
+
+**Setup required:**
+
+1. **Pinecone API Key**: Set `PINECONE_API_KEY` environment variable
+2. **Shopify Webhooks**: Configure Shopify to send order webhooks to your agent
+3. **SMS Outbound**: Connect Agentuity's SMS Outbound IO for actual SMS delivery
 
 ## 📋 Prerequisites
-
-Before you begin, ensure you have the following installed:
 
 - **Python**: Version 3.10 or higher
 - **UV**: Version 0.5.25 or higher ([Documentation](https://docs.astral.sh/uv/))
 
 ## 🚀 Getting Started
 
-### Authentication
-
-Before using Agentuity, you need to authenticate:
+### 1. Authentication
 
 ```bash
 agentuity login
 ```
 
-This command will open a browser window where you can log in to your Agentuity account.
+### 2. Environment Setup
 
-### Creating a New Agent
-
-To create a new agent in your project:
+For the Shopify SMS agent, set your Pinecone API key:
 
 ```bash
-agentuity agent new
+agentuity env set PINECONE_API_KEY your_pinecone_api_key_here
 ```
 
-Follow the interactive prompts to configure your agent.
+### 3. Development Mode
 
-### Development Mode
-
-Run your project in development mode with:
+Run your project in development mode:
 
 ```bash
 agentuity dev
 ```
 
-This will start your project and open a new browser window connecting your agent to the Agentuity Console in DevMode, allowing you to test and debug your agent in real-time.
+This opens the Agentuity Console where you can test both agents:
 
-You can also start your project in development mode without connecting to the Agentuity Console:
+- **YouTube to Blog**: Paste any YouTube URL and get an instant blog post
+- **Shopify SMS**: Send sample Shopify order JSON to see the SMS output
 
-```bash
-uv run server.py
-```
+## 🌐 Production Setup
 
-## 🌐 Deployment
-
-When you're ready to deploy your agent to the Agentuity Cloud:
+### Deploy to Agentuity Cloud
 
 ```bash
 agentuity deploy
 ```
 
-This command will bundle your agent and deploy it to the cloud, making it accessible via the Agentuity platform.
+### Connect External Services
+
+**For Shopify SMS Agent:**
+
+1. **Shopify Webhooks**: In your Shopify admin, configure order webhooks to point to your deployed agent URL
+2. **SMS Outbound**: In the Agentuity Console, add SMS Outbound IO to your agent for actual SMS delivery
+3. **Pinecone**: Your API key is automatically available in the production environment
 
 ## 📚 Project Structure
 
 ```
-├── agents/             # Agent definitions and implementations
-├── .venv/              # Virtual environment (created by UV)
-├── pyproject.toml      # Project dependencies and metadata
-├── server.py           # Server entry point
-└── agentuity.yaml      # Agentuity project configuration
+├── agentuity_agents/
+│   ├── youtube_to_blog/    # YouTube to blog conversion agent
+│   │   └── agent.py
+│   └── shopify_order_sms/  # Shopify order SMS notification agent
+│       └── agent.py
+├── references/             # Original workflow references
+├── pyproject.toml          # Dependencies (anthropic, pinecone, etc.)
+├── server.py              # Server entry point
+└── agentuity.yaml         # Project configuration
 ```
 
-## 🔧 Configuration
+## 💡 How It Works
 
-Your project configuration is stored in `agentuity.yaml`. This file defines your agents, development settings, and deployment configuration.
+These agents demonstrate key Agentuity concepts:
 
-## 🛠️ Advanced Usage
+- **Simple Python Functions**: No complex frameworks - just `async def run()`
+- **Built-in AI Integration**: Direct access to OpenAI and Anthropic models
+- **Vector Database**: Pinecone integration for RAG workflows
+- **IO Connectors**: Easy webhook handling and SMS sending
+- **Environment Management**: Secure API key handling
 
-### Environment Variables
-
-You can set environment variables for your project:
-
-```bash
-agentuity env set KEY VALUE
-```
-
-### Secrets Management
-
-For sensitive information, use secrets:
-
-```bash
-agentuity env set --secret KEY VALUE
-```
+Compare this to traditional workflow tools that require visual editors, custom nodes, and complex configurations!
 
 ## 📖 Documentation
 

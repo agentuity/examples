@@ -6,7 +6,7 @@
 # ------------------------------------------------
 
 # The version semver range required to run this project
-version: ">=0.0.164"
+version: '>=0.0.164'
 # The ID of the project which is automatically generated
 project_id: proj_b8f8b5b7fe6c1447532621db0b790a8d
 # The name of the project which is editable
@@ -59,10 +59,12 @@ bundler:
   agents:
     dir: agentuity_agents
   ignore:
-    - "**/__pycache__/**"
+    - '**/__pycache__/**'
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
     id: agent_342a496d4a662aae0a1a05ad153ff107
     # The name of the Agent which is editable
     name: youtube-to-blog
+  - id: agent_7342c80d8c09011d665e7805fd40bffa
+    name: shopify_order_sms
