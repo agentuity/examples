@@ -68,3 +68,5 @@ agents:
     name: youtube-to-blog
   - id: agent_7342c80d8c09011d665e7805fd40bffa
     name: shopify_order_sms
+  - id: agent_7cbffa96a20460cb1202a7aaf7e7354b
+    name: email_digest
