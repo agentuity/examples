@@ -10,7 +10,7 @@
 
 # 🤖 Agentuity Workflow Examples
 
-This project demonstrates how Agentuity can replace complex workflow tools with simple Python agents. It includes two example agents that showcase different use cases and integrations.
+This project demonstrates how Agentuity can replace complex workflow tools with simple Python agents. It includes three example agents that showcase different use cases and integrations.
 
 ## 🎯 Example Agents
 
@@ -44,6 +44,28 @@ Processes Shopify orders and generates personalized SMS notifications for custom
 2. **Shopify Webhooks**: Configure Shopify to send order webhooks to your agent
 3. **SMS Outbound**: Connect Agentuity's SMS Outbound IO for actual SMS delivery
 
+### 3. Email Digest Agent (`email_digest`)
+
+Processes incoming emails and generates intelligent daily digests using AI-powered filtering and summarization.
+
+**What it does:**
+
+- Receives emails via Agentuity's Email IO input
+- Filters out promotional emails, spam, and automated notifications using AI
+- Stores relevant emails in Agentuity's vector database
+- Generates comprehensive daily digests with key topics, action items, and summaries
+- Can be triggered via cron jobs for automated digest generation
+- Supports email output for delivering digests directly to your inbox
+
+**Setup options:**
+
+1. **Email Input**: Configure Agentuity's Email IO to forward emails to your agent
+2. **Cron Jobs**: Set up automated digest generation on a schedule (daily, weekly, etc.)
+3. **Email Output**: Use Agentuity's Email IO output to receive digests in your email
+4. **Custom Output**: Code your own output method using any supported Agentuity IO connector
+
+**Setup required:** None - works out of the box with Email IO!
+
 ## 📋 Prerequisites
 
 - **Python**: Version 3.10 or higher
@@ -73,10 +95,11 @@ Run your project in development mode:
 agentuity dev
 ```
 
-This opens the Agentuity Console where you can test both agents:
+This opens the Agentuity Console where you can test all three agents:
 
 - **YouTube to Blog**: Paste any YouTube URL and get an instant blog post
 - **Shopify SMS**: Send sample Shopify order JSON to see the SMS output
+- **Email Digest**: Type "digest" to generate a daily email summary or test with sample email data
 
 ## 🌐 Production Setup
 
@@ -94,13 +117,22 @@ agentuity deploy
 2. **SMS Outbound**: In the Agentuity Console, add SMS Outbound IO to your agent for actual SMS delivery
 3. **Pinecone**: Your API key is automatically available in the production environment
 
+**For Email Digest Agent:**
+
+1. **Email Input**: Configure Email IO to forward emails to your deployed agent
+2. **Cron Jobs**: Set up scheduled triggers in the Agentuity Console for automated digest generation
+3. **Email Output**: Add Email IO output to send digests directly to your email
+4. **Custom Scheduling**: Use external cron services or schedulers to trigger digest generation
+
 ## 📚 Project Structure
 
 ```
 ├── agentuity_agents/
 │   ├── youtube_to_blog/    # YouTube to blog conversion agent
 │   │   └── agent.py
-│   └── shopify_order_sms/  # Shopify order SMS notification agent
+│   ├── shopify_order_sms/  # Shopify order SMS notification agent
+│   │   └── agent.py
+│   └── email_digest/       # Email digest generation agent
 │       └── agent.py
 ├── references/             # Original workflow references
 ├── pyproject.toml          # Dependencies (anthropic, pinecone, etc.)
