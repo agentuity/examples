@@ -59,12 +59,12 @@ Processes incoming emails and generates intelligent daily digests using AI-power
 
 **Setup options:**
 
-1. **Email Input**: Configure Agentuity's Email IO to forward emails to your agent
+1. **Email Input**: Configure Agentuity's Email IO to receive emails (then you can forward emails from your inbox to the agent!)
 2. **Cron Jobs**: Set up automated digest generation on a schedule (daily, weekly, etc.)
-3. **Email Output**: Use Agentuity's Email IO output to receive digests in your email
-4. **Custom Output**: Code your own output method using any supported Agentuity IO connector
+3. **Email Output**: Use Agentuity's Email IO output to receive digests in your email.
+4. **Custom Output**: Code your own output method using any supported Agentuity IO connector.
 
-**Setup required:** None - works out of the box with Email IO!
+**Setup required:** Inbox forwarding rule to your agent.
 
 ## 📋 Prerequisites
 
