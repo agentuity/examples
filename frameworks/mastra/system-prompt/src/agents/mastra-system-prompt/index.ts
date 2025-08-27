@@ -13,7 +13,7 @@ export const welcome = () => {
   };
 };
 
-export default async function Agent(
+export default async function AgentuityAgent(
   req: AgentRequest,
   resp: AgentResponse,
   ctx: AgentContext
@@ -29,10 +29,11 @@ export default async function Agent(
     let system: string | undefined;
     let message = input;
 
-    const match = /^system:\s*(.+)\n([\s\S]*)$/i.exec(input);
-    if (match) {
-      system = match[1].trim();
-      message = (match[2] || '').trim() || 'Continue.';
+    const m = input.match(/^system:\s*(.+)\n([\s\S]*)$/i);
+    if (m) {
+      const [, sys, rest] = m;
+      system = (sys || '').trim();
+      message = (rest || '').trim() || 'Continue.';
     }
 
     const result = await agent.generate(message, system ? { system } : undefined);
