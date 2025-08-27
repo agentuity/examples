@@ -1,0 +1,11 @@
+{
+  "name": "@agentuity-examples/mastra-system-prompt",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@agentuity/sdk": "workspace:*",
+    "@ai-sdk/openai": "^1.0.0",
+    "@mastra/core": "^0.6.0"
+  }
+}
