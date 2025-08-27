@@ -5,10 +5,10 @@ import { Agent } from '@mastra/core/agent';
 export const welcome = () => {
   return {
     welcome:
-      'This is the Mastra System Prompt example wrapped for Agentuity. Try changing the character voice via the input.',
+      'Mastra System Prompt example wrapped for Agentuity. You can provide a system prompt at runtime.',
     prompts: [
-      { data: 'Speak like Harry Potter about friendship.', contentType: 'text/plain' },
-      { data: 'Speak like Hermione about studying.', contentType: 'text/plain' }
+      { data: 'system: You are Harry Potter.\nTalk about the value of friendship.', contentType: 'text/plain' },
+      { data: 'system: You are Hermione Granger.\nShare study tips.', contentType: 'text/plain' }
     ]
   };
 };
@@ -19,23 +19,23 @@ export default async function Agent(
   ctx: AgentContext
 ) {
   try {
-    const defaultInstructions =
-      'You are a friendly assistant. Respond clearly and helpfully.';
-
     const agent = new Agent({
       name: 'MastraSystemPrompt',
       model: openai('gpt-4o-mini'),
-      instructions: defaultInstructions
+      instructions: 'You are a helpful assistant.'
     });
 
-    const userText = (await req.data.text()) || 'Hello there!';
-    const systemMessage = ''; // callers can pass style in text; Mastra example shows swapping system at call
+    const input = (await req.data.text()) || 'Hello there!';
+    let system: string | undefined;
+    let message = input;
 
-    const result = await agent.generate(
-      userText,
-      systemMessage ? { system: systemMessage } : undefined
-    );
+    const match = /^system:\s*(.+)\n([\s\S]*)$/i.exec(input);
+    if (match) {
+      system = match[1].trim();
+      message = (match[2] || '').trim() || 'Continue.';
+    }
 
+    const result = await agent.generate(message, system ? { system } : undefined);
     return resp.text(result.text || '');
   } catch (error) {
     ctx.logger.error(
