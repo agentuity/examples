@@ -1,0 +1,76 @@
+# Agentuity
+> The cloud, built for AI agents. Deploy, run, and scale autonomous agents on infrastructure designed for the future, not the past.
+
+## Features
+
+### Build with _your_ stack
+Integrate with leading LLMs, popular frameworks including LangChain and CrewAI, and your preferred programming languages. Infrastructure that adapts to your tech stack, not the other way around.
+
+### Seamless agent collaboration
+Break down framework barriers. Agent-native infrastructure enables seamless communication between agents built with different toolsâ€”whether they're using CrewAI, LangChain, or custom implementations. Let your agents collaborate naturally across any platform.
+
+### Fastest path to production
+Skip the complex setup of traditional cloud providers. Deploy your AI agents with a single command; no IAM, security groups, or load balancers to configure. Agent-native infrastructure handles everything else. Still want to use AWS, Azure, or GCP? Deploy Agents directly into your AWS, Azure, GCP, or on-premise VMWare environment using our fully managed Agentic Cloud platform.
+
+### First-class dev experience
+Build, test, and deploy AI agents with confidence. Agentuity's comprehensive toolkit includes a CLI, web interface, pre-built agent library, and local dev mode designed for rapid iteration.
+
+### Instructions in, magic out
+Connect your agents to any channelâ€”chat, webhooks, email, SMS, voice, or custom interfacesâ€”using an intelligent routing system that ensures your data flows seamlessly to the right places at the right time.
+
+### Unified AI gateway
+Stop managing the complexity of multiple model providers and their API keys and tokensâ€”just use the gateway to connect to OpenAI, Anthropic, Gemini, or any other provider. Pay only for what you use.
+
+### Real-time monitoring and analytics
+Gain full transparency into your agents with real-time metrics on performance, memory, and cost. Instantly spot issues, optimize usage, and make data-driven decisions to maximize efficiency and control.
+
+## About Agentuity
+> Mission control for the AI agent revolution. We're building the infrastructure layer that powers the next generation of autonomous AI applications.
+
+### Our story
+Agentuity was born from seeing developers and companies struggle with the same challenges: building and rebuilding infrastructure to manage AI agents at scale.
+
+We envisioned a world where teams could focus on building incredible AI applications without worrying about the operational complexity beneath. That's why we created the first mission control center for AI agents.
+
+Agentuity was founded by Jeff Haynie, Rick Blalock, Matthew Congrove, Robin Diddams and Bobby Christopher in early-2025 in Austin, Texas.
+
+### Our vision
+We believe in the near future there will be a world of autonomous AI software agents. This with the best of human ingenuity will solve the world's most complex problems.
+
+We believe today's edge based cloud computing is insufficient to support the unique needs of millions of autonomous AI agents, which will be deployed to work in the real world and leverage proprietary knowledge and tools inside the enterprise.
+
+We believe tomorrow's fully autonomous AI agents will require the ability to self-learn, self-replicate and self-heal in a safe, secure and scalable computing environment.
+
+We are building this future today.
+
+### Backed by industry-leading investors
+In early 2025, we raised a $4M seed round led by top-tier investors ("boldstart ventures", "Bloomberg Beta", "Southern Equity" and "OneSixOne Ventures") who share our vision for the future of AI infrastructure. Our backers bring deep expertise in enterprise software, AI/ML, and building developer platforms at scale.
+
+## Blog Posts
+
+[Agentuity and Discord](https://www.agentuity.com/blog/agentuity-and-discord.md): Discord is one of the biggest social platforms on the web, but with so many AI integration options, which approach is right for you? We explore three ways to bring Agentuity agents to Discord: built-in integrations for quick setup, webhooks for rich formatting, and custom bots for advanced features. Learn the pros, cons, and use cases for each approach.
+[The Agent-Native Company, Part 2: Designing the Agent-Native Organization](https://www.agentuity.com/blog/agent-native-company-pt-2.md): We'll explore core design concepts of agent-native companies â€“ what "agent-first thinking" means and how it changes business structure.
+[How To Cure Your AI Agent From Its Digital Amnesia (using mem0) ðŸ§ ](https://www.agentuity.com/blog/how-to-cure-your-AI-agent-from-its-digital-Amnesia-mem0.md): A short guide to using mem0 to cure your AI agent from its digital amnesia.
+[OpenAI Python Agent Framework on Agentuity](https://www.agentuity.com/blog/openai-agents-example.md): Deploying OpenAI agent framework in Agentuity is as easy as one CLI command.
+[Summer Contributions - Hiring manager using Agent-to-Agent communication](https://www.agentuity.com/blog/community-contributions-hiring-manager.md): Ever wondered what an agent-native hiring process would be like? Nick Mirigliani has a killer example of how to use Agent-to-Agent communication to build an agentic hiring manager.
+[Agno Agent Framework on Agentuity](https://www.agentuity.com/blog/agno-examples.md): Deploying Agno agents in Agentuity is as easy as one CLI command.
+[Summer Contributions - Agentic Hedge Fund](https://www.agentuity.com/blog/community-contributions-hedge-fund.md): Community member Seng made a SWEET hedge fund agentic swarm, complete with real-time market data, risk management, and LangGraph orchestrationâ€”on Agentuity.  One click to deploy and make it yours too...
+[Summer Contributions - LLM as a Judge](https://www.agentuity.com/blog/community-contributions-llm-judge.md): Joel, a student at University of Florida, takes LLM as a Judge and runs with it with this great pattern example built on Agentuity.
+[Summer Contributions - Evals](https://www.agentuity.com/blog/community-contributions-eval-template.md): This evaluation system uses multiple specialized agents to create a robust, scalable framework for testing AI models against ground truth datasets. Each agent has a discrete task and can pass information to others through the Agentuity key-value store..
+[Summer Contributions - Your Own Deep Research Agents](https://www.agentuity.com/blog/community-contributions-deep-research.md): Community member Nick Nance is at it again with a great example of a multi-agent setup that does deep research.
+[The Agent-Native Company, Part 1: Beyond AI-Enhanced](https://www.agentuity.com/blog/agent-native-company-pt-1.md): Driver assist or self-driving? That might be the difference between a company that is just AI-enhanced and one that is agent-native. This series explores the new reality of companies that are built around AI agents.
+[Collider: Our AI Gateway Testing With Intelligent Automation](https://www.agentuity.com/blog/collider.md): An orchestrated approach to testing and validating AI model integrations
+[Summer Contributions - Chat in the Front, Party in the Back](https://www.agentuity.com/blog/community-contributions-vercel-chat-with-agentuity.md): Community member Nick Nance built a beautiful Next.js chat interface powered by Agentuity agents in the cloud - showcasing the perfect marriage of modern frontend and AI backend.
+[Summer Contributions - DMARC Gmail Agent](https://www.agentuity.com/blog/community-contributions-dmarc-gmail-agent.md): DMARC reports are critical for email security but incredibly annoying to monitor. Seng built an agent that monitors Gmail for DMARC reports and uses an agent to intelligently analyze them.
+[Coding Agents Are Changing Engineering Culture](https://www.agentuity.com/blog/conversations-and-code.md): Bringing conversations and requirements into code early on is a huge unlock.
+[Pydantic AI Examples on Agentuity](https://www.agentuity.com/blog/pydanticai.md): Deploying a Pydantic AI agent on Agentuity is a breeze! This post explores a few examples.
+[Get Structured Output from LangGraph / LangChain](https://www.agentuity.com/blog/langgraph-structured-output.md): Deploy a simple agent that uses LangGraph and LangChain to get structured output.
+[Agents Just Want To Have Streams](https://www.agentuity.com/blog/agent-streaming.md): Agent streaming is important and we've got it here!
+[React Miami 2025 Recap: Agentuity Takes Center Stage](https://www.agentuity.com/blog/react-miami-2025-recap.md): Our experience launching Agentuity's private preview at React Miami 2025 and connecting with the community.
+[An Agent-Native Cloud Does Not Mean a Faster Horse](https://www.agentuity.com/blog/agent-native.md): It is time to rethink the cloud - not for humans, but for agents
+[Agent-to-Agent Networking: Building the Interconnected Agent-Native Ecosystem](https://www.agentuity.com/blog/agent-to-agent-networking.md): AI agents are changing the way we think about networking.
+[Launching Agentuity at React Miami 2025](https://www.agentuity.com/blog/launching-agentuity-react-miami-2025.md): We're excited to announce that Agentuity will make its public debut at React Miami 2025!
+[Do We Need a Programming Language Just for AI Agents?](https://www.agentuity.com/blog/ai-agents-and-language.md): Why creating a specialized AI programming language is unnecessary when natural language and LLMs offer a more powerful solution.
+[Moats, the Maginot Line, and AI](https://www.agentuity.com/blog/there-is-no-moat.md): The relentless pace of AI development renders traditional business moats obsolete. Focusing on agility and innovation is the key to success in this new era.
+[AI Augmented UI: A Paradigm for Human-Computer Interaction](https://www.agentuity.com/blog/ai-augmented-ui.md): You hear a lot about generative UI but what about AI augmented UI?
+[Announcing Our $4M Seed Round](https://www.agentuity.com/blog/announcing-our-seed-round.md): Agentuity raises $4M to build mission control for autonomous AI agents

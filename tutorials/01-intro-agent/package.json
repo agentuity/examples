@@ -1,0 +1,36 @@
+{
+  "name": "github-issue-triage",
+  "description": "An agent that automatically triages GitHub issues.",
+  "version": "0.0.1",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "agentuity build",
+    "dev": "agentuity dev",
+    "format": "biome format --write .",
+    "lint": "biome lint .",
+    "prestart": "agentuity bundle",
+    "start": "bun run .agentuity/index.js"
+  },
+  "keywords": [
+    "agentuity",
+    "agent",
+    "ai",
+    "ai agent",
+    "bun"
+  ],
+  "private": true,
+  "devDependencies": {
+    "@biomejs/biome": "^2.1.1",
+    "@types/bun": "^1.2.18"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@agentuity/sdk": "^0.0.131",
+    "openai": "^5.9.0",
+    "source-map-js": "^1.2.1"
+  },
+  "module": "index.ts"
+}
