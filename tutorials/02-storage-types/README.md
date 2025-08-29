@@ -173,7 +173,7 @@ agentuity deploy
 
 ## Resources
 
-- [Video Tutorial](https://www.youtube.com/playlist?list=PLnOYEHNTwKeOA0OKAphsqRfUEQuACOPA3)
+- [Video Tutorial](https://www.youtube.com/watch?v=rT9eCMRztpI)
 - [Agentuity Documentation](https://agentuity.dev)
 - [JavaScript SDK Reference](https://agentuity.dev/SDKs/javascript)
 - [Storage Documentation](https://agentuity.dev/SDKs/javascript#storage)

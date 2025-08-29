@@ -140,7 +140,7 @@ agentuity deploy
 
 ## Resources
 
-- [Video Tutorial](https://www.youtube.com/playlist?list=PLnOYEHNTwKeOA0OKAphsqRfUEQuACOPA3)
+- [Video Tutorial](https://www.youtube.com/watch?v=Z9QAdFO2LYE)
 - [Agentuity Documentation](https://agentuity.dev)
 - [JavaScript SDK Reference](https://agentuity.dev/SDKs/javascript)
 - [GitHub API Documentation](https://docs.github.com/en/rest)
