@@ -1,109 +1,147 @@
 <div align="center">
     <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
-    <strong>Build Agents, Not Infrastructure</strong> <br/>
-    <br/>
-        <a target="_blank" href="https://app.agentuity.com/deploy" alt="Agentuity">
-            <img src="https://app.agentuity.com/img/deploy.svg" /> 
-        </a>
-    <br />
+    <strong>GitHub Issue Responder Agent</strong> <br/>
+    <strong>Tutorial 1: Building Your First AI Agent</strong> <br/>
+<br />
 </div>
 
-# 🤖 Bun Agent Project
+# GitHub Issue Responder Agent
 
-Welcome to your Agentuity Bun Agent project! This README provides essential information to help you get started with developing, testing, and deploying your AI agents.
+A beginner-friendly tutorial that demonstrates how to build an AI agent that automatically triages GitHub issues. This agent reads GitHub issues, uses AI to classify them, and responds with helpful comments and appropriate labels.
 
-## 📋 Prerequisites
+## What You'll Learn
 
-Before you begin, ensure you have the following installed:
+- Setting up your first Agentuity agent
+- Processing incoming HTTP requests
+- Integrating with external APIs (GitHub API)
+- Using OpenAI for intelligent classification
+- Implementing agent logging and error handling
+
+## Tech Stack
+
+- **Runtime**: Bun with TypeScript
+- **AI Provider**: OpenAI (GPT-4)
+- **External API**: GitHub REST API
+- **Agent Platform**: Agentuity SDK
+- **Code Quality**: Biome for linting and formatting
+
+## Prerequisites
+
+Before you begin, ensure you have:
 
 - **Bun**: Version 1.2.4 or higher
+- **Agentuity CLI**: Install globally with `npm install -g @agentuity/cli`
 
-## 🚀 Getting Started
+## Getting Started
 
-### Authentication
+### 1. Environment Setup
 
-Before using Agentuity, you need to authenticate:
+This agent requires a GitHub token for API access. Configure it as a secret:
+
+```bash
+# Set your GitHub token as a secret
+agentuity env set --secret GITHUB_TOKEN your_github_token
+```
+
+**Getting the GitHub Token:**
+- Go to GitHub Settings → Developer settings → Personal access tokens
+- Create new token with `repo` and `issues` permissions
+
+**Note**: Agentuity's AI Gateway feature means no OpenAI API key is required! The platform handles access, routing, and billing all in one place.
+
+### 2. Install Dependencies
+
+```bash
+bun install
+```
+
+### 3. Authentication
+
+Authenticate with Agentuity:
 
 ```bash
 agentuity login
 ```
 
-This command will open a browser window where you can log in to your Agentuity account.
+### 4. Deploy Your Agent
 
-### Creating a New Agent
-
-To create a new agent in your project:
-
-```bash
-agentuity agent new
-```
-
-Follow the interactive prompts to configure your agent.
-
-### Development Mode
-
-Run your project in development mode with:
-
-```bash
-agentuity dev
-```
-
-This will start your project and open a new browser window connecting your agent to the Agentuity Console in DevMode, allowing you to test and debug your agent in real-time.
-
-## 🌐 Deployment
-
-When you're ready to deploy your agent to the Agentuity Cloud:
+Deploy the agent to Agentuity cloud:
 
 ```bash
 agentuity deploy
 ```
 
-This command will bundle your agent and deploy it to the cloud, making it accessible via the Agentuity platform.
+This makes your agent available to receive webhooks and process requests.
 
-## 📚 Project Structure
+### 5. Development Mode
 
-```
-├── agents/             # Agent definitions and implementations
-├── node_modules/       # Dependencies
-├── package.json        # Project dependencies and scripts
-└── agentuity.yaml      # Agentuity project configuration
-```
-
-## 🔧 Configuration
-
-Your project configuration is stored in `agentuity.yaml`. This file defines your agents, development settings, and deployment configuration.
-
-## 🛠️ Advanced Usage
-
-### Environment Variables
-
-You can set environment variables for your project:
+Run the agent in development mode for testing:
 
 ```bash
-agentuity env set KEY VALUE
+agentuity dev
 ```
 
-### Secrets Management
+This will start your agent and open the Agentuity Console where you can test it.
 
-For sensitive information, use secrets:
+### 6. Testing Your Agent
+
+In the Agentuity Console, test your agent with a GitHub issue URL:
+
+```
+https://github.com/owner/repo/issues/123
+```
+
+The agent will:
+1. Fetch the issue details from GitHub
+2. Analyze the issue content with AI
+3. Classify it (bug, feature-request, question, or documentation)
+4. Post a helpful comment
+5. Apply the appropriate label
+
+## Project Structure
+
+```
+├── src/
+│   └── agents/
+│       └── issue-responder/
+│           └── index.ts        # Main agent logic
+├── package.json                # Dependencies
+├── tsconfig.json              # TypeScript config
+├── biome.json                 # Code formatting rules
+└── agentuity.yaml             # Agent configuration
+```
+
+## How It Works
+
+1. **Request Processing**: The agent receives a GitHub issue URL
+2. **URL Parsing**: Validates and extracts owner, repo, and issue number
+3. **API Integration**: Fetches issue data from GitHub API
+4. **AI Analysis**: Uses OpenAI to classify the issue and generate a response
+5. **Action Execution**: Posts comment and applies label via GitHub API
+6. **Response**: Returns success/failure status to the user
+
+## Deployment
+
+Your agent is already deployed! The `agentuity deploy` command in step 4 deployed your agent to the Agentuity cloud.
+
+To redeploy after making changes:
 
 ```bash
-agentuity env set --secret KEY VALUE
+agentuity deploy
 ```
 
-## 📖 Documentation
+## Next Steps
 
-For comprehensive documentation on the Agentuity JavaScript SDK, visit:
-[https://agentuity.dev/SDKs/javascript](https://agentuity.dev/SDKs/javascript)
+- Try modifying the classification categories
+- Add more sophisticated issue analysis
+- Implement issue assignment based on labels
+- Add support for pull requests
+- Explore the [02-storage-types](../02-storage-types/) tutorial to learn about data persistence
 
-## 🆘 Troubleshooting
+## Resources
 
-If you encounter any issues:
-
-1. Check the [documentation](https://agentuity.dev/SDKs/javascript)
-2. Join our [Discord community](https://discord.gg/agentuity) for support
-3. Contact the Agentuity support team
-
-## 📝 License
-
-This project is licensed under the terms specified in the LICENSE file.
+- [Video Tutorial](https://www.youtube.com/playlist?list=PLnOYEHNTwKeOA0OKAphsqRfUEQuACOPA3)
+- [Agentuity Documentation](https://agentuity.dev)
+- [JavaScript SDK Reference](https://agentuity.dev/SDKs/javascript)
+- [GitHub API Documentation](https://docs.github.com/en/rest)
+- [Join our Discord](https://discord.gg/agentuity)
