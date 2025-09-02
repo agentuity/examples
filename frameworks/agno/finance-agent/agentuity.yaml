@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.142'
 # The ID of the project which is automatically generated
-project_id: proj_agno_finance_agent
+project_id: proj_7e42a938274c880d3c6b2a6a7a5b8653
 # The name of the project which is editable
 name: agno-finance-agent
 # The description of the project which is editable
-description: "Agno Finance Agent wrapped for Agentuity"
+description: Agno Finance Agent wrapped for Agentuity
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -58,5 +58,7 @@ bundler:
     - '**/__pycache__/**'
 # The agents that are part of this project
 agents:
-  - id: agent_agno_finance_agent
+  - # The ID of the Agent which is automatically generated
+    id: agent_55962c89711bf43f7483cd249d334def
+    # The name of the Agent which is editable
     name: FinanceAgent
