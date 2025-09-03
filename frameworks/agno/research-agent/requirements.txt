@@ -1,0 +1,4 @@
+agno
+duckduckgo-search
+newspaper4k
+lxml-html-clean
