@@ -1,6 +1,6 @@
 import type { AgentRequest, AgentResponse, AgentContext } from '@agentuity/sdk';
 import { openai } from '@ai-sdk/openai';
-import { Agent } from '@mastra/core/agent';
+import { Agent as MastraAgent } from '@mastra/core/agent';
 
 export const welcome = () => {
   return {
@@ -26,7 +26,7 @@ export const welcome = () => {
   };
 };
 
-export default async function HarryPotterAgent(
+export default async function Agent(
   req: AgentRequest,
   resp: AgentResponse,
   ctx: AgentContext
@@ -49,7 +49,7 @@ export default async function HarryPotterAgent(
       instructions = "You are Albus Dumbledore, the wise headmaster of Hogwarts. You are known for your wisdom, kindness, and mysterious ways. You often speak in riddles and have a twinkle in your eye. You see the good in people and believe in second chances. Respond as Dumbledore would, with his characteristic wisdom and gentle humor.";
     }
 
-    const harryPotterAgent = new Agent({
+    const harryPotterAgent = new MastraAgent({
       name: characterName,
       instructions: instructions,
       model: openai('gpt-4o-mini'),

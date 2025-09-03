@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.130'
 # The ID of the project which is automatically generated
-project_id: proj_02eeb42256a976ad4e8dc7e68c0ce8de
+project_id: proj_cbab5d074cbefe720e6733382a72bcfa
 # The name of the project which is editable
 name: mastra-system-prompt
 # The description of the project which is editable
-description: "A Harry Potter character agent that demonstrates system prompt usage with the Mastra framework and Agentuity. Shows how to dynamically change agent behavior based on character selection."
+description: A Harry Potter character agent that demonstrates system prompt usage with the Mastra framework and Agentuity. Shows how to dynamically change agent behavior based on character selection.
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -68,6 +68,6 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_7766a63f18f2b7dc434b276c430344a4
+    id: agent_917d852eab03e3a7a8cad93ed38eb320
     # The name of the Agent which is editable
     name: HarryPotterAgent
