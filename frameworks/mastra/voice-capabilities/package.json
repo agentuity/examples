@@ -1,0 +1,33 @@
+{
+  "name": "sample-bun-mastra-voice-capabilities",
+  "version": "0.0.1",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "agentuity build",
+    "dev": "agentuity dev",
+    "format": "biome format --write .",
+    "lint": "biome lint .",
+    "prestart": "agentuity bundle",
+    "start": "bun run .agentuity/index.js"
+  },
+  "keywords": ["agentuity", "agent", "ai", "ai agent", "bun", "mastra", "voice"],
+  "private": true,
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/bun": "^1.2.13"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@agentuity/sdk": "^0.0.116",
+    "@ai-sdk/openai": "^1.2.11",
+    "@mastra/core": "^0.9.4",
+    "@mastra/voice-openai": "^0.9.4",
+    "ai": "^4.3.16",
+    "mastra": "^0.6.3",
+    "openai": "^4.67.3"
+  },
+  "module": "index.ts"
+}
