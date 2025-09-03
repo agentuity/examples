@@ -1,0 +1,9 @@
+[project]
+name = "agno-recipe-creator"
+version = "0.1.0"
+description = "Agno recipe-creator agent wrapped for Agentuity"
+requires-python = ">=3.10, <3.13"
+dependencies = [
+    "agentuity>=0.0.90",
+    "openai>=1.82.1",
+]
