@@ -8,7 +8,7 @@
 # The version semver range required to run this project
 version: '>=0.0.131'
 # The ID of the project which is automatically generated
-project_id: proj_recipe_creator_agno_example
+project_id: proj_agno_recipe_creator_example
 # The name of the project which is editable
 name: agno-recipe-creator
 # The description of the project which is editable
