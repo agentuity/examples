@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.142'
 # The ID of the project which is automatically generated
-project_id: proj_youtube_agent_standalone_example
+project_id: proj_5d575910625b8d532bba90828b203fce
 # The name of the project which is editable
 name: youtube-agent
 # The description of the project which is editable
-description: "YouTube Content Analyzer using Agno framework wrapped in Agentuity"
+description: YouTube Content Analyzer using Agno framework wrapped in Agentuity
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -58,5 +58,7 @@ bundler:
     - '**/__pycache__/**'
 # The agents that are part of this project
 agents:
-  - id: agent_youtube_analyzer_standalone
+  - # The ID of the Agent which is automatically generated
+    id: agent_5bf6fcde1d06b2dc696ac4eea1ae6902
+    # The name of the Agent which is editable
     name: YouTubeAgent
