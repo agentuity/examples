@@ -1,0 +1,21 @@
+[project]
+name = "agno-finance-agent"
+version = "0.1.0"
+description = "Original Agno Finance Agent wrapped with Agentuity"
+authors = [
+    {name = "Agentuity", email = "support@agentuity.com"}
+]
+dependencies = [
+    "agno",
+    "duckduckgo_search",
+    "openai",
+    "agentuity",
+]
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = []
