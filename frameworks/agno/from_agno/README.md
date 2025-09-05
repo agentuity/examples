@@ -15,7 +15,7 @@ These agents were ported directly from Agno's official examples and added into t
 
 ## Finance Agent  
 Ported from: https://docs.agno.com/examples/agents/finance-agent  
-This agent first uses a query parser to understand the user’s request and extract relevant stock tickers and intent, then pulls real-time pricing, fundamentals, analyst ratings, and news from Yahoo! Finance, and finally feeds all of that into GPT-4o to produce a structured, up-to-date market analysis.
+This agent provides comprehensive financial analysis using real-time news and research data. It combines financial news, market analysis, company information, and expert insights to deliver professional-grade financial research and market commentary using DuckDuckGo search and news tools.
 
 ## YouTube Agent  
 Ported from: https://docs.agno.com/examples/agents/youtube-agent  
