@@ -1,0 +1,1 @@
+{"agents":[{"id":"agent_bbfdb1c16507278cbc24ba49019b06b4","name":"ResearchAgent","filename":"agents/ResearchAgent/agent.py"}],"app":{"name":"agno-research-agent","version":"0.1.0"},"cli_version":"0.0.166","environment":"development"}

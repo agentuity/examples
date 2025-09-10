@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.142'
 # The ID of the project which is automatically generated
-project_id: proj_research_agent_agno_example
+project_id: proj_8018c9a68c336d7d81ef3b509194b868
 # The name of the project which is editable
 name: agno-research-agent
 # The description of the project which is editable
-description: "Agno Research Agent converted to Agentuity - performs comprehensive investigative journalism with web search and content analysis"
+description: Agno Research Agent converted to Agentuity - performs comprehensive investigative journalism with web search and content analysis
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -58,5 +58,7 @@ bundler:
     - '**/__pycache__/**'
 # The agents that are part of this project
 agents:
-  - id: agent_research_agno_example
+  - # The ID of the Agent which is automatically generated
+    id: agent_bbfdb1c16507278cbc24ba49019b06b4
+    # The name of the Agent which is editable
     name: ResearchAgent
