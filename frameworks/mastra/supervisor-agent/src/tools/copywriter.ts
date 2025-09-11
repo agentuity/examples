@@ -16,7 +16,7 @@ export const copywriterTool = createTool({
 		const copywriterAgent = new Agent({
 			name: "copywriter-agent",
 			instructions: "You are a copywriter agent that writes blog post copy.",
-			model: anthropic("claude-3-5-sonnet-20241022"),
+			model: anthropic("claude-3-5-sonnet-20241022") as any,
 		});
 
 		const result = await copywriterAgent.generate(

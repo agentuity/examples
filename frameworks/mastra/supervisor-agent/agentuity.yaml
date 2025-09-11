@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.130'
 # The ID of the project which is automatically generated
-project_id: proj_supervisor_agent_mastra_example
+project_id: proj_3acd4734b82ba8aced38c677a97d57bf
 # The name of the project which is editable
 name: mastra-supervisor-agent
 # The description of the project which is editable
-description: "A supervisor agent that coordinates copywriting, editing, and publishing workflows using the Mastra framework."
+description: A supervisor agent that coordinates copywriting, editing, and publishing workflows using the Mastra framework.
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -68,6 +68,6 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_mastra_supervisor_agent
+    id: agent_7af1cdcfadfbaf74fe9de815df4bdff1
     # The name of the Agent which is editable
     name: mastra-supervisor-agent
