@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.130'
 # The ID of the project which is automatically generated
-project_id: proj_dynamic_agents_mastra_example
+project_id: proj_5a86503e606e2faa6e68bb4efa32fb95
 # The name of the project which is editable
 name: mastra-dynamic-agents
 # The description of the project which is editable
-description: "A Mastra dynamic agents example that demonstrates how agents can adapt their behavior and capabilities at runtime based on contextual input, wrapped in Agentuity's structure."
+description: A Mastra dynamic agents example that demonstrates how agents can adapt their behavior and capabilities at runtime based on contextual input, wrapped in Agentuity's structure.
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -68,6 +68,6 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_mastra_dynamic_context_example
+    id: agent_0afc7259e8f1d7b378c7fd19bf68c720
     # The name of the Agent which is editable
     name: mastra-dynamic-agent

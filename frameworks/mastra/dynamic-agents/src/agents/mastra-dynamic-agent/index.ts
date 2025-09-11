@@ -1,17 +1,18 @@
 import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
 import { openai } from "@ai-sdk/openai";
-import { Agent } from "@mastra/core";
+import { Agent } from "@mastra/core/agent";
 
 export function welcome() {
   return {
-    message: "Welcome to the Mastra Dynamic Context Agent! This agent demonstrates how to create agents that adapt their behavior and capabilities at runtime based on contextual input.",
+    welcome:
+      "Welcome to the Mastra Dynamic Context Agent! This agent adapts its behavior at runtime based on user context.",
     prompts: [
-      "I'm a free tier user, can you help me with basic documentation?",
-      "I'm a pro user, provide detailed technical support",
-      "I'm an enterprise customer, I need priority assistance with integration",
-      "Can Mastra Cloud handle long-running tasks?",
-      "What language should I use for my project?"
-    ]
+      { data: "I'm a free tier user, can you help me with basic documentation?", contentType: "text/plain" },
+      { data: "I'm a pro user, provide detailed technical support", contentType: "text/plain" },
+      { data: "I'm an enterprise customer, I need priority assistance", contentType: "text/plain" },
+      { data: "Can Mastra Cloud handle long-running tasks?", contentType: "text/plain" },
+      { data: "What language should I use for my project?", contentType: "text/plain" },
+    ],
   };
 }
 
