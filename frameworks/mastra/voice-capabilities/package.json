@@ -24,10 +24,11 @@
     "@agentuity/sdk": "^0.0.116",
     "@ai-sdk/openai": "^1.2.11",
     "@mastra/core": "^0.9.4",
-    "@mastra/voice-openai": "^0.9.4",
+    "@mastra/voice-openai": "0.11.4",
     "ai": "^4.3.16",
     "mastra": "^0.6.3",
-    "openai": "^4.67.3"
+    "openai": "^4.67.3",
+    "source-map-js": "^1.2.1"
   },
   "module": "index.ts"
 }

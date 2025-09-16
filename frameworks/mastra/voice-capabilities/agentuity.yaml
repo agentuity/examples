@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.130'
 # The ID of the project which is automatically generated
-project_id: proj_02eeb42256a976ad4e8dc7e68c0ce8de
+project_id: proj_ef035570e010330157b5bd3c6c14706d
 # The name of the project which is editable
 name: mastra-voice-capabilities
 # The description of the project which is editable
-description: "Voice-enabled agents demonstrating Mastra's voice capabilities with both hybrid and unified approaches using Agentuity."
+description: Voice-enabled agents demonstrating Mastra's voice capabilities with both hybrid and unified approaches using Agentuity.
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -68,8 +68,8 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_7766a63f18f2b7dc434b276c430344a4
+    id: agent_3e2b344f402c232893dcb33f8b18232a
     # The name of the Agent which is editable
     name: HybridVoiceAgent
-  - id: agent_575363d7f6a3fb47f5ef6e07bab3d9cc
+  - id: agent_0d9c64516a8a84d9c748dce89994fc72
     name: UnifiedVoiceAgent
