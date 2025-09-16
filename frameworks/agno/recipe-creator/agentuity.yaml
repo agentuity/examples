@@ -8,11 +8,11 @@
 # The version semver range required to run this project
 version: '>=0.0.131'
 # The ID of the project which is automatically generated
-project_id: proj_agno_recipe_creator_example
+project_id: proj_ff2a77ccaa3c6dcfc70c0870f487d5a6
 # The name of the project which is editable
 name: agno-recipe-creator
 # The description of the project which is editable
-description: "Agno recipe-creator agent wrapped for Agentuity - finds recipes based on ingredients or preferences"
+description: Agno recipe-creator agent wrapped for Agentuity - finds recipes based on ingredients or preferences
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -57,6 +57,6 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_recipe_creator_agno
+    id: agent_8e2a789baed2181077577ed87b992e75
     # The name of the Agent which is editable
     name: RecipeCreator
