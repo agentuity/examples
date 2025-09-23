@@ -1,13 +1,14 @@
 from textwrap import dedent
 from agentuity import AgentRequest, AgentResponse, AgentContext
 import traceback
+import asyncio
 
 try:
     from agno.agent import Agent as AgnoAgent
     from agno.models.openai import OpenAIChat
     from agno.tools.cartesia import CartesiaTools
     from agno.utils.media import save_audio
-except ImportError as e:
+except ImportError:
     AgnoAgent = None
     OpenAIChat = None
     CartesiaTools = None
@@ -55,7 +56,7 @@ class TranslationAgent:
             if AgnoAgent is None:
                 return response.text("❌ Translation agent not available. Missing agno or cartesia dependencies.")
             
-            agno_response = self.agent.run(user_input)
+            agno_response = await asyncio.to_thread(self.agent.run, user_input)
             
             response_text = str(agno_response)
             
@@ -92,5 +93,8 @@ def welcome():
     }
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    agent = TranslationAgent()
-    return await agent.run(request, response, context)
+    try:
+        agent = TranslationAgent()
+        return await agent.run(request, response, context)
+    except ImportError:
+        return response.text("❌ Translation agent not available. Missing agno or cartesia dependencies.")

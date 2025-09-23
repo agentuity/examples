@@ -46,8 +46,8 @@ Ported from: https://docs.agno.com/examples/agents/research-agent-exa
 This agent is designed for scholarly research and academic reporting. It uses Exa's academic search tools to find the latest peer-reviewed literature, synthesize insights across disciplines, and produce well-structured, citation-rich reports. It's ideal for researchers, students, and professionals seeking rigorous academic analysis.
 
 ## Translation Agent
-Ported from: https://docs.agno.com/examples/use-cases/agents/translation_agent
-This agent translates text, analyzes emotional content, selects appropriate voices based on language and emotion, creates localized voices using Cartesia's voice localization tools, and generates audio output with emotion-appropriate voice characteristics. It uses a step-by-step approach to ensure high-quality translation and voice generation, making it ideal for creating localized content that maintains the emotional tone of the original text.sis.
+Ported from: [https://docs.agno.com/examples/use-cases/agents/translation_agent](https://docs.agno.com/examples/use-cases/agents/translation_agent)
+This agent translates text, analyzes emotional content, selects appropriate voices based on language and emotion, creates localized voices using Cartesia's voice localization tools, and generates audio output with emotion-appropriate voice characteristics. It uses a step-by-step approach to ensure high-quality translation and voice generation, making it ideal for creating localized content that maintains the emotional tone of the original text.
 
 ## 📋 Prerequisites
 
