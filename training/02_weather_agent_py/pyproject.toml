@@ -1,0 +1,9 @@
+[project]
+name = "weather-agent-py"
+version = "0.1.0"
+description = "An agent that fetches and reports on weather in US cities."
+requires-python = ">=3.10, <3.13"
+dependencies = [
+    "agentuity>=0.0.106",
+    "openai>=1.109.0",
+]

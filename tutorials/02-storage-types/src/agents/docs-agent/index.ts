@@ -38,8 +38,8 @@ export default async function Agent(
     const textContent = await req.data.text();
     
     // Detect if this is the llms.txt file
-    const isFileUpload = textContent.startsWith('# Agentuity') && 
-                        textContent.includes('## Features') &&
+    const isFileUpload = textContent.startsWith('# Agentuity') &&
+                        (textContent.includes('## Features') || textContent.includes('## Product Features')) &&
                         textContent.includes('## About');
     
     if (isFileUpload) {
@@ -66,20 +66,25 @@ export default async function Agent(
       /* Split the text into sections based on the ## headers */
 
       // Find the exact positions of the main ## headers
-      const featuresIndex = textContent.indexOf('## Features');
+      let featuresIndex = textContent.indexOf('## Product Features');
+      if (featuresIndex === -1) {  // Fallback to just '## Features' if 'Product Features' not found
+        featuresIndex = textContent.indexOf('## Features');
+      }
+      const coreBenefitsIndex = textContent.indexOf('## Core Benefits');
       const aboutIndex = textContent.indexOf('## About');
       const blogIndex = textContent.indexOf('## Blog Posts');
-      
-      // Create the 4 major sections based on these positions
+
+      // Create the 5 major sections based on these positions
       const sections: string[] = [
         textContent.substring(0, featuresIndex).trim(),  // Intro
-        textContent.substring(featuresIndex, aboutIndex).trim(),  // Features section (with all subsections)
-        textContent.substring(aboutIndex, blogIndex).trim(),  // About section (with all subsections)  
-        textContent.substring(blogIndex).trim()  // Blog Posts 
+        textContent.substring(featuresIndex, coreBenefitsIndex).trim(),  // Product Features section
+        textContent.substring(coreBenefitsIndex, aboutIndex).trim(),  // Core Benefits section
+        textContent.substring(aboutIndex, blogIndex).trim(),  // About section
+        textContent.substring(blogIndex).trim()  // Blog Posts
       ];
-      
+
       // Section titles for metadata
-      const sectionTitles = ['Introduction', 'Features', 'About', 'Blog Posts'];
+      const sectionTitles = ['Introduction', 'Product Features', 'Core Benefits', 'About', 'Blog Posts'];
       
       // Store each section in vector storage
       const vectorIds: string[] = [];
@@ -182,7 +187,7 @@ export default async function Agent(
       
       // Generate response from the LLM
       const { text: aiAnswer } = await generateText({
-        model: openai('gpt-4o-mini'),
+        model: openai('gpt-5-nano'),
         prompt: `Answer this question about Agentuity based on the documentation provided.
 
 Documentation context:
