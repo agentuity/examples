@@ -20,9 +20,19 @@
 
 This repository contains a collection of examples that demonstrate how to build and deploy agents using the Agentuity platform. These examples are designed to help you get started with Agentuity and provide reference implementations that you can use, copy, or adapt for your own projects.
 
-## Documentation
+## New to Agentuity? Try the Kitchen Sink
 
-For comprehensive documentation on Agentuity, visit our documentation site at [agentuity.dev](https://agentuity.dev).
+The [**Kitchen Sink**](https://github.com/agentuity/kitchen-sink-ts) is an interactive SDK showcase with 20+ live agents demonstrating:
+
+- **Handler APIs** - Request/response handling, context management
+- **I/O Methods** - Agent communication, webhooks, cron, email, SMS
+- **Storage** - Key-value, object store, vector search
+- **AI Integrations** - Multiple frameworks, AI Gateway, BYO tokens
+- **Observability** - Logging and tracing
+
+Perfect for **hands-on learning** before building your own agents. Deploy in minutes, test features interactively, and see working code for every SDK capability.
+
+The examples in this repo showcase **practical implementations** for real-world use cases.
 
 ## Getting Started
 
