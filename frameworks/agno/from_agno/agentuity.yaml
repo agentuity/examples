@@ -74,3 +74,5 @@ agents:
     name: ResearchAgent
   - id: agent_aa367f8ccc08222f3cea4b4940a54a84
     name: AcademicResearchAgent
+  - id: agent_b8c9d4e5f6a7b8c9d0e1f2a3b4c5d6e7
+    name: TravelPlannerAgent
