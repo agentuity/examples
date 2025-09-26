@@ -1,9 +1,17 @@
+"""Agentuity wrapper for the Agno Study Partner agent."""
+
 from agentuity import AgentRequest, AgentResponse, AgentContext
 import asyncio
 
 from agentuity_agents.StudyPartner.study_partner import study_partner
 
+
 def welcome():
+    """Return welcome message and example prompts for the Study Partner agent.
+    
+    Returns:
+        dict: Welcome message and list of example prompts with proper format.
+    """
     return {
         "welcome": "📚 I'm StudyScout, your AI study partner! I help you find learning resources, create study plans, and provide explanations on various topics. What would you like to learn about?",
         "prompts": [
@@ -13,7 +21,18 @@ def welcome():
         ]
     }
 
+
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    """Process user requests through the Agno Study Partner agent.
+    
+    Args:
+        request: The incoming agent request containing user input.
+        response: Response builder for returning results to user.
+        context: Agent execution context with logging and other utilities.
+        
+    Returns:
+        AgentResponse: Text response with study partner recommendations and resources.
+    """
     prompt = await request.data.text()
     context.logger.info(f"[StudyPartner] prompt: {prompt!r}")
 

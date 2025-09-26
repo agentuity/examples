@@ -1,3 +1,5 @@
+"""Agno Study Partner agent implementation using ExaTools and YouTubeTools."""
+
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.tools.exa import ExaTools
