@@ -1,0 +1,17 @@
+name: mastra-using-a-tool
+description: Mastra agent with London weather tool wrapped in Agentuity SDK
+version: 0.0.1
+runtime: nodejs
+
+agents:
+  london-weather-agent:
+    name: London Weather Agent
+    description: Provides historical weather data for London using Mastra tools
+    path: src/agents/london-weather-agent
+
+development:
+  port: 3000
+
+deployment:
+  memory: 512
+  timeout: 30
