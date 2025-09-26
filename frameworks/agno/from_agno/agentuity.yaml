@@ -7,8 +7,10 @@
 
 # The version semver range required to run this project
 version: '>=0.0.142'
+# The ID of the project which is automatically generated
+project_id: proj_7392e658e774ef2a10c26c294185f33b
 # The name of the project which is editable
-name: from-agno
+name: from-agno-test
 # The description of the project which is editable
 description: ""
 # The development configuration for the project
@@ -56,12 +58,23 @@ bundler:
     - '**/__pycache__/**'
 # The agents that are part of this project
 agents:
-  - name: FinanceAgent
-  - name: YouTubeAgent
-  - name: RecipeAgent
-  - name: MovieAgent
-  - name: BookAgent
-  - name: TravelAgent
-  - name: ResearchAgent
-  - name: AcademicResearchAgent
-  - name: TranslationAgent
+  - # The ID of the Agent which is automatically generated
+    id: agent_3416c88e819b19e086994c2ef03d4b9b
+    # The name of the Agent which is editable
+    name: FinanceAgent
+  - id: agent_4a394d1a7e6b3fc134fff38288abd046
+    name: YouTubeAgent
+  - id: agent_ccd3023bffa757bafa02abfeacf3ce4a
+    name: RecipeAgent
+  - id: agent_8b52813a7862fcafe25bb089b3e64f66
+    name: MovieAgent
+  - id: agent_b965a5b273eb5655beee5ba41dad4632
+    name: BookAgent
+  - id: agent_6356e50462ad398a61389b916438283a
+    name: TravelAgent
+  - id: agent_17dfff033112863f446f3792c92646ba
+    name: ResearchAgent
+  - id: agent_f934ba812c7c8a261ae21c8b1c2682f6
+    name: AcademicResearchAgent
+  - id: agent_028f167f1654d4bf2b0360ea68f7baa2
+    name: TranslationAgent
