@@ -1,0 +1,1 @@
+{"agents":[{"id":"agent_55962c89711bf43f7483cd249d334def","name":"FinanceAgent","filename":"agents/FinanceAgent/agent.py"}],"app":{"name":"agno-finance-agent","version":"0.1.0"},"cli_version":"0.0.166","environment":"development"}
