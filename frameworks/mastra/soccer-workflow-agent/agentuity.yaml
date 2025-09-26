@@ -1,0 +1,6 @@
+name: mastra-soccer-workflow-agent
+version: 0.0.1
+runtime: bun
+agents:
+  - name: SoccerAgent
+    description: A Premier League soccer specialist that fetches match fixtures using Mastra workflows
