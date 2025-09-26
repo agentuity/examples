@@ -1,0 +1,1 @@
+{"agents":[{"id":"agent_5bf6fcde1d06b2dc696ac4eea1ae6902","name":"YouTubeAgent","filename":"agents/YouTubeAgent/agent.py"}],"app":{"name":"youtube-agent","version":"0.1.0"},"cli_version":"0.0.166","environment":"development"}
