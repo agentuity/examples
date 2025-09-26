@@ -6,4 +6,6 @@ requires-python = ">=3.10, <3.13"
 dependencies = [
     "agentuity>=0.0.90",
     "openai>=1.82.1",
+    "agno>=0.1.0",
+    "cartesia>=1.0.0",
 ]
