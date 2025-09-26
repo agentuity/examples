@@ -1,0 +1,12 @@
+[project]
+name = "web-extraction-agent"
+version = "0.1.0"
+description = "Web extraction agent using Agno framework with Firecrawl tools"
+requires-python = ">=3.10, <3.13"
+dependencies = [
+    "agentuity>=0.0.106",
+    "openai>=1.107.3",
+    "agno>=0.1.14",
+    "firecrawl-py>=1.5.0",
+    "pydantic>=2.0.0",
+]
