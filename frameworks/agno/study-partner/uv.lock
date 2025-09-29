@@ -64,10 +64,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agentuity", specifier = ">=0.0.106" },
-    { name = "agno", specifier = ">=0.1.0" },
-    { name = "exa-py", specifier = ">=1.0.0" },
-    { name = "openai", specifier = ">=1.107.3" },
+    { name = "agentuity", specifier = ">=0.0.106,<0.1.0" },
+    { name = "agno", specifier = ">=0.1.0,<3.0.0" },
+    { name = "exa-py", specifier = ">=1.0.0,<2.0.0" },
+    { name = "openai", specifier = ">=1.107.3,<2.0.0" },
 ]
 
 [[package]]
