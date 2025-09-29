@@ -1,0 +1,11 @@
+[project]
+name = "tweet-analysis-agent"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.10, <3.13"
+dependencies = [
+    "agentuity>=0.0.106",
+    "openai>=1.107.3",
+    "agno==2.0.11",
+    "tweepy==4.16.0",
+]
