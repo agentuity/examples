@@ -9,11 +9,13 @@ if __name__ == "__main__":
         "AGENTUITY_SDK_KEY"
     ):
         print(
-            "\033[31m[ERROR] AGENTUITY_SDK_KEY is not set. This should have been set automatically by the Agentuity CLI or picked up from the .env file.\033[0m"
+            "\033[31m[ERROR] Neither AGENTUITY_API_KEY nor AGENTUITY_SDK_KEY is set. This should have been set automatically by the Agentuity CLI or picked up from the .env file.\033[0m",
+            file=sys.stderr
         )
         if os.environ.get("_", "").endswith("uv") and os.path.exists(".env"):
             print(
-                "\033[31m[ERROR] Re-run the command with `uv run --env-file .env server.py`\033[0m"
+                "\033[31m[ERROR] Re-run the command with `uv run --env-file .env server.py`\033[0m",
+                file=sys.stderr
             )
         sys.exit(1)
 

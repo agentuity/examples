@@ -15,7 +15,7 @@ def welcome():
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     prompt = await request.data.text()
-    context.logger.info(f"[StudyPartner] prompt: {prompt!r}")
+    context.logger.debug(f"[StudyPartner] prompt preview: {prompt[:256]!r} ({len(prompt)} chars)")
 
     try:
         loop = asyncio.get_running_loop()
