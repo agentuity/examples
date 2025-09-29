@@ -7,6 +7,8 @@
 
 # The version semver range required to run this project
 version: '>=0.0.166'
+# The ID of the project which is automatically generated
+project_id: proj_ff1c9f4b3df15138c7ff7644082f69d5
 # The name of the project which is editable
 name: airbnb-mcp
 # The description of the project which is editable
@@ -60,6 +62,7 @@ bundler:
     - '**/__pycache__/**'
 # The agents that are part of this project
 agents:
-  - # The name of the Agent which is editable
+  - # The ID of the Agent which is automatically generated
+    id: agent_c1ee7ccb8bda94e28ab5415a2b8b30f0
+    # The name of the Agent which is editable
     name: AirbnbMcp
-    entry: agentuity_agents/AirbnbMcp/agent.py
