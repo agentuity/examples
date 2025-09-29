@@ -39,11 +39,17 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         parsed_info = await parse_user_query(prompt)
         context.logger.info(f"[TravelPlanner] parsed_info: {parsed_info!r}")
 
-        formatted_prompt = f"""
-I want to plan a {parsed_info.get("trip_style", "fun")} trip to {parsed_info.get("destination", "somewhere nice")} with {parsed_info.get("group_size", 2)} people, 
-around {parsed_info.get("dates", "sometime soon")} for {parsed_info.get("duration_days", 5)} days, with a total budget of ${parsed_info.get("budget_total", 2000)}.
+        info = parsed_info or {}
+        activities = info.get("preferred_activities", [])
+        if not isinstance(activities, list):
+            activities = [activities] if activities else []
+        activities_str = ", ".join(map(str, activities)) or "local food, sightseeing, and chill time"
 
-We're a group of {parsed_info.get("group_type", "friends")}, and we'd like to include things like {", ".join(parsed_info.get("preferred_activities", [])) or "local food, sightseeing, and chill time"}.
+        formatted_prompt = f"""
+I want to plan a {info.get("trip_style", "fun")} trip to {info.get("destination", "somewhere nice")} with {info.get("group_size", 2)} people, 
+around {info.get("dates", "sometime soon")} for {info.get("duration_days", 5)} days, with a total budget of ${info.get("budget_total", 2000)}.
+
+We're a group of {info.get("group_type", "friends")}, and we'd like to include things like {activities_str}.
 """
 
         loop = asyncio.get_running_loop()

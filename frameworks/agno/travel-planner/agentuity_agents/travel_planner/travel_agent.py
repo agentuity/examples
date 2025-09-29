@@ -106,7 +106,7 @@ travel_agent = Agent(
         - Food & Drinks: {cost}
         - Miscellaneous: {cost}
 
-        ## Important Notes ℹ️
+        ## Important Notes 📝
         {Key information and tips}
 
         ## Booking Requirements 📋

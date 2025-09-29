@@ -16,9 +16,6 @@ from openai import AsyncOpenAI
 
 logger = logging.getLogger(__name__)
 
-if not os.getenv("OPENAI_API_KEY"):
-    raise ValueError("OPENAI_API_KEY environment variable is required")
-
 client = AsyncOpenAI()
 
 async def parse_user_query(user_query: str) -> dict:
@@ -58,10 +55,24 @@ async def parse_user_query(user_query: str) -> dict:
     ]
 
     try:
+        if not os.getenv("OPENAI_API_KEY"):
+            logger.warning("OPENAI_API_KEY not set, returning default travel info")
+            return {
+                "destination": "Mexico",
+                "dates": "June 2025",
+                "duration_days": 5,
+                "group_size": 2,
+                "group_type": "friends",
+                "budget_total": 2000,
+                "trip_style": "general",
+                "preferred_activities": []
+            }
+
         response = await client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
-            temperature=0
+            temperature=0,
+            response_format={"type": "json_object"}
         )
 
         text = response.choices[0].message.content.strip()
@@ -79,13 +90,14 @@ async def parse_user_query(user_query: str) -> dict:
         logger.error("Travel query parsing failed: %s", exc, exc_info=True)
     except Exception:
         logger.exception("Unexpected failure while parsing travel query")
-        return {
-            "destination": "Mexico",
-            "dates": "June 2025",
-            "duration_days": 5,
-            "group_size": 2,
-            "group_type": "friends",
-            "budget_total": 2000,
-            "trip_style": "general",
-            "preferred_activities": []
-        }
+    
+    return {
+        "destination": "Mexico",
+        "dates": "June 2025",
+        "duration_days": 5,
+        "group_size": 2,
+        "group_type": "friends",
+        "budget_total": 2000,
+        "trip_style": "general",
+        "preferred_activities": []
+    }
