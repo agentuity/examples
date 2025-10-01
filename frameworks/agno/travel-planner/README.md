@@ -6,7 +6,7 @@ Travel planning agent using the Agno framework, providing comprehensive itinerar
 
 This example demonstrates how to convert an Agno agent to run on the Agentuity platform. The agent uses:
 - **Agno Framework**: For agent orchestration
-- **OpenAI GPT-5-mini**: For natural language processing
+- **OpenAI GPT-4o-mini**: For natural language processing
 - **Exa Tools**: For real-time destination research
 
 ## Setup
@@ -52,7 +52,7 @@ The agent follows a structured approach:
 ## Architecture
 
 This example uses the Agno-to-Agentuity bridge pattern:
-- `travel_planner.py`: Original Agno agent definition
-- `agent.py`: Agentuity async wrapper using `asyncio.run_in_executor`
+- `agentuity_agents/TravelPlanner/travel_planner.py`: Original Agno agent definition
+- `agentuity_agents/TravelPlanner/agent.py`: Agentuity async wrapper using `asyncio.run_in_executor`
 
 The wrapper converts Agentuity's async interface to work with Agno's synchronous agent execution.

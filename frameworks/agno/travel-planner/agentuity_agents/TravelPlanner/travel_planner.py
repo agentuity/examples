@@ -6,7 +6,7 @@ from agno.tools.exa import ExaTools
 
 travel_agent = Agent(
     name="Globe Hopper",
-    model=OpenAIChat(id="gpt-5-mini"),
+    model=OpenAIChat(id="gpt-4o-mini"),
     tools=[ExaTools()],
     markdown=True,
     description=dedent("""\
