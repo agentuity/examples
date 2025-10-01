@@ -21,7 +21,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@agentuity/sdk": "^0.0.116",
+    "@agentuity/sdk": "^0.0.147",
     "@ai-sdk/openai": "^1.2.11",
     "@mastra/core": "^0.9.4",
     "@mastra/voice-openai": "0.11.4",
