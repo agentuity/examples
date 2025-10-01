@@ -1,3 +1,4 @@
+import asyncio
 from textwrap import dedent
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
@@ -91,7 +92,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         
         context.logger.info("Processing YouTube video analysis request")
         
-        result = youtube_agent.run(user_input, stream=False)
+        result = await asyncio.to_thread(youtube_agent.run, user_input, stream=False)
         
         return response.text(result.content)
         

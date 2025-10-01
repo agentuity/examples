@@ -1715,25 +1715,6 @@ wheels = [
 ]
 
 [[package]]
-name = "py-template"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "agentuity" },
-    { name = "agno" },
-    { name = "openai" },
-    { name = "youtube-transcript-api" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "agentuity", specifier = ">=0.0.106" },
-    { name = "agno", specifier = ">=0.0.106" },
-    { name = "openai", specifier = ">=1.107.3" },
-    { name = "youtube-transcript-api", specifier = ">=0.6.0" },
-]
-
-[[package]]
 name = "pydantic"
 version = "2.11.9"
 source = { registry = "https://pypi.org/simple" }
@@ -2380,6 +2361,25 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/35/99/9918c8739ba271dcd935400cff8b32e3cd319eaf02fcd023d5dcd487a7c8/yarl-1.20.1-cp312-cp312-win32.whl", hash = "sha256:daea0d313868da1cf2fac6b2d3a25c6e3a9e879483244be38c8e6a41f1d876a5", size = 81249, upload-time = "2025-06-10T00:44:14.731Z" },
     { url = "https://files.pythonhosted.org/packages/eb/83/5d9092950565481b413b31a23e75dd3418ff0a277d6e0abf3729d4d1ce25/yarl-1.20.1-cp312-cp312-win_amd64.whl", hash = "sha256:48ea7d7f9be0487339828a4de0360d7ce0efc06524a48e1810f945c45b813698", size = 86710, upload-time = "2025-06-10T00:44:16.716Z" },
     { url = "https://files.pythonhosted.org/packages/b4/2d/2345fce04cfd4bee161bf1e7d9cdc702e3e16109021035dbb24db654a622/yarl-1.20.1-py3-none-any.whl", hash = "sha256:83b8eb083fe4683c6115795d9fc1cfaf2cbbefb19b3a1cb68f6527460f483a77", size = 46542, upload-time = "2025-06-10T00:46:07.521Z" },
+]
+
+[[package]]
+name = "youtube-agent"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "agentuity" },
+    { name = "agno" },
+    { name = "openai" },
+    { name = "youtube-transcript-api" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "agentuity", specifier = ">=0.0.106" },
+    { name = "agno", specifier = ">=0.0.106" },
+    { name = "openai", specifier = ">=1.107.3" },
+    { name = "youtube-transcript-api", specifier = ">=0.6.0" },
 ]
 
 [[package]]

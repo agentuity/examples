@@ -1,7 +1,7 @@
 [project]
-name = "py-template"
+name = "youtube-agent"
 version = "0.1.0"
-description = ""
+description = "YouTube content analyzer agent built with Agno and Agentuity"
 requires-python = ">=3.10, <3.13"
 dependencies = [
     "agentuity>=0.0.106",
