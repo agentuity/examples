@@ -5,7 +5,7 @@ description = "Agno Research Agent - Professional investigative journalism with 
 requires-python = ">=3.10, <3.13"
 dependencies = [
     "agentuity>=0.0.106",
-    "agno>=0.1.50",
+    "agno>=2.1.0",
     "openai>=1.107.3",
     "duckduckgo-search>=7.0.0",
     "newspaper4k>=0.9.3",
