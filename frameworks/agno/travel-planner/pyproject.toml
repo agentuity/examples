@@ -1,0 +1,11 @@
+[project]
+name = "travel-planner"
+version = "0.1.0"
+description = "Travel planning agent using Agno framework"
+requires-python = ">=3.10, <3.13"
+dependencies = [
+    "agentuity>=0.0.90",
+    "openai>=1.82.1",
+    "agno>=0.1.0",
+    "exa-py>=1.0.0",
+]

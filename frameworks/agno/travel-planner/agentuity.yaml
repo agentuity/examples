@@ -1,0 +1,40 @@
+
+
+version: '>=0.0.142'
+name: travel-planner
+description: "Travel planning agent using Agno framework"
+development:
+  port: 3500
+  watch:
+    enabled: true
+    files:
+      - agentuity_agents/**
+  command: uv
+  args:
+    - run
+    - --env-file
+    - .env
+    - --env-file
+    - .env.development
+    - server.py
+deployment:
+  command: uv
+  args:
+    - run
+    - server.py
+  resources:
+    memory: 250Mi
+    cpu: 500M
+    disk: 300Mi
+bundler:
+  enabled: true
+  identifier: python-uv
+  language: python
+  runtime: uv
+  agents:
+    dir: agentuity_agents
+  ignore:
+    - '**/__pycache__/**'
+agents:
+  - name: TravelPlanner
+    entry: agentuity_agents/TravelPlanner/agent.py
