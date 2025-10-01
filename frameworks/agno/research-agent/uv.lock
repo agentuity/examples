@@ -72,7 +72,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "agentuity", specifier = ">=0.0.106" },
-    { name = "agno", specifier = ">=0.1.50" },
+    { name = "agno", specifier = ">=2.1.0" },
     { name = "duckduckgo-search", specifier = ">=7.0.0" },
     { name = "lxml-html-clean", specifier = ">=0.4.1" },
     { name = "newspaper4k", specifier = ">=0.9.3" },
