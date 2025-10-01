@@ -7,6 +7,8 @@
 
 # The version semver range required to run this project
 version: '>=0.0.166'
+# The ID of the project which is automatically generated
+project_id: proj_d97f43647507985c808d482b8d937157
 # The name of the project which is editable
 name: Agno Research Agent
 # The description of the project which is editable
@@ -60,6 +62,7 @@ bundler:
     - '**/__pycache__/**'
 # The agents that are part of this project
 agents:
-  - # The name of the Agent which is editable
+  - # The ID of the Agent which is automatically generated
+    id: agent_96044e66bfbbde0c05ba499fd092cfe6
+    # The name of the Agent which is editable
     name: Research Agent
-    entry: agentuity_agents/ResearchAgent/agent.py
