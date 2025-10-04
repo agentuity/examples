@@ -45,7 +45,7 @@ const createAccumulator = (): Research => ({
 	completedQueries: [],
 });
 
-const mainModel = anthropic("claude-4-sonnet-20250514");
+const mainModel = anthropic("claude-sonnet-4-5-20250929");
 
 const generateSearchQueries = async (query: string, n = 3) => {
 	const {
@@ -63,7 +63,7 @@ const generateSearchQueries = async (query: string, n = 3) => {
 
 const generateLearnings = async (query: string, searchResult: SearchResult) => {
 	const { object } = await generateObject({
-		model: anthropic("claude-3-5-sonnet-latest"),
+		model: anthropic("claude-sonnet-4-5-20250929"),
 		system: SYSTEM_PROMPT,
 		prompt: `The user is researching "${query}". The following search result were deemed relevant.
       Generate a learning and a follow-up question from the following search result:
@@ -71,6 +71,8 @@ const generateLearnings = async (query: string, searchResult: SearchResult) => {
       <search_result>
       ${JSON.stringify(searchResult)}
       </search_result>
+
+	  **CRITICAL**: followUpQuestions must be formatted as z.array(z.string())
       `,
 		schema: z.object({
 			learning: z.string(),

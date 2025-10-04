@@ -66,7 +66,7 @@ async function evaluateResult(
 
 	try {
 		const { object: evaluation } = await generateObject({
-			model: anthropic("claude-4-sonnet-20250514"),
+			model: anthropic("claude-3-7-sonnet-20250219"),
 			prompt: EVAL_PROMPT(query, result, existingUrls),
 			output: "enum",
 			enum: ["relevant", "irrelevant"],

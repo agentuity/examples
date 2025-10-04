@@ -8,7 +8,7 @@
 # The version semver range required to run this project
 version: '>=0.0.136'
 # The ID of the project which is automatically generated
-project_id: proj_8e0e8bc805c0f488c53b8252d58ed4a5
+project_id: proj_be45db26581f0bd973a07f7a3d0cf045
 # The name of the project which is editable
 name: deep-research-js
 # The description of the project which is editable
@@ -63,17 +63,17 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_4a9f389c3492bb94e0df16b8df0a12bb
+    id: agent_3df31d0aacc8cb367391d5f10f4cfc2c
     # The name of the Agent which is editable
     name: orchestrator
     # The description of the Agent which is editable
     description: Orchestration agent
-  - id: agent_5bf58a044719678b313df1f91631af62
+  - id: agent_7d1fd1a6cf0f1d4036fcd6577a9d65b7
     name: researcher
     description: Deep research agent
-  - id: agent_617feb7a822ebba1bb0c11110ac28d74
+  - id: agent_7bdcc8a1f7efaffcf15d69c922f80f30
     name: author
     description: Report authoring agent
-  - id: agent_608314fc164f30f25f79d26032b90f81
+  - id: agent_47b4308126a98f6b8551568ca334aaed
     name: web-search
     description: Web search agent with evaluator

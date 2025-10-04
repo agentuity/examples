@@ -20,7 +20,7 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse) {
 	const research = ResearchSchema.parse(await req.data.json());
 
 	const { text } = await generateText({
-		model: anthropic("claude-4-sonnet-20250514"),
+		model: anthropic("claude-sonnet-4-20250514"),
 		system: SYSTEM_PROMPT,
 		prompt: AUTHOR_PROMPT(research),
 	});
