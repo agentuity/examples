@@ -45,7 +45,7 @@ const createAccumulator = (): Research => ({
 	completedQueries: [],
 });
 
-const mainModel = anthropic("claude-sonnet-4-5-20250929");
+const mainModel = anthropic("claude-sonnet-4-5-latest");
 
 const generateSearchQueries = async (query: string, n = 3) => {
 	const {
@@ -63,7 +63,7 @@ const generateSearchQueries = async (query: string, n = 3) => {
 
 const generateLearnings = async (query: string, searchResult: SearchResult) => {
 	const { object } = await generateObject({
-		model: anthropic("claude-sonnet-4-5-20250929"),
+		model: anthropic("claude-sonnet-4-5-latest"),
 		system: SYSTEM_PROMPT,
 		prompt: `The user is researching "${query}". The following search result were deemed relevant.
       Generate a learning and a follow-up question from the following search result:
