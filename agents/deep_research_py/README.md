@@ -81,6 +81,19 @@ This command will bundle your agent and deploy it to the cloud, making it access
 
 Your project configuration is stored in `agentuity.yaml`. This file defines your agents, development settings, and deployment configuration.
 
+### Agent Naming Convention
+
+This project uses the following agent naming mapping:
+
+| Directory Name | Agent Name (in agentuity.yaml) | Used in context.getAgent() |
+|----------------|--------------------------------|----------------------------|
+| `agentuity_agents/orchestrator/` | `orchestrator` | `{"name": "orchestrator"}` |
+| `agentuity_agents/researcher/` | `researcher` | `{"name": "researcher"}` |
+| `agentuity_agents/web_search/` | `web-search` | `{"name": "web-search"}` |
+| `agentuity_agents/author/` | `author` | `{"name": "author"}` |
+
+**Note**: The web_search directory uses underscores, but the agent name in the configuration uses hyphens (`web-search`).
+
 ## 🛠️ Advanced Usage
 
 ### Environment Variables

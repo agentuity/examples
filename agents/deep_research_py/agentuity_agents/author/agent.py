@@ -1,32 +1,46 @@
 from agentuity import AgentRequest, AgentResponse, AgentContext
 from anthropic import AsyncAnthropic
+import json
+from common.prompts import SYSTEM_PROMPT
 
 client = AsyncAnthropic()
 
+def author_prompt(research):
+    return f"""Generate a report based on the following research data:
+
+{json.dumps(research, indent=2)}
+
+Make sure to include the following sections:
+- Summary
+- Key Findings
+- Recommendations
+- Next Steps
+- References
+Write in markdown format."""
+
 def welcome():
     return {
-        "welcome": "Welcome to the Anthropic Python Agent! I can help you build AI-powered applications using Claude models.",
+        "welcome": "Welcome to the Author Agent! I can generate comprehensive reports based on research data.",
         "prompts": [
             {
-                "data": "How do I implement streaming responses with Claude models?",
-                "contentType": "text/plain"
-            },
-            {
-                "data": "What are the best practices for prompt engineering with Claude?",
-                "contentType": "text/plain"
+                "data": "Generate a report from research data",
+                "contentType": "application/json"
             }
         ]
     }
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     try:
+        research_data = await request.data.json()
+
         result = await client.messages.create(
-            model="claude-3-7-sonnet-latest",
-            max_tokens=1024,
+            model="claude-sonnet-4-20250514",
+            max_tokens=4096,
+            system=SYSTEM_PROMPT,
             messages=[
                 {
                     "role": "user",
-                    "content": await request.data.text() or "Hello, Claude",
+                    "content": author_prompt(research_data),
                 }
             ],
         )
@@ -37,5 +51,4 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
             return response.text("Something went wrong")
     except Exception as e:
         context.logger.error(f"Error running agent: {e}")
-
         return response.text("Sorry, there was an error processing your request.")

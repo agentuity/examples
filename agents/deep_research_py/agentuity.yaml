@@ -66,3 +66,9 @@ agents:
     id: agent_88a0daae73f7017c65e17065dbb37130
     # The name of the Agent which is editable
     name: author
+  - id: agent_92c1131dc53b3def9b29591b378a66e1
+    name: researcher
+  - id: agent_07223f8e04afeb9b4c1a3c2369e4a29d
+    name: web-search
+  - id: agent_c51e574b483c9fe478e49f8549fa03dc
+    name: orchestrator

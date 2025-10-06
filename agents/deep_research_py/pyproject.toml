@@ -6,4 +6,5 @@ requires-python = ">=3.10, <3.13"
 dependencies = [
     "agentuity>=0.0.106",
     "anthropic>=0.69.0",
+    "exa-py>=1.0.0",
 ]
