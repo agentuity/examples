@@ -1,0 +1,9 @@
+[project]
+name = "deep-research-py"
+version = "0.1.0"
+description = "A translated version of deep-research-js for python"
+requires-python = ">=3.10, <3.13"
+dependencies = [
+    "agentuity>=0.0.106",
+    "anthropic>=0.69.0",
+]
