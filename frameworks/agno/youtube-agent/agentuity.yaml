@@ -65,4 +65,4 @@ agents:
   - # The ID of the Agent which is automatically generated
     id: agent_4efcb96a59b533814028172a7971715c
     # The name of the Agent which is editable
-    name: YouTube Agent
+    name: YouTubeAgent
