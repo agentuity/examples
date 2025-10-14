@@ -7,6 +7,8 @@
 
 # The version semver range required to run this project
 version: '>=0.0.166'
+# The ID of the project which is automatically generated
+project_id: proj_55a351a031e3bc26127269e2fea406f7
 # The name of the project which is editable
 name: using-a-tool
 # The description of the project which is editable
@@ -71,6 +73,7 @@ bundler:
     - '!/agentuity.yaml'
 # The agents that are part of this project
 agents:
-  - # The name of the Agent which is editable
+  - # The ID of the Agent which is automatically generated
+    id: agent_4aa29b1b6a34b26acc0b21c7d2245721
+    # The name of the Agent which is editable
     name: using-a-tool
-    entry: src/agents/using-a-tool/index.ts
