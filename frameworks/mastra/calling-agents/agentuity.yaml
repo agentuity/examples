@@ -7,10 +7,12 @@
 
 # The version semver range required to run this project
 version: '>=0.0.166'
+# The ID of the project which is automatically generated
+project_id: proj_d3dacab6a539aa0a10611a13cb93ecf3
 # The name of the project which is editable
 name: calling-agents
 # The description of the project which is editable
-description: "Harry Potter agent demonstrating Mastra agent calling patterns, converted from mastra.ai examples"
+description: Harry Potter agent demonstrating Mastra agent calling patterns, converted from mastra.ai examples
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -71,6 +73,7 @@ bundler:
     - '!/agentuity.yaml'
 # The agents that are part of this project
 agents:
-  - # The name of the Agent which is editable
+  - # The ID of the Agent which is automatically generated
+    id: agent_3302ea381c0a35e7cbc5ba137dc25098
+    # The name of the Agent which is editable
     name: calling-agents
-    entry: src/agents/calling-agents/index.ts
