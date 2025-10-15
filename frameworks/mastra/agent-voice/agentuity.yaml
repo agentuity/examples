@@ -7,10 +7,12 @@
 
 # The version semver range required to run this project
 version: '>=0.0.166'
+# The ID of the project which is automatically generated
+project_id: proj_cb5cf6a27ed4bae341990f570a7f3ebf
 # The name of the project which is editable
 name: agent-voice
 # The description of the project which is editable
-description: "Mastra voice agent demonstrating text-to-speech (TTS) and speech-to-text (STT) capabilities"
+description: Mastra voice agent demonstrating text-to-speech (TTS) and speech-to-text (STT) capabilities
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -71,6 +73,7 @@ bundler:
     - '!/agentuity.yaml'
 # The agents that are part of this project
 agents:
-  - # The name of the Agent which is editable
+  - # The ID of the Agent which is automatically generated
+    id: agent_5855157b7ded9c31269adcb8ca99e283
+    # The name of the Agent which is editable
     name: agent-voice
-    entry: src/agents/agent-voice/index.ts

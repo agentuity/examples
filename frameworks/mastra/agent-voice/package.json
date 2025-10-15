@@ -29,10 +29,11 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@agentuity/sdk": "^0.0.145",
-    "@ai-sdk/openai": "^1.0.14",
-    "@mastra/core": "^0.21.0",
-    "ai": "^4.2.9"
+    "@agentuity/sdk": "^0.0.155",
+    "@ai-sdk/openai": "2.0.52",
+    "@mastra/core": "0.21.0",
+    "ai": "^5",
+    "source-map-js": "^1.2.1"
   },
   "module": "index.ts"
 }
