@@ -33,7 +33,8 @@
     "@mastra/libsql": "^0.15.2",
     "@mastra/memory": "^0.15.7",
     "ai": "^5.0.72",
-    "openai": "^5.20.3"
+    "openai": "^5.20.3",
+    "source-map-js": "^1.2.1"
   },
   "module": "index.ts"
 }

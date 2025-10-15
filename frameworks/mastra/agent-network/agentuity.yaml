@@ -7,6 +7,8 @@
 
 # The version semver range required to run this project
 version: '>=0.0.166'
+# The ID of the project which is automatically generated
+project_id: proj_35b5b73bd3b72ddd8a154f2cbddb883a
 # The name of the project which is editable
 name: agent-network
 # The description of the project which is editable
@@ -71,6 +73,7 @@ bundler:
     - '!/agentuity.yaml'
 # The agents that are part of this project
 agents:
-  - # The name of the Agent which is editable
+  - # The ID of the Agent which is automatically generated
+    id: agent_0dfa3602130da8e75591d0f5efabfba4
+    # The name of the Agent which is editable
     name: agent-network
-    entry: src/agents/agent-network/index.ts
