@@ -7,10 +7,12 @@
 
 # The version semver range required to run this project
 version: '>=0.0.166'
+# The ID of the project which is automatically generated
+project_id: proj_b29da0427c9a14b38b205653e17bc753
 # The name of the project which is editable
 name: supervisor-agent
 # The description of the project which is editable
-description: 'A multi-agent supervisor system using Mastra framework. The publisher agent coordinates copywriter and editor agents to create high-quality blog posts.'
+description: A multi-agent supervisor system using Mastra framework. The publisher agent coordinates copywriter and editor agents to create high-quality blog posts.
 # The development configuration for the project
 development:
   # The port to run the development server on which can be overridden by setting the PORT environment variable
@@ -71,6 +73,7 @@ bundler:
     - '!/agentuity.yaml'
 # The agents that are part of this project
 agents:
-  - # The name of the Agent which is editable
+  - # The ID of the Agent which is automatically generated
+    id: agent_77f780c5ef66fbb75e59d7913af7194a
+    # The name of the Agent which is editable
     name: supervisor-agent
-    entry: src/agents/supervisor-agent/index.ts
