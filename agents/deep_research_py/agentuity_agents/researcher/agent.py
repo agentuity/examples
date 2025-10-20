@@ -30,15 +30,32 @@ async def generate_search_queries(query, n=3):
         system=SYSTEM_PROMPT,
         messages=[{
             "role": "user",
-            "content": f"Generate {n} search queries for the following query: {query}\n\nRespond with JSON in this format: {{\"queries\": [\"query1\", \"query2\", \"query3\"]}}"
+            "content": f"""
+            Generate {n} search queries for the following query: {query}
+
+            Respond with JSON in this format: {{\"queries\": [\"query1\", \"query2\", \"query3\"]}}
+            **CRITICAL**: Your exact response text will be fed into json.loads(response_text), you cannot wrap your response in anything, including '''json.
+            """
         }]
     )
-
     response_text = result.content[0].text
-    data = json.loads(response_text)
+    try:
+        data = json.loads(response_text)
+    except json.JSONDecodeError as e:
+        print(f"JSON error in generate_search_queries: {e}")
+        print(f"Response text: {response_text[:500]}")
+        raise
     return data["queries"]
 
 async def generate_learnings(query, search_result):
+    try:
+        search_result_json = json.dumps(search_result)
+    except (TypeError, ValueError) as e:
+        print(f"JSON encoding error in generate_learnings (search_result): {e}")
+        print(f"search_result type: {type(search_result)}")
+        print(f"search_result: {search_result}")
+        raise
+
     result = await client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=1024,
@@ -49,7 +66,7 @@ async def generate_learnings(query, search_result):
 Generate a learning and a follow-up question from the following search result:
 
 <search_result>
-{json.dumps(search_result)}
+{search_result_json}
 </search_result>
 
 Respond with JSON in this format: {{"learning": "string", "followUpQuestions": ["question1", "question2"]}}
@@ -59,16 +76,30 @@ Respond with JSON in this format: {{"learning": "string", "followUpQuestions": [
     )
 
     response_text = result.content[0].text
-    return json.loads(response_text)
+    try:
+        loaded_json = json.loads(response_text)
+    except json.JSONDecodeError as e:
+        print(f"JSON error in generate_learnings: {e}")
+        print(f"Response text: {response_text[:500]}")
+        raise
+    return loaded_json
 
 async def research_web(query, web_search_agent, accumulated_research):
     response = await web_search_agent.run({
-        "data": {
             "query": query,
             "accumulatedSources": accumulated_research["searchResults"]
-        }
     })
-    results = await response.data.json()
+    try:
+        results = await response.data.json()
+    except Exception as e:
+        print(f"ERROR in research_web calling response.data.json(): {e}")
+        print(f"Error type: {type(e).__name__}")
+        try:
+            raw = await response.data.text()
+            print(f"Response text: {raw[:500]}")
+        except Exception as text_err:
+            print(f"Could not get text: {text_err}")
+        raise
     return results["searchResults"]
 
 async def deep_research(prompt, web_search_agent, accumulated_research, depth=2, breadth=3, max_results=20):
@@ -129,16 +160,26 @@ def welcome():
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     try:
-        request_data = await request.data.json()
+        try:
+            request_data = await request.data.json()
+        except Exception as e:
+            print(f"ERROR in run() parsing request.data.json(): {e}")
+            print(f"Error type: {type(e).__name__}")
+            try:
+                raw = await request.data.text()
+                print(f"Request text: {raw[:500]}")
+            except Exception as text_err:
+                print(f"Could not get text: {text_err}")
+            return response.text(f"Invalid JSON in request: {e}")
 
         query = request_data["query"]
         depth = request_data.get("depth", 2)
         breadth = request_data.get("breadth", 3)
         max_results = request_data.get("maxResults", 20)
 
-        web_search_agent = await context.getAgent({"name": "web-search"})
+        web_search_agent = context.get_agent({"name": "web-search"})
         if not web_search_agent:
-            return response.text("Web Search agent not found", status=500)
+            return response.text("Web Search agent not found")
 
         accumulator = create_accumulator()
         research = await deep_research(
@@ -153,7 +194,13 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         context.logger.info("Deep research completed!")
         context.logger.info(f"Research results: {len(research['searchResults'])} search results, {len(research['learnings'])} learnings")
 
-        return response.json(research)
+        try:
+            return response.json(research)
+        except (TypeError, ValueError) as e:
+            print(f"JSON encoding error in run() returning response: {e}")
+            print(f"research type: {type(research)}")
+            print(f"research keys: {research.keys() if isinstance(research, dict) else 'N/A'}")
+            raise
 
     except Exception as e:
         context.logger.error(f"Error running researcher agent: {e}")

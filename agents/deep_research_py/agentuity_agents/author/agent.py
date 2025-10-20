@@ -6,9 +6,17 @@ from common.prompts import SYSTEM_PROMPT
 client = AsyncAnthropic()
 
 def author_prompt(research):
+    try:
+        research_json = json.dumps(research, indent=2)
+    except (TypeError, ValueError) as e:
+        print(f"JSON encoding error in author_prompt: {e}")
+        print(f"research type: {type(research)}")
+        print(f"research: {research}")
+        raise
+
     return f"""Generate a report based on the following research data:
 
-{json.dumps(research, indent=2)}
+{research_json}
 
 Make sure to include the following sections:
 - Summary
@@ -31,7 +39,17 @@ def welcome():
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     try:
-        research_data = await request.data.json()
+        try:
+            research_data = await request.data.json()
+        except Exception as e:
+            print(f"ERROR in author run() parsing request.data.json(): {e}")
+            print(f"Error type: {type(e).__name__}")
+            try:
+                raw = await request.data.text()
+                print(f"Request text: {raw[:500]}")
+            except Exception as text_err:
+                print(f"Could not get text: {text_err}")
+            return response.text(f"Invalid JSON in request: {e}")
 
         result = await client.messages.create(
             model="claude-sonnet-4-20250514",

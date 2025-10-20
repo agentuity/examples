@@ -14,15 +14,27 @@ def welcome():
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     try:
-        request_data = await request.data.json()
+        try:
+            request_data = await request.data.json()
+        except Exception as e:
+            print(f"ERROR in orchestrator run() parsing request.data.json(): {e}")
+            print(f"Error type: {type(e).__name__}")
+            try:
+                raw = await request.data.text()
+                print(f"Request text: {raw[:500]}")
+            except Exception as text_err:
+                print(f"Could not get text: {text_err}")
+            return response.text(f"Invalid JSON in request: {e}")
 
         query = request_data["query"]
         depth = request_data.get("depth", 2)
         breadth = request_data.get("breadth", 3)
         max_results = request_data.get("maxResults", 20)
 
+        
+
         async def researcher_agent():
-            researcher = await context.getAgent({"name": "researcher"})
+            researcher = context.get_agent({"name": "researcher"})
             if not researcher:
                 raise Exception("Researcher agent not found")
 
@@ -30,21 +42,29 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
             context.logger.info(f"Researching: {query} with depth: {depth} and breadth: {breadth}")
 
             research_results = await researcher.run({
-                "data": {
                     "query": query,
                     "depth": depth,
                     "breadth": breadth,
                     "maxResults": max_results
-                }
             })
 
             context.logger.info("Research completed, processing results...")
-            research = await research_results.data.json()
+            try:
+                research = await research_results.data.json()
+            except Exception as e:
+                print(f"ERROR in orchestrator researcher_agent() parsing research_results.data.json(): {e}")
+                print(f"Error type: {type(e).__name__}")
+                try:
+                    raw = await research_results.data.text()
+                    print(f"Research results text: {raw[:500]}")
+                except Exception as text_err:
+                    print(f"Could not get text: {text_err}")
+                raise
             context.logger.info("Research completed!")
             return research
 
         async def author_agent(research):
-            author = await context.getAgent({"name": "author"})
+            author = context.get_agent({"name": "author"})
             if not author:
                 raise Exception("Author agent not found")
 
@@ -61,4 +81,4 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 
     except Exception as error:
         context.logger.error(f"Error generating report: {error}")
-        return response.text(f"Failed to generate report: {error}", status=500)
+        return response.text(f"Failed to generate report: {error}")

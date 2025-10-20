@@ -84,10 +84,18 @@ def welcome():
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     
     if not os.environ.get("EXA_API_KEY"):
-        return response.text("EXA_API_KEY environment variable is not set", status=500)
+        return response.text("EXA_API_KEY environment variable is not set")
     
     try:
-        request_data = await request.data.json()
+        try:
+            request_data = await request.data.json()
+            print(request_data)
+        except json.JSONDecodeError as e:
+            raw = await request.data.text()
+            print(f"JSON error in web_search run() parsing request: {e}")
+            print(f"Request text: {raw[:500]}")
+            return response.text(f"Invalid JSON in request: {e}")
+
         query = request_data["query"]
         accumulated_sources = request_data["accumulatedSources"]
 
@@ -117,7 +125,14 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
             "message": "Research completed successfully!"
         }
 
-        return response.json(payload)
+        try:
+            return response.json(payload)
+        except (TypeError, ValueError) as e:
+            print(f"JSON encoding error in web_search run() returning response: {e}")
+            print(f"payload type: {type(payload)}")
+            print(f"payload keys: {payload.keys()}")
+            print(f"search_results length: {len(search_results)}")
+            raise
 
     except Exception as error:
         print(f"Error in web search: {error}")
