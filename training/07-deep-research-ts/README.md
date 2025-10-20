@@ -4,7 +4,7 @@ This training module uses an existing production example that demonstrates sophi
 
 ## 🔗 Complete Implementation
 
-**GitHub Repository**: [deep-research-js](https://github.com/agentuity/examples/tree/main/agents/deep-research-js)
+**GitHub Repository**: [deep-research-js](https://github.com/agentuity/examples/tree/add-tutorials/agents/deep-research-js)
 
 ## 📚 What You'll Learn
 
