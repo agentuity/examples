@@ -26,7 +26,7 @@ Respond with either "relevant" or "irrelevant"."""
 async def search_web(exa, query, num_results=3):
     print(f"Searching for: {query}")
 
-    results = await exa.search_and_contents(
+    results = exa.search_and_contents(
         query,
         num_results=num_results,
         livecrawl="always"
@@ -82,9 +82,10 @@ def welcome():
     }
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    
     if not os.environ.get("EXA_API_KEY"):
         return response.text("EXA_API_KEY environment variable is not set", status=500)
-
+    
     try:
         request_data = await request.data.json()
         query = request_data["query"]
@@ -120,4 +121,4 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 
     except Exception as error:
         print(f"Error in web search: {error}")
-        return response.text(f"Failed to search web: {error}", status=500)
+        return response.text(f"Failed to search web: {error}")
