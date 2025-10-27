@@ -1,13 +1,28 @@
 <div align="center">
     <img src="https://raw.githubusercontent.com/agentuity/cli/refs/heads/main/.github/Agentuity.png" alt="Agentuity" width="100"/> <br/>
-    <strong>Deep Research JS</strong> <br/>
-    <strong>Multi-Agent Research & Report Generation System</strong> <br/>
-<br />
+    <strong>Build Agents, Not Infrastructure</strong> <br/>
+    <br/>
+        <a target="_blank" href="https://app.agentuity.com/deploy" alt="Agentuity">
+            <img src="https://app.agentuity.com/img/deploy.svg" />
+        </a>
+    <br />
 </div>
 
-# 🔍 Deep Research JS
+# Module 7: Deep Research Multi-Agent System (TypeScript)
 
 A sophisticated multi-agent system that conducts comprehensive research on any topic and generates detailed reports. The system uses multiple specialized AI agents working together to search the web, analyze information, and produce high-quality research reports.
+
+**Training Module**: This example demonstrates a sophisticated multi-agent research workflow and report generation system built with TypeScript and the Vercel AI SDK.
+
+## 📚 What You'll Learn
+
+- Multi-agent orchestration with specialized roles
+- Iterative research workflows with configurable depth/breadth
+- Web search integration with Exa API
+- Content evaluation and relevance filtering
+- Report synthesis from distributed research findings
+- Agent-to-agent communication patterns
+- Structured data validation with Zod schemas
 
 ## 🏗️ Architecture
 
@@ -54,7 +69,7 @@ EXA_API_KEY=your_exa_api_key
 ```
 
 **Required API Keys:**
-- **Agentuity Keys**: Get from your [Agentuity dashboard](https://console.agentuity.dev)
+- **Agentuity Keys**: Get from the [Agentuity dashboard](https://app.agentuity.com/)
 - **Exa API Key**: Sign up at [Exa.ai](https://exa.ai) for web search capabilities
 
 ### 2. Install Dependencies
@@ -163,7 +178,7 @@ npm run start
 If you encounter any issues:
 
 1. Check the [Agentuity documentation](https://agentuity.dev)
-2. Join our [Discord community](https://discord.com/invite/vtn3hgUfuc) for support
+2. Join our [Discord community](https://discord.gg/agentuity) for support
 3. Review the project logs in development mode
 
 ## 📝 License
