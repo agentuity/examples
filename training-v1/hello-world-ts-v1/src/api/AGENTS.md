@@ -2,12 +2,30 @@
 
 This folder contains REST API routes for your Agentuity application. Each API is organized in its own subdirectory.
 
+## Generated Types
+
+The `src/generated/` folder contains auto-generated TypeScript files:
+
+- `routes.ts` - Route registry with strongly-typed route definitions and schema types
+- `registry.ts` - Agent registry (for calling agents from routes)
+- `app.ts` - Application entry point (regenerated on every build)
+
+**Important:** Never edit files in `src/generated/` - they are overwritten on every build.
+
+Import generated types in your routes:
+
+```typescript
+import type { POST_Api_UsersInput, POST_Api_UsersOutput } from '../generated/routes';
+```
+
 ## Directory Structure
 
 Each API folder must contain:
+
 - **route.ts** (required) - HTTP route definitions using Hono router
 
 Example structure:
+
 ```
 src/api/
 ├── index.ts         (optional, mounted at /api)
@@ -51,6 +69,7 @@ export default router;
 ```typescript
 import { createRouter } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
+import { validator } from 'hono/validator';
 
 const router = createRouter();
 
@@ -60,35 +79,42 @@ const createUserSchema = s.object({
 	age: s.number(),
 });
 
-const validator = createRouter.validator({
-	input: createUserSchema,
-});
-
-router.post('/', validator, async (c) => {
-	const data = c.req.valid('json');
-	// data is fully typed: { name: string, email: string, age: number }
-	return c.json({ 
-		success: true, 
-		user: data 
-	});
-});
+router.post(
+	'/',
+	validator('json', (value, c) => {
+		const result = createUserSchema['~standard'].validate(value);
+		if (result.issues) {
+			return c.json({ error: 'Validation failed', issues: result.issues }, 400);
+		}
+		return result.value;
+	}),
+	async (c) => {
+		const data = c.req.valid('json');
+		// data is fully typed: { name: string, email: string, age: number }
+		return c.json({
+			success: true,
+			user: data,
+		});
+	}
+);
 
 export default router;
 ```
 
 ### API Calling Agents
 
-APIs can call agents directly:
+APIs can call agents directly by importing them:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import helloAgent from '@agent/hello';
 
 const router = createRouter();
 
 router.get('/', async (c) => {
-	// Call an agent from the agents/ folder
-	const result = await c.agent.hello.run({ name: 'API Caller', age: 42 });
-	
+	// Call an agent directly
+	const result = await helloAgent.run({ name: 'API Caller', age: 42 });
+
 	return c.json({
 		success: true,
 		agentResult: result,
@@ -98,14 +124,34 @@ router.get('/', async (c) => {
 router.post('/with-input', async (c) => {
 	const body = await c.req.json();
 	const { name, age } = body;
-	
+
 	// Call agent with dynamic input
-	const result = await c.agent.simple.run({ name, age });
-	
+	const result = await helloAgent.run({ name, age });
+
 	return c.json({
 		success: true,
 		agentResult: result,
 	});
+});
+
+export default router;
+```
+
+### API with Agent Validation
+
+Use `agent.validator()` for automatic input validation from agent schemas:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import myAgent from '@agent/my-agent';
+
+const router = createRouter();
+
+// POST with automatic validation using agent's input schema
+router.post('/', myAgent.validator(), async (c) => {
+	const data = c.req.valid('json'); // Fully typed from agent schema!
+	const result = await myAgent.run(data);
+	return c.json({ success: true, result });
 });
 
 export default router;
@@ -124,7 +170,7 @@ router.get('/log-test', (c) => {
 	c.var.logger.warn('Warning message');
 	c.var.logger.debug('Debug message');
 	c.var.logger.trace('Trace message');
-	
+
 	return c.text('Check logs');
 });
 
@@ -141,22 +187,34 @@ The route handler receives a Hono context object with:
 - **c.html()** - Return HTML response
 - **c.redirect()** - Redirect to URL
 - **c.var.logger** - Structured logger (info, warn, error, debug, trace)
-- **Import agents directly** - Import and call agents directly instead of using c.var.agent
 - **c.var.kv** - Key-value storage
 - **c.var.vector** - Vector storage
 - **c.var.stream** - Stream management
+- **Import agents directly** - Import and call agents directly (recommended)
 
 ## HTTP Methods
 
 ```typescript
 const router = createRouter();
 
-router.get('/path', (c) => { /* ... */ });
-router.post('/path', (c) => { /* ... */ });
-router.put('/path', (c) => { /* ... */ });
-router.patch('/path', (c) => { /* ... */ });
-router.delete('/path', (c) => { /* ... */ });
-router.options('/path', (c) => { /* ... */ });
+router.get('/path', (c) => {
+	/* ... */
+});
+router.post('/path', (c) => {
+	/* ... */
+});
+router.put('/path', (c) => {
+	/* ... */
+});
+router.patch('/path', (c) => {
+	/* ... */
+});
+router.delete('/path', (c) => {
+	/* ... */
+});
+router.options('/path', (c) => {
+	/* ... */
+});
 ```
 
 ## Path Parameters
@@ -207,9 +265,11 @@ router.post('/upload', async (c) => {
 ## Error Handling
 
 ```typescript
+import myAgent from '@agent/my-agent';
+
 router.get('/', async (c) => {
 	try {
-		const result = await c.agent.myAgent.run({ data: 'test' });
+		const result = await myAgent.run({ data: 'test' });
 		return c.json({ success: true, result });
 	} catch (error) {
 		c.var.logger.error('Agent call failed:', error);
@@ -248,12 +308,55 @@ return c.json({ data: 'value' }, 200, {
 });
 ```
 
+## Streaming Routes
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+// Stream response
+router.stream('/events', (c) => {
+	return new ReadableStream({
+		start(controller) {
+			controller.enqueue('event 1\n');
+			controller.enqueue('event 2\n');
+			controller.close();
+		},
+	});
+});
+
+// Server-Sent Events
+router.sse('/notifications', (c) => {
+	return (stream) => {
+		stream.writeSSE({ data: 'Hello', event: 'message' });
+		stream.writeSSE({ data: 'World', event: 'message' });
+	};
+});
+
+// WebSocket
+router.websocket('/ws', (c) => {
+	return (ws) => {
+		ws.onOpen(() => {
+			ws.send('Connected!');
+		});
+		ws.onMessage((event) => {
+			ws.send(`Echo: ${event.data}`);
+		});
+	};
+});
+
+export default router;
+```
+
 ## Rules
 
 - Each API folder name becomes the route name (e.g., `status/` → `/api/status`)
 - **route.ts** must export default the router instance
 - Use c.var.logger for logging, not console.log
-- All agents are accessible via c.agent.{agentName}
-- Validation should use @agentuity/schema or any Standard Schema compatible library
+- Import agents directly to call them (e.g., `import agent from '@agent/name'`)
+- Validation should use @agentuity/schema or agent.validator() for type safety
 - Return appropriate HTTP status codes
 - APIs run at `/api/{folderName}` by default
+
+<!-- prompt_hash: 23d5af163bb84225723dfcbf497192bb28d748ebca80e48e680d2fb265e8288a -->

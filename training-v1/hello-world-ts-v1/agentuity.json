@@ -1,14 +1,12 @@
 {
   "$schema": "https://agentuity.dev/schema/cli/v1/agentuity.json",
-  "projectId": "proj_3f8080a840e3cd5598dba5ed5390f118",
+  "projectId": "proj_ef16e3de1b9f0034d27d5253f505c9e3",
   "orgId": "org_2u8RgDTwcZWrZrZ3sZh24T5FCtz",
   "deployment": {
     "resources": {
       "memory": "500Mi",
       "cpu": "500m",
-      "disk": "500Mi",
-      "storage": "ag-l8mtda8g0yj8",
-      "db": "karen_humason"
+      "disk": "500Mi"
     }
   },
   "region": "use"
