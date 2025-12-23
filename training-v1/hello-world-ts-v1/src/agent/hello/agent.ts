@@ -34,48 +34,48 @@ const agent = createAgent('hello', {
 
 		const greeting = completion.choices[0]?.message?.content ?? '';
 
-		// const nameKey = `greeting_count_${name}`;
-  		// ctx.logger.info(`Looking for counter with key: ${nameKey}`);
+		const nameKey = `greeting_count_${name}`;
+  		ctx.logger.info(`Looking for counter with key: ${nameKey}`);
 
-		// const counterResult = await ctx.kv.get('greetings', nameKey);
-		// ctx.logger.info(`Counter exists: ${counterResult.exists}`);
+		const counterResult = await ctx.kv.get('greetings', nameKey);
+		ctx.logger.info(`Counter exists: ${counterResult.exists}`);
 
-		// let newCount: number;
-		// if (counterResult.exists && counterResult.data) {
-		// 	const data = ( counterResult.data) as { count: number };
-		// 	ctx.logger.info(`Retrieved counter data:`, data);
-		// 	const currentCount = data.count;
-		// 	newCount = currentCount + 1;
-		// } else {
-		// 	ctx.logger.info(`No existing counter found, starting at 1`);
-		// 	newCount = 1;
-		// }
+		let newCount: number;
+		if (counterResult.exists && counterResult.data) {
+			const data = ( counterResult.data) as { count: number };
+			ctx.logger.info(`Retrieved counter data:`, data);
+			const currentCount = data.count;
+			newCount = currentCount + 1;
+		} else {
+			ctx.logger.info(`No existing counter found, starting at 1`);
+			newCount = 1;
+		}
 
-		// // Save updated counter with 24-hour TTL (86400 seconds)
-		// ctx.logger.info(`Saving counter ${newCount} for key: ${nameKey}`);
-		// await ctx.kv.set(
-		// 	'greetings',
-		// 	nameKey,
-		// 	{ count: newCount },
-		// 	{
-		// 	ttl: 86400,
-		// 	contentType: 'application/json',
-		// 	}
-		// );
+		// Save updated counter with 24-hour TTL (86400 seconds)
+		ctx.logger.info(`Saving counter ${newCount} for key: ${nameKey}`);
+		await ctx.kv.set(
+			'greetings',
+			nameKey,
+			{ count: newCount },
+			{
+			ttl: 86400,
+			contentType: 'application/json',
+			}
+		);
 
-		// // Verify storage
-		// const verifyResult = await ctx.kv.get('greetings', nameKey);
-		// if (verifyResult.exists && verifyResult.data) {
-		// 	const verifiedData = await verifyResult.data.json();
-		// 	ctx.logger.info(`Verified stored value:`, verifiedData);
-		// } else {
-		// 	ctx.logger.error(`Failed to verify storage for key: ${nameKey}`);
-		// }
+		// Verify storage
+		const verifyResult = await ctx.kv.get('greetings', nameKey);
+		if (verifyResult.exists && verifyResult.data) {
+			const verifiedData = verifyResult.data;
+			ctx.logger.info(`Verified stored value:`, verifiedData);
+		} else {
+			ctx.logger.error(`Failed to verify storage for key: ${nameKey}`);
+		}
 
 		// Prepare response
 		const responseData = {
 			greeting,
-			personal_count: 1,
+			personal_count: newCount,
 		};
 
 		ctx.logger.info(`Generated greeting #${1} for ${name}`);
