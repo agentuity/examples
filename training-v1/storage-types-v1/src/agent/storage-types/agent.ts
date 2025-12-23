@@ -1,9 +1,16 @@
-// TODO - check on object storage
-
-import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { S3Client } from 'bun';
+
+// Configure S3 client with environment variables
+const s3 = new S3Client({
+	accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+	secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+	bucket: process.env.S3_BUCKET!,
+	endpoint: process.env.S3_ENDPOINT!,
+});
 
 // Storage name constants for easy management
 const OBJECT_STORAGE_BUCKET = 'docs';
@@ -15,10 +22,6 @@ const agent = createAgent('storage-types', {
 	schema: {
 		input: s.object({ textContent: s.string() }),
 		output: s.union(
-			s.object({
-				message: s.string(),
-				error: s.string()
-			}),
 			s.object({
 				mode: s.literal('upload'),
 				message: s.string(),
@@ -59,12 +62,13 @@ const agent = createAgent('storage-types', {
 				ctx.logger.info(`Storing binary data to Object Storage with key: ${key}`);
 
 				// Store binary data directly in Object Storage
-				await ctx.objectstore.put(OBJECT_STORAGE_BUCKET, key, binaryData);
+				const file = s3.file(`${OBJECT_STORAGE_BUCKET}/${key}`);
+				await file.write(binaryData);
 
 				ctx.logger.info(`Successfully stored file in Object Storage: ${key}`);
 
-				// Create a public URL for the file (valid for 1 hour)
-				const publicUrl = await ctx.objectstore.createPublicURL(OBJECT_STORAGE_BUCKET, key);
+				// Create a public URL for the file
+				const publicUrl = `/${OBJECT_STORAGE_BUCKET}/${key}`;
 
 				// PHASE 1: Add Vector Storage
 				/* Split the text into sections based on the ## headers */
@@ -91,7 +95,7 @@ const agent = createAgent('storage-types', {
 				const sectionTitles = ['Introduction', 'Product Features', 'Core Benefits', 'About', 'Blog Posts'];
 
 				// Store each section in vector storage
-				const vectorIds: VectorUpsertResult[] = [];
+				const vectorIds: string[] = [];
 				ctx.logger.info(`Starting to index ${sections.length} sections in vector storage`);
 
 				for (let i = 0; i < sections.length; i++) {
@@ -124,7 +128,10 @@ const agent = createAgent('storage-types', {
 
 					// Upsert (add or update vectors) to vector storage - returns array of IDs
 					const ids = await ctx.vector.upsert(VECTOR_STORAGE_NAME, vectorParams);
-					vectorIds.push(...ids);
+					ids.map((id) => {
+						vectorIds.push(id.id)
+					})
+
 				}
 
 				ctx.logger.info(`Successfully indexed ${vectorIds.length} sections in vector storage`);
@@ -165,7 +172,7 @@ const agent = createAgent('storage-types', {
 				// Store all queries in one place for easy viewing
 				const existingQueries = await ctx.kv.get(KV_STORAGE_NAME, 'demo-user-queries');
 				const queryHistory = existingQueries.exists
-					? await existingQueries.data.json() as any[]
+					? existingQueries.data as any[]
 					: [];
 
 				// Add this query to the history with readable timestamp
@@ -209,10 +216,7 @@ Provide a helpful, concise answer in 2-3 sentences. If no context is available, 
 			}
 		} catch (error) {
 			ctx.logger.error('Error running agent:', error);
-			return {
-				message: 'Error processing file',
-				error: error instanceof Error ? error.message : 'Unknown error'
-			};
+			return `Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
 		}
 	},
 });

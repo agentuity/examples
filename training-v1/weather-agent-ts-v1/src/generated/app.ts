@@ -8,6 +8,7 @@ import {
   createCorsMiddleware,
   createOtelMiddleware,
   createAgentMiddleware,
+  createCompressionMiddleware,
   getAppState,
   getAppConfig,
   register,
@@ -20,6 +21,7 @@ import {
   setGlobalRouter,
   enableProcessExitProtection,
   hasWaitUntilPending,
+  createWorkbenchRouter,
 } from '@agentuity/runtime';
 import type { Context } from 'hono';
 import { websocket } from 'hono/bun';
@@ -61,6 +63,9 @@ const app = createRouter();
 setGlobalRouter(app);
 
 // Step 3: Apply middleware in correct order (BEFORE mounting routes)
+// Compression runs first (outermost) so it can compress the final response
+app.use('*', createCompressionMiddleware());
+
 app.use('*', createBaseMiddleware({
 	logger: otel.logger,
 	tracer: otel.tracer,
@@ -113,9 +118,128 @@ if (!isDevelopment()) {
 	app.get('/_idle', idleHandler);
 }
 
+// Dev readiness check - verifies Vite asset server is ready to serve frontend
+if (isDevelopment()) {
+	app.get('/_agentuity/ready', async (c: Context) => {
+		const vitePort = process.env.VITE_PORT;
+		if (!vitePort) {
+			// No Vite port means we're not using Vite proxy
+			return c.text('OK', 200, { 'Content-Type': 'text/plain; charset=utf-8' });
+		}
+
+		try {
+			// Probe Vite to check if it can serve the main entry point
+			// Use @vite/client as a lightweight check - it's always available
+			const viteUrl = `http://127.0.0.1:${vitePort}/@vite/client`;
+			const res = await fetch(viteUrl, {
+				signal: AbortSignal.timeout(5000),
+				method: 'HEAD'
+			});
+
+			if (res.ok) {
+				return c.text('OK', 200, { 'Content-Type': 'text/plain; charset=utf-8' });
+			}
+			return c.text('VITE_NOT_READY', 503, { 'Content-Type': 'text/plain; charset=utf-8' });
+		} catch (err) {
+			otel.logger.debug('Vite readiness check failed: %s', err instanceof Error ? err.message : String(err));
+			return c.text('VITE_NOT_READY', 503, { 'Content-Type': 'text/plain; charset=utf-8' });
+		}
+	});
+}
+
+// Asset proxy routes - Development mode only (proxies to Vite asset server)
+if (isDevelopment() && process.env.VITE_PORT) {
+	const VITE_ASSET_PORT = parseInt(process.env.VITE_PORT, 10);
+
+	const proxyToVite = async (c: Context) => {
+		const viteUrl = `http://127.0.0.1:${VITE_ASSET_PORT}${c.req.path}`;
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+		try {
+			otel.logger.debug(`[Proxy] ${c.req.method} ${c.req.path} -> Vite:${VITE_ASSET_PORT}`);
+			const res = await fetch(viteUrl, { signal: controller.signal });
+			clearTimeout(timeout);
+			otel.logger.debug(`[Proxy] ${c.req.path} -> ${res.status} (${res.headers.get('content-type')})`);
+			return new Response(res.body, {
+				status: res.status,
+				headers: res.headers,
+			});
+		} catch (err) {
+			clearTimeout(timeout);
+			if (err instanceof Error && err.name === 'AbortError') {
+				otel.logger.error(`Vite proxy timeout: ${c.req.path}`);
+				return c.text('Vite asset server timeout', 504);
+			}
+			otel.logger.error(`Failed to proxy to Vite: ${c.req.path} - ${err instanceof Error ? err.message : String(err)}`);
+			return c.text('Vite asset server error', 500);
+		}
+	};
+
+	// Vite client scripts and HMR
+	app.get('/@vite/*', proxyToVite);
+	app.get('/@react-refresh', proxyToVite);
+
+	// Source files for HMR
+	app.get('/src/web/*', proxyToVite);
+	app.get('/src/*', proxyToVite); // Catch-all for other source files
+
+	// Workbench source files (in .agentuity/workbench-src/)
+	app.get('/.agentuity/workbench-src/*', proxyToVite);
+
+	// Node modules (Vite transforms these)
+	app.get('/node_modules/*', proxyToVite);
+
+	// Scoped packages (e.g., @agentuity/*, @types/*)
+	app.get('/@*', proxyToVite);
+
+	// File system access (for Vite's @fs protocol)
+	app.get('/@fs/*', proxyToVite);
+
+	// Module resolution (for Vite's @id protocol)
+	app.get('/@id/*', proxyToVite);
+
+	// Any .js, .jsx, .ts, .tsx files (catch remaining modules)
+	app.get('/*.js', proxyToVite);
+	app.get('/*.jsx', proxyToVite);
+	app.get('/*.ts', proxyToVite);
+	app.get('/*.tsx', proxyToVite);
+	app.get('/*.css', proxyToVite);
+}
+
 // Mount API routes
 const { default: router_0 } = await import('../api/index.js');
 app.route('/api', router_0);
+
+// Mount workbench API routes (/_agentuity/workbench/*)
+const workbenchRouter = createWorkbenchRouter();
+app.route('/', workbenchRouter);
+
+// Workbench routes - Runtime mode detection
+// Both dev and prod run from .agentuity/app.js (dev bundles before running)
+// So workbench-src is always in the same directory
+const workbenchSrcDir = import.meta.dir + '/workbench-src';
+const workbenchIndexPath = import.meta.dir + '/workbench/index.html';
+const workbenchIndex = existsSync(workbenchIndexPath) 
+	? readFileSync(workbenchIndexPath, 'utf-8')
+	: '';
+
+if (isDevelopment()) {
+	// Development mode: Let Vite serve source files with HMR
+	app.get('/workbench', async (c: Context) => {
+		const html = await Bun.file(workbenchSrcDir + '/index.html').text();
+		// Rewrite script/css paths to use Vite's @fs protocol
+		const withVite = html
+			.replace('src="./main.tsx"', `src="/@fs${workbenchSrcDir}/main.tsx"`)
+			.replace('href="./styles.css"', `href="/@fs${workbenchSrcDir}/styles.css"`);
+		return c.html(withVite);
+	});
+} else {
+	// Production mode: Serve pre-built assets
+	if (workbenchIndex) {
+		app.get('/workbench', (c: Context) => c.html(workbenchIndex));
+		app.get('/workbench/*', serveStatic({ root: import.meta.dir + '/workbench' }));
+	}
+}
 
 // Web routes - Runtime mode detection (dev proxies to Vite, prod serves static)
 if (isDevelopment()) {
@@ -150,7 +274,7 @@ if (isDevelopment()) {
 	// 404 for unmatched API/system routes
 	app.all('/_agentuity/*', (c: Context) => c.notFound());
 	app.all('/api/*', (c: Context) => c.notFound());
-	app.all('/workbench/*', (c: Context) => c.notFound());
+	
 	
 	// SPA fallback - serve index.html for client-side routing
 	app.get('*', (c: Context) => {
@@ -183,7 +307,7 @@ if (isDevelopment()) {
 	// 404 for unmatched API/system routes (IMPORTANT: comes before SPA fallback)
 	app.all('/_agentuity/*', (c: Context) => c.notFound());
 	app.all('/api/*', (c: Context) => c.notFound());
-	app.all('/workbench/*', (c: Context) => c.notFound());
+	
 
 	// SPA fallback with asset protection
 	app.get('*', (c: Context) => {
