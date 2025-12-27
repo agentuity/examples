@@ -1,11 +1,7 @@
-import type {
-  AgentRequest,
-  AgentResponse,
-  AgentContext,
-  AgentWelcomeResult,
-} from '@agentuity/sdk';
-import { openai } from '@ai-sdk/openai';
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { s } from '@agentuity/schema';
 import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
 
 // NWS API configuration
 const USER_AGENT =
@@ -46,159 +42,32 @@ interface NWSForecastResponse {
   };
 }
 
-export default async function WeatherAgent(
-  request: AgentRequest,
-  response: AgentResponse,
-  context: AgentContext
-) {
-  /**
-   * Weather agent demonstrating how to use agents in Agentuity (trigger-based behaviors).
-   *
-   * Uses National Weather Service API for real weather data, with some simple caching.
-   */
-  context.logger.info(`Weather agent triggered via: ${request.trigger}`);
+/**
+ * Simple coordinate mapping for demo purposes
+ * Typically, you'd use a proper geocoding service
+ */
+function getCoordinatesForLocation(location: string): {
+  lat: number;
+  lon: number;
+} | null {
+  const locationLower = location.toLowerCase();
 
-  // Cron jobs run automatically, and are configurable in the UI
-  if (request.trigger === 'cron') {
-    return await handleCronTrigger(response, context);
-    // Manual triggers allow you to test your agent from Dev Mode, even if you have a cron job set up
-  } else if (request.trigger === 'manual') {
-    return await handleManualTrigger(request, response, context);
+  if (locationLower.includes('san francisco') || locationLower.includes('sf')) {
+    return { lat: 37.77, lon: -122.42 };
+  } else if (
+    locationLower.includes('new york') ||
+    locationLower.includes('nyc')
+  ) {
+    return { lat: 40.71, lon: -74.01 };
+  } else if (
+    locationLower.includes('los angeles') ||
+    locationLower.includes('la')
+  ) {
+    return { lat: 34.05, lon: -118.24 };
+  } else if (locationLower.includes('chicago')) {
+    return { lat: 41.88, lon: -87.63 };
   } else {
-    context.logger.warn(`Unknown trigger type: ${request.trigger}`);
-    return response.json({
-      error: `Unsupported trigger: ${request.trigger}`,
-      supportedTriggers: ['cron', 'manual'],
-    });
-  }
-}
-
-/**
- * CRON TRIGGER: Bulk weather updates for monitoring
- * Behavior: Fetch weather for multiple cities and cache for alerts
- */
-async function handleCronTrigger(
-  response: AgentResponse,
-  context: AgentContext
-): Promise<any> {
-  context.logger.info(
-    `Cron job: Fetching weather for ${MONITORED_CITIES.length} cities`
-  );
-
-  const weatherData: Record<string, WeatherResult> = {};
-  const errors: string[] = [];
-
-  // Process each monitored city
-  for (const city of MONITORED_CITIES) {
-    try {
-      const weather = await fetchNWSWeather(
-        city.lat,
-        city.lon,
-        city.name,
-        context
-      );
-      weatherData[city.name] = weather;
-
-      // Cache individual city data for 1 hour
-      await context.kv.set(
-        'weather',
-        `city_${city.name.toLowerCase()}`,
-        weather,
-        { ttl: 3600 }
-      );
-
-      context.logger.info(
-        `Cached weather for ${city.name}: ${weather.temperature}°F`
-      );
-    } catch (error) {
-      const errorMsg = `Failed to fetch weather for ${city.name}: ${error}`;
-      context.logger.error(errorMsg);
-      errors.push(errorMsg);
-    }
-  }
-
-  // Store bulk report
-  const bulkReport = {
-    cities: weatherData,
-    updated: new Date().toISOString(),
-    successCount: Object.keys(weatherData).length,
-    errorCount: errors.length,
-    errors: errors,
-  };
-
-  await context.kv.set('weather', 'bulk_report', bulkReport, { ttl: 3600 });
-
-  return response.json({
-    source: 'cron_trigger',
-    message: `Weather updated for ${Object.keys(weatherData).length} cities`,
-    cities: Object.keys(weatherData),
-    errors: errors.length > 0 ? errors : undefined,
-    timestamp: new Date().toISOString(),
-    nextUpdate: 'in 1 hour',
-  });
-}
-
-/**
- * MANUAL TRIGGER: On-demand weather lookup with caching
- * Behavior: Get specific location weather, check cache first, shorter TTL
- */
-async function handleManualTrigger(
-  request: AgentRequest,
-  response: AgentResponse,
-  context: AgentContext
-): Promise<any> {
-  // Parse location from request (default to San Francisco)
-  let locationQuery: string;
-  try {
-    locationQuery = (await request.data.text()) || 'San Francisco';
-  } catch {
-    locationQuery = 'San Francisco';
-  }
-
-  context.logger.info(`Manual request for weather in: ${locationQuery}`);
-
-  // Get coordinates for location
-  const coordinates = getCoordinatesForLocation(locationQuery);
-  if (!coordinates) {
-    return response.json({
-      error: 'Location not supported',
-      message: `Weather data is only available for: San Francisco, New York, Los Angeles, and Chicago. You requested: ${locationQuery}`,
-      supported_cities: ['San Francisco', 'New York', 'Los Angeles', 'Chicago']
-    });
-  }
-
-  const cacheKey = `city_${locationQuery.toLowerCase().replace(/\s+/g, '_')}`;
-
-  // Check if we have recent data (5 minutes)
-  const cached = await context.kv.get('weather', cacheKey);
-  if (cached.exists) {
-    const cachedWeather = (await cached.data.json()) as any;
-    context.logger.info(`Returning cached weather for ${locationQuery}`);
-    return response.json(cachedWeather);
-  }
-
-  // Fetch fresh weather data
-  try {
-    const weather = await fetchNWSWeather(
-      coordinates.lat,
-      coordinates.lon,
-      locationQuery,
-      context
-    );
-
-    // Cache for 5 minutes
-    await context.kv.set('weather', cacheKey, weather, { ttl: 300 });
-
-    return response.json(weather);
-  } catch (error) {
-    context.logger.error(
-      `Failed to fetch weather for ${locationQuery}: ${error}`
-    );
-    return response.json({
-      error: 'Weather data unavailable',
-      message: `Could not fetch weather for ${locationQuery}. Please try again later.`,
-      location: locationQuery,
-    });
+    return null; // Unsupported location
   }
 }
 
@@ -210,9 +79,9 @@ async function fetchNWSWeather(
   latitude: number,
   longitude: number,
   locationName: string,
-  context: AgentContext
+  ctx: AgentContext 
 ): Promise<WeatherResult> {
-  context.logger.info(
+  ctx.logger.info(
     `Fetching NWS weather for ${locationName} (${latitude}, ${longitude})`
   );
 
@@ -281,9 +150,9 @@ async function fetchNWSWeather(
       });
 
       aiSummary = aiResult.text.trim();
-      context.logger.info(`Generated AI summary for ${locationName}`);
+      ctx.logger.info(`Generated AI summary for ${locationName}`);
     } catch (error) {
-      context.logger.error(`AI generation failed: ${error}`);
+      ctx.logger.error(`AI generation failed: ${error}`);
       aiSummary = null; // Fallback
     }
 
@@ -294,12 +163,12 @@ async function fetchNWSWeather(
       ai_summary: aiSummary,
     };
 
-    context.logger.info(
+    ctx.logger.info(
       `Successfully fetched weather for ${locationName}: ${result.temperature}°F`
     );
     return result;
   } catch (error) {
-    context.logger.error(
+    ctx.logger.error(
       `Error fetching weather: ${error instanceof Error ? error.message : String(error)}`
     );
     throw new Error(
@@ -308,60 +177,77 @@ async function fetchNWSWeather(
   }
 }
 
-/**
- * Simple coordinate mapping for demo purposes
- * Typically, you'd use a proper geocoding service
- */
-function getCoordinatesForLocation(location: string): {
-  lat: number;
-  lon: number;
-} | null {
-  const locationLower = location.toLowerCase();
+const agent = createAgent('weather', {
+	description: 'An agent using Vercel AI SDK with OpenAI',
+	schema: {
+		input: s.object({location: s.string()}),
+		output: s.union(
+			// Error
+			s.object({
+				error: s.string(),
+				message: s.string(),
+				supported_cities: s.optional(s.array(s.string())),
+				location: s.optional(s.string())
+			}),
+			// Expected Output
+			s.object({
+				location: s.string(),
+  				temperature: s.number(),
+  				forecast: s.string(),
+  				ai_summary: s.union(s.string(), s.null())
+			}),
+			// Test
+			s.string()
+		)
+	},
+	handler: async (ctx, { location }) => {
+    ctx.logger.info(`Manual request for weather in: ${location}`);
 
-  if (locationLower.includes('san francisco') || locationLower.includes('sf')) {
-    return { lat: 37.77, lon: -122.42 };
-  } else if (
-    locationLower.includes('new york') ||
-    locationLower.includes('nyc')
-  ) {
-    return { lat: 40.71, lon: -74.01 };
-  } else if (
-    locationLower.includes('los angeles') ||
-    locationLower.includes('la')
-  ) {
-    return { lat: 34.05, lon: -118.24 };
-  } else if (locationLower.includes('chicago')) {
-    return { lat: 41.88, lon: -87.63 };
-  } else {
-    return null; // Unsupported location
-  }
-}
+    // Get coordinates for location
+    const coordinates = getCoordinatesForLocation(location);
+    if (!coordinates) {
+      return {
+        error: 'Location not supported',
+        message: `Weather data is only available for: San Francisco, New York, Los Angeles, and Chicago. You requested: ${location}`,
+        supported_cities: ['San Francisco', 'New York', 'Los Angeles', 'Chicago']
+      };
+    }
 
-export const welcome = (): AgentWelcomeResult => {
-  return {
-    welcome: `🌤️ **Real Weather Agent** - National Weather Service Integration
+    const cacheKey = `city_${location.toLowerCase().replace(/\s+/g, '_')}`;
 
-I demonstrate **agent anatomy** through different trigger behaviors:
+    // Check if we have recent data (5 minutes)
+    const cached = await ctx.kv.get('weather', cacheKey);
+    if (cached.exists) {
+      const cachedWeather = cached.data as any;
+      ctx.logger.info(`Returning cached weather for ${location}`);
+      return cachedWeather;
+    }
 
-📅 **Cron Trigger**: Bulk updates for monitoring dashboards
-🔍 **Manual Trigger**: On-demand weather with smart caching
+    // Fetch fresh weather data
+    try {
+      const weather = await fetchNWSWeather(
+        coordinates.lat,
+        coordinates.lon,
+        location,
+        ctx
+      );
 
-I use the National Weather Service API (no API key required) and intelligent caching strategies for optimal performance.
+      // Cache for 5 minutes
+      await ctx.kv.set('weather', cacheKey, weather, { ttl: 300 });
 
-⚠️ **Note**: I currently support weather for: San Francisco, New York, Los Angeles, and Chicago. Please use one of these cities for accurate weather data.`,
-    prompts: [
-      {
-        data: 'San Francisco',
-        contentType: 'text/plain',
-      },
-      {
-        data: 'New York',
-        contentType: 'text/plain',
-      },
-      {
-        data: 'Chicago',
-        contentType: 'text/plain',
-      },
-    ],
-  };
-};
+      return weather;
+    } catch (error) {
+      ctx.logger.error(
+        `Failed to fetch weather for ${location}: ${error}`
+      );
+      return {
+        error: 'Weather data unavailable',
+        message: `Could not fetch weather for ${location}. Please try again later.`,
+        location: location,
+      };
+    }
+	},
+});
+
+
+export default agent;
