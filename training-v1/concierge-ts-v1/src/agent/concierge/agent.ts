@@ -70,12 +70,8 @@ const agent = createAgent('concierge', {
 				);
 			}
 
-			// Add current user message to history
-			conversationHistory.push({
-				role: 'user',
-				content: prompt,
-				timestamp: Date.now(),
-			});
+			// Do NOT add current message yet - let specialized agents handle it
+			// We'll add it after getting the response to maintain proper alternation
 
 			// Classify intent using OpenAI
 			let intent = 'other';
@@ -172,7 +168,14 @@ Respond with ONLY the category name in lowercase (sanfrancisco, conference, agen
 				responseText = getWelcomeMessage();
 			}
 
-			// Add response to history
+			// Add current user message and response to history
+			// (Adding user message here ensures proper alternation with assistant response)
+			conversationHistory.push({
+				role: 'user',
+				content: prompt,
+				timestamp: Date.now(),
+			});
+
 			conversationHistory.push({
 				role: 'assistant',
 				content: responseText,
