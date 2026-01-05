@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agentuity.dev/schema/cli/v1/agentuity.json",
+  "projectId": "proj_949ee03501171e3f96f3ffee612c7407",
+  "orgId": "org_2u8RgDTwcZWrZrZ3sZh24T5FCtz",
+  "deployment": {
+    "resources": {
+      "memory": "500Mi",
+      "cpu": "500m",
+      "disk": "500Mi",
+      "storage": "ag-nw71slim1dpy",
+      "db": "will_krohn"
+    }
+  },
+  "region": "use"
+}
