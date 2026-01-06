@@ -6,11 +6,11 @@
 # ------------------------------------------------
 
 # The version semver range required to run this project
-version: '>=0.0.148'
+version: '>=0.0.150'
 # The ID of the project which is automatically generated
-project_id: proj_7693a1dd0a17bce69869c383522b09bd
+project_id: proj_a453b04d4fd6a0d741faea69eb7a2728
 # The name of the project which is editable
-name: Startup_News_Scraper
+name: blog-publisher
 # The description of the project which is editable
 description: ""
 # The development configuration for the project
@@ -70,6 +70,6 @@ bundler:
 # The agents that are part of this project
 agents:
   - # The ID of the Agent which is automatically generated
-    id: agent_25cbe261850fa3738b7e2b7d2227e745
+    id: agent_83708c4e4737e1d9c5991f75f1229261
     # The name of the Agent which is editable
-    name: startup_scraper
+    name: supervisor
