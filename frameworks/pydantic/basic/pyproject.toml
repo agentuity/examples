@@ -1,9 +1,0 @@
-[project]
-name = "sample-uv-pydantic"
-version = "0.1.0"
-description = ""
-requires-python = ">=3.10, <=3.12"
-dependencies = [
-    "agentuity>=0.0.85",
-    "pydantic-ai>=0.2.6",
-]

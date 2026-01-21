@@ -15,28 +15,52 @@
 
 [![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
 
-> [!WARNING]  
-> This repository is under heavy development and it is not yet stable or ready for use.
+Examples for building agents with the [Agentuity SDK](https://github.com/agentuity/sdk).
 
-This repository contains a collection of examples that demonstrate how to build and deploy agents using the Agentuity platform. These examples are designed to help you get started with Agentuity and provide reference implementations that you can use, copy, or adapt for your own projects.
+## Examples
 
-## New to Agentuity? Try the Kitchen Sink
+### [training/](./training)
 
-The [**Kitchen Sink**](https://github.com/agentuity/kitchen-sink-ts) is an interactive SDK showcase with 20+ live agents demonstrating:
+Learn Agentuity from basics to advanced. Full-stack examples with React frontends.
 
-- **Handler APIs** - Request/response handling, context management
-- **I/O Methods** - Agent communication, webhooks, cron, email, SMS
-- **Storage** - Key-value, object store, vector search
-- **AI Integrations** - Multiple frameworks, AI Gateway, BYO tokens
-- **Observability** - Logging and tracing
+| Example | Description |
+|---------|-------------|
+| [01-hello-world](./training/01-hello-world) | Your first agent |
+| [02-weather-agent](./training/02-weather-agent) | External API integration |
+| [03-concierge](./training/03-concierge) | Multi-agent orchestration |
+| [04-storage-types](./training/04-storage-types) | Key-value, object store, vector search |
+| [05-deep-research](./training/05-deep-research) | Complex agent workflows |
 
-Perfect for **hands-on learning** before building your own agents. Deploy in minutes, test features interactively, and see working code for every SDK capability.
+### [integrations/](./integrations)
 
-The examples in this repo showcase **practical implementations** for real-world use cases.
+Add Agentuity to your existing frontend app.
+
+| Example | Framework | Description |
+|---------|-----------|-------------|
+| [nextjs](./integrations/nextjs) | Next.js App Router | API rewrites + useAPI hook |
+| [tanstack-start](./integrations/tanstack-start) | TanStack Start | SSR with lazy-loaded components |
+| [turborepo](./integrations/turborepo) | Turborepo | Monorepo with shared schemas |
 
 ## Getting Started
 
-For comprehensive documentation and getting started guides, please visit our documentation site at [agentuity.dev](https://agentuity.dev).
+```bash
+# Clone this repo
+git clone https://github.com/agentuity/examples
+cd examples
+
+# Pick an example
+cd training/01-hello-world
+
+# Install and run
+bun install
+bun run dev
+```
+
+For documentation, visit [agentuity.dev](https://agentuity.dev).
+
+## v0 Examples
+
+Looking for v0 SDK examples? Run `git checkout v0`.
 
 ## Contributing
 

@@ -1,1 +1,10 @@
 .DS_Store
+
+# dependencies (bun install)
+node_modules/
+
+# coding agents
+.claude/
+CLAUDE.md
+AGENTS.md
+.agents/
