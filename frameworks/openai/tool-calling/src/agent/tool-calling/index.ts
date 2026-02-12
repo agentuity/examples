@@ -9,8 +9,11 @@
  */
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
-import { Agent, run, tool } from '@openai/agents';
+import { Agent, run, tool, setTracingDisabled } from '@openai/agents';
 import { z } from 'zod';
+
+// Disable OpenAI tracing — Agentuity provides its own observability
+setTracingDisabled(true);
 
 // ---------------------------------------------------------------------------
 // OpenAI Agents SDK Tools — defined with tool() + Zod schemas
