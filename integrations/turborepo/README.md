@@ -65,7 +65,7 @@ const agent = createAgent('translate', {
 
 ```typescript
 // apps/web/src/components/TranslateDemo.tsx
-import '@agentuity/routes'; // Generated types
+import '@tanstack-turborepo/agentuity/routes'; // Generated types
 import { LANGUAGES, type Language } from '@tanstack-turborepo/shared';
 
 const { data, invoke } = useAPI('POST /api/translate');
@@ -122,3 +122,11 @@ AGENTUITY_SDK_KEY=your_key_here
 ```
 
 Get your SDK key from [agentuity.com](https://agentuity.com).
+
+## Related
+
+- [React hooks](https://agentuity.dev/frontend/react-hooks)
+- [Provider setup](https://agentuity.dev/frontend/provider-setup)
+- [Schema libraries](https://agentuity.dev/agents/schema-libraries)
+- [Project structure](https://agentuity.dev/get-started/project-structure)
+- [Agentuity SDK](https://github.com/agentuity/sdk)

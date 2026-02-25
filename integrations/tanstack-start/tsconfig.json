@@ -1,5 +1,5 @@
 {
-	"include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
+	"include": ["**/*.ts", "**/*.tsx", "vite.config.ts"],
 	"exclude": ["node_modules", "agentuity"],
 	"compilerOptions": {
 		"target": "ES2022",
@@ -20,7 +20,8 @@
 		"baseUrl": ".",
 		"paths": {
 			"@/*": ["./src/*"],
-			"@agentuity/routes": ["./agentuity/src/generated/routes.ts"]
+			"@agentuity/routes": ["./agentuity/src/generated/routes.ts"],
+			"@agentuity/frontend": ["./node_modules/@agentuity/frontend"]
 		}
 	}
 }

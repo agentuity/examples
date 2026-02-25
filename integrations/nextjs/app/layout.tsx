@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
 	title: 'Agentuity + Next.js Demo',
@@ -12,7 +13,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<body style={{ margin: 0, backgroundColor: '#09090b' }}>{children}</body>
+			<body>{children}</body>
 		</html>
 	);
 }

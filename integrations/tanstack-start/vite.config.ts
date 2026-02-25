@@ -1,19 +1,18 @@
 import { defineConfig } from 'vite';
 import { devtools } from '@tanstack/devtools-vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import viteReact from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
-	plugins: [devtools(), viteReact(), tailwindcss()],
-	resolve: {
-		alias: {
-			'@': fileURLToPath(new URL('./src', import.meta.url)),
-			'@agentuity/routes': fileURLToPath(
-				new URL('./agentuity/src/generated/routes.ts', import.meta.url)
-			),
-		},
-	},
+	plugins: [
+		devtools(),
+		tsconfigPaths({ projects: ['./tsconfig.json'] }),
+		tailwindcss(),
+		tanstackStart(),
+		viteReact(),
+	],
 	server: {
 		proxy: {
 			'/api': {
@@ -21,5 +20,11 @@ export default defineConfig({
 				changeOrigin: true,
 			},
 		},
+	},
+	ssr: {
+		noExternal: [/^@agentuity\//],
+	},
+	test: {
+		environment: 'jsdom',
 	},
 });

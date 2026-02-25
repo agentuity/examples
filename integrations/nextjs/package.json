@@ -5,11 +5,13 @@
 	"type": "module",
 	"scripts": {
 		"dev": "concurrently -n web,agent -c blue,cyan \"bun run dev:web\" \"bun run dev:agent\"",
-		"dev:web": "next dev --port 3001",
+		"dev:web": "bun run wait:agent && next dev --port 3001",
 		"dev:agent": "cd agentuity && agentuity dev --port 3501",
+		"wait:agent": "node scripts/wait-for-agent.mjs",
 		"build": "concurrently \"bun run build:web\" \"bun run build:agent\"",
 		"build:web": "next build",
 		"build:agent": "cd agentuity && agentuity build --dev",
+		"test": "bun run build:agent && bun run typecheck",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {

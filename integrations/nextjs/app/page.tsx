@@ -1,9 +1,9 @@
-import EchoDemo from './components/EchoDemo';
+import TranslateDemo from './components/TranslateDemo';
 
 export default function Home() {
 	return (
 		<main>
-			<EchoDemo />
+			<TranslateDemo />
 		</main>
 	);
 }

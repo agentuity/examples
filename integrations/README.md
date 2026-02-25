@@ -1,27 +1,26 @@
-# Integration Examples
+# Adding Agentuity to an Existing Frontend
 
-Examples showing how to integrate Agentuity with frontend frameworks.
+These examples show how to add Agentuity agents to a frontend app you already have. Each one runs two processes side by side: your framework's dev server and the Agentuity backend.
 
-| Example | Framework | Description |
-|---------|-----------|-------------|
-| [nextjs](./nextjs) | Next.js App Router | API rewrites + useAPI hook |
-| [tanstack-start](./tanstack-start) | TanStack Start | SSR with lazy-loaded components |
-| [turborepo](./turborepo) | Turborepo | Monorepo with shared schemas |
+| Example | Framework | What It Demonstrates |
+|---------|-----------|----------------------|
+| [nextjs](./nextjs) | Next.js App Router | Translate agent with history, evals, and rewrite proxy |
+| [tanstack-start](./tanstack-start) | TanStack Start | Translate agent with history, evals, and Vite proxy |
+| [turborepo](./turborepo) | Turborepo | Monorepo with shared schemas across frontend and agents |
 
 ## Getting Started
 
-Each example includes setup instructions in its README.
+Pick an example and follow its README:
 
 ```bash
-# Example: Run the Next.js integration
-cd nextjs
+cd nextjs        # or tanstack-start, turborepo
 bun install
 bun run build:agent
 bun run dev
 ```
 
-## When to Use These
+Each example includes its own setup instructions, project layout, and deployment notes.
 
-These examples are for developers who have an **existing** frontend app and want to add Agentuity agents.
+## New to Agentuity?
 
-If you're new to Agentuity, start with the [training examples](../training) instead.
+Start with the [training examples](../training) instead. They cover Agentuity fundamentals before you integrate with a framework.

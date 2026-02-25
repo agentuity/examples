@@ -1,6 +1,6 @@
 # Agent Approval
 
-Demonstrates [Mastra's agent approval](https://mastra.ai/docs/agents/agent-tool-approval) patterns ported to Agentuity. Agents sometimes require human-in-the-loop oversight when calling tools that handle sensitive operations, like deleting resources or sending notifications.
+Demonstrates [Mastra's agent approval](https://mastra.ai/docs/workflows/human-in-the-loop) patterns ported to Agentuity. Agents sometimes require human-in-the-loop oversight when calling tools that handle sensitive operations, like deleting resources or sending notifications.
 
 ## What This Example Shows
 

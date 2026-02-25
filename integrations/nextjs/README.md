@@ -1,136 +1,129 @@
-# Next.js + Agentuity Integration
+# Next.js + Agentuity
 
-Type-safe integration between Next.js App Router and Agentuity agents.
+Upgrade pattern for an existing Next.js App Router frontend that adds an Agentuity backend runtime for AI routes.
 
-## Architecture
+## What This Example Shows
 
-```
+- Two-runtime architecture:
+  - Next.js frontend runtime (`localhost:3001`)
+  - Agentuity backend runtime (`localhost:3501`)
+- Dev startup gate: web server waits for backend health (`/api/health`) before Next.js boots
+- Translate workflow:
+  - `GET /api/translate/history` bootstrap uses `fetch` with retry/timeout
+  - `POST /api/translate` and `DELETE /api/translate/history` use `useAPI`
+- Eval wiring on the translate agent:
+  - `adversarial` preset eval
+  - `language-match` custom eval
+- Type-safe route augmentation via `@agentuity/routes`
+- Local proxy mode and cross-origin `baseUrl` mode
+
+## Official References
+
+- Next.js rewrites: https://nextjs.org/docs/app/api-reference/config/next-config-js/rewrites
+- Next.js `'use client'`: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+## Project Layout
+
+```text
 nextjs/
-├── app/                          # Next.js App Router (port 3001)
-│   ├── components/
-│   │   └── EchoDemo.tsx          # Client component using useAPI hook
-│   ├── layout.tsx                # Root layout
-│   └── page.tsx                  # Home page
-├── agentuity/                    # Agentuity agent backend (port 3501)
-│   ├── src/
-│   │   ├── agent/echo/agent.ts   # Echo agent with typed schemas
-│   │   ├── api/index.ts          # API routes
-│   │   └── generated/routes.ts   # Auto-generated type definitions
-│   └── app.ts
-├── next.config.ts                # API rewrites to backend
-└── tsconfig.json                 # TypeScript path aliases
+├── app/                                # Next.js frontend
+│   ├── components/TranslateDemo.tsx     # Translate/history UI (fetch bootstrap + useAPI actions)
+│   ├── layout.tsx
+│   └── page.tsx
+├── agentuity/                          # Agentuity backend
+│   ├── src/agent/translate/agent.ts    # Translate agent
+│   ├── src/agent/translate/eval.ts     # Evals (adversarial + language-match)
+│   ├── src/agent/translate/state.ts    # History state schema
+│   ├── src/api/index.ts                # /api/translate* routes
+│   └── src/generated/routes.ts         # Generated frontend route augmentation
+├── next.config.ts                      # /api/* rewrite to Agentuity backend
+└── tsconfig.json                       # @agentuity/routes alias
 ```
 
-## Key Integration Points
-
-### 1. API Rewrites (next.config.ts)
-
-Next.js rewrites `/api/*` requests to the Agentuity backend:
-
-```typescript
-const nextConfig: NextConfig = {
-	async rewrites() {
-		return [
-			{
-				source: '/api/:path*',
-				destination: 'http://localhost:3500/api/:path*',
-			},
-		];
-	},
-};
-```
-
-### 2. Type-Safe Routes (tsconfig.json paths)
-
-Path aliases enable importing generated route types:
-
-```json
-{
-	"paths": {
-		"@agentuity/routes": ["./agentuity/src/generated/routes.ts"]
-	}
-}
-```
-
-### 3. Client Component (EchoDemo.tsx)
-
-The `useAPI` hook provides full type inference with the `'use client'` directive:
-
-```tsx
-'use client';
-
-import { useAPI, AgentuityProvider } from '@agentuity/react';
-import '@agentuity/routes'; // Side-effect import for type augmentation
-
-function EchoDemoInner() {
-	// TypeScript knows: input = { message: string }, output = { echo: string, timestamp: string }
-	const { data, invoke, isLoading, error } = useAPI('POST /api/echo');
-
-	return <button onClick={() => invoke({ message: 'Hello!' })}>Send Echo</button>;
-}
-
-export default function EchoDemo() {
-	return (
-		<AgentuityProvider>
-			<EchoDemoInner />
-		</AgentuityProvider>
-	);
-}
-```
-
-### 4. Echo Agent (agent.ts)
-
-Typed agent with input/output schemas:
-
-```typescript
-import { createAgent } from '@agentuity/runtime';
-import { s } from '@agentuity/schema';
-
-export const EchoInput = s.object({
-	message: s.string(),
-});
-
-export const EchoOutput = s.object({
-	echo: s.string(),
-	timestamp: s.string(),
-});
-
-const agent = createAgent('echo', {
-	schema: { input: EchoInput, output: EchoOutput },
-	handler: async (ctx, { message }) => ({
-		echo: message,
-		timestamp: new Date().toISOString(),
-	}),
-});
-```
-
-## Quick Start
+## Running Locally
 
 ```bash
-# Install dependencies
+cd integrations/nextjs
 bun install
-
-# Build agent backend (generates routes.ts)
 bun run build:agent
-
-# Run both frontend and backend concurrently
 bun run dev
 ```
+
+`bun run dev` starts both runtimes concurrently, and the web process waits until `http://127.0.0.1:3501/api/health` responds successfully before launching Next.js. This makes startup deterministic, so the UI does not bootstrap history calls while the backend is still warming up.
 
 - Frontend: http://localhost:3001
 - Backend: http://localhost:3501
 - Workbench: http://localhost:3501/workbench
 
-## Type Safety Flow
+### AI Credentials in Local-Only Mode
 
-1. Agent schemas defined in `agent.ts` using `@agentuity/schema`
-2. Build generates `routes.ts` with `declare module '@agentuity/frontend'`
-3. Frontend imports `@agentuity/routes` (side-effect import)
-4. `useAPI('POST /api/echo')` infers types from RouteRegistry augmentation
-5. TypeScript validates `invoke({ message })` and `data.echo` at compile time
+If the project is not registered with Agentuity Cloud, translation calls require provider keys:
 
-## Next.js Specific Notes
+- `OPENAI_API_KEY` for translate agent calls
+- `GROQ_API_KEY` for eval model calls
 
-- Use `'use client'` directive for components using `useAPI` hook
-- The `AgentuityProvider` must wrap any component using Agentuity hooks
-- API rewrites only work in development; for production, configure your deployment platform
+Without credentials, the backend still starts and history endpoints work, but `POST /api/translate` returns `500`.
+
+## Warnings and Local-vs-Cloud Notes
+
+- If Next.js warns about workspace root detection, keep `outputFileTracingRoot` in `next.config.ts` pointed to the monorepo root.
+- Local default mode uses rewrite proxying: `/api/:path* -> http://localhost:3501/api/:path*`.
+- Cross-origin mode skips the rewrite and uses `NEXT_PUBLIC_AGENTUITY_BASE_URL` in `AgentuityProvider`.
+- In local-only mode without provider credentials, `POST /api/translate` can return `500`; history endpoints still work.
+- If backend startup is delayed, `bun run dev` waits up to 30 seconds before failing with a clear wait-script error.
+- If you see a `DEP0060` warning while using Next.js rewrites/proxy in dev, treat it as a known transitive dev-time warning unless request routing is actually failing.
+
+## Frontend Type Safety
+
+The client component keeps the required side-effect import:
+
+```tsx
+import '@agentuity/routes';
+```
+
+That enables typed `useAPI` route keys and payloads for:
+
+- `useAPI('POST /api/translate')`
+- `useAPI('DELETE /api/translate/history')`
+
+History bootstrap uses `fetch('/api/translate/history', { method: 'GET' })` with retry/timeout behavior.
+
+## Verification Workflow
+
+Run this after changing backend routes, schemas, or frontend route calls:
+
+```bash
+cd integrations/nextjs
+bun run build:agent
+bun run test
+```
+
+- `build:agent` regenerates `agentuity/src/generated/routes.ts`, which typed frontend routes depend on.
+- Keep `import '@agentuity/routes'` so generated route typings are loaded.
+- Keep exact method+path literal keys in `useAPI(...)` for strong typing.
+- `test` is a practical check (`build:agent && typecheck`), not a separate test framework setup.
+
+## Deployment
+
+This example runs two separate runtimes when deployed.
+
+1. Preferred: host-level proxy/rewrite
+- Route frontend `/api/*` traffic to the Agentuity backend.
+- Equivalent to local `next.config.ts` rewrite behavior, but configured at your host/load balancer.
+
+2. Fallback: explicit backend base URL from the frontend
+- Set frontend env: `NEXT_PUBLIC_AGENTUITY_BASE_URL=https://your-agentuity-backend.example.com`
+- Passes through `AgentuityProvider baseUrl`.
+- Enable cross-origin backend access with:
+  - `AGENTUITY_CORS_ALLOWED_ORIGINS=https://your-frontend.example.com`
+
+Backend CORS is configured with trusted-origin mode plus optional extra origins from that env variable.
+
+## Related
+
+- [React hooks](https://agentuity.dev/frontend/react-hooks)
+- [Provider setup](https://agentuity.dev/frontend/provider-setup)
+- [Deployment scenarios](https://agentuity.dev/frontend/deployment-scenarios)
+- [Evaluations](https://agentuity.dev/agents/evaluations)
+- [HTTP routes](https://agentuity.dev/routes/http)
+- [Agentuity SDK](https://github.com/agentuity/sdk)

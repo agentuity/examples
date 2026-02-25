@@ -1,7 +1,19 @@
-import { createApp } from '@agentuity/runtime';
+import { createApp, createTrustedCorsOrigin } from '@agentuity/runtime';
 
-const app = await createApp();
+const allowedOrigins = process.env.AGENTUITY_CORS_ALLOWED_ORIGINS?.split(',')
+	.map((origin) => origin.trim())
+	.filter(Boolean);
 
-console.log(`[TanStack Start Agent] Server started: ${app.server.url}`);
+const app = await createApp({
+	cors: {
+		origin: createTrustedCorsOrigin({
+			allowedOrigins,
+		}),
+		sameOrigin: true,
+		allowedOrigins: allowedOrigins?.length ? allowedOrigins : undefined,
+	},
+});
+
+app.logger.info(`[TanStackStart-Agentuity] Server started: ${app.server.url}`);
 
 export default app;

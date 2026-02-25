@@ -1,0 +1,236 @@
+import { useAPI } from '@agentuity/react';
+import { useCallback, useState } from 'react';
+import { TARGETS } from '../lib/targets';
+import type { AgentOutput, ExplorationStep } from '../lib/types';
+import './App.css';
+
+export function App() {
+	const [customUrl, setCustomUrl] = useState('');
+	const { data, invoke, isLoading, error, reset } = useAPI('POST /api/explore');
+
+	const result = data as AgentOutput | undefined;
+
+	const handleExplore = useCallback(
+		async (url: string) => {
+			await invoke({ url, maxSteps: 4 });
+		},
+		[invoke]
+	);
+
+	const handleCustomExplore = useCallback(async () => {
+		if (!customUrl.trim()) return;
+		const url = customUrl.startsWith('http') ? customUrl : `https://${customUrl}`;
+		await handleExplore(url);
+	}, [customUrl, handleExplore]);
+
+	const handleReset = useCallback(() => {
+		setCustomUrl('');
+		reset();
+	}, [reset]);
+
+	// Results view
+	if (result && !isLoading) {
+		return (
+			<div className="text-white flex font-sans justify-center min-h-screen">
+				<div className="flex flex-col gap-6 max-w-3xl p-8 md:p-16 w-full">
+					{/* Header */}
+					<div className="flex items-center gap-4 mb-4">
+						<Logo className="h-auto w-8 shrink-0" />
+						<div>
+							<h1 className="text-2xl font-thin">{result.title}</h1>
+							<p className="text-gray-500 text-sm break-all">{result.url}</p>
+						</div>
+					</div>
+
+					{/* Timeline */}
+					<div className="relative">
+						{/* Vertical connector line */}
+						<div className="absolute left-4 top-8 bottom-8 w-px bg-gray-800" />
+
+						<div className="flex flex-col gap-8">
+							{result.steps.map((step: ExplorationStep) => (
+								<div key={step.stepNumber} className="relative pl-12">
+									{/* Step number badge */}
+									<div className="absolute left-0 top-0 flex items-center justify-center w-8 h-8 rounded-full bg-cyan-950 border border-cyan-500 text-cyan-500 text-sm font-medium z-10">
+										{step.stepNumber}
+									</div>
+
+									<div className="bg-black border border-gray-900 rounded-lg p-5 flex flex-col gap-4">
+										{/* Action */}
+										<div>
+											<span className="text-gray-500 text-xs uppercase tracking-wider">
+												Action
+											</span>
+											<p className="text-white text-sm mt-1">{step.action}</p>
+										</div>
+
+										{/* Screenshot */}
+										<img
+											src={`data:image/png;base64,${step.screenshot}`}
+											alt={`Step ${step.stepNumber} screenshot`}
+											className="rounded-lg border border-gray-800 shadow-lg w-full"
+										/>
+
+										{/* Observation */}
+										<div>
+											<span className="text-gray-500 text-xs uppercase tracking-wider">
+												Observation
+											</span>
+											<p className="text-gray-300 text-sm mt-1">{step.observation}</p>
+										</div>
+
+										{/* Element ref badge */}
+										{step.elementRef && (
+											<span className="self-start bg-gray-900 border border-gray-800 rounded text-gray-400 text-xs py-0.5 px-2 font-mono">
+												{step.elementRef}
+											</span>
+										)}
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+
+					{/* Summary card */}
+					<div className="bg-black border border-cyan-900 rounded-lg p-6 ml-12">
+						<span className="text-cyan-500 text-xs uppercase tracking-wider font-medium">
+							Summary
+						</span>
+						<p className="text-gray-300 text-sm mt-2 leading-relaxed">{result.summary}</p>
+					</div>
+
+					{/* Reset button */}
+					<div className="flex justify-center mt-4">
+						<button
+							className="bg-transparent border border-gray-800 rounded-lg text-gray-400 cursor-pointer text-sm transition-all duration-200 py-2.5 px-6 hover:bg-gray-900 hover:border-gray-700 hover:text-white"
+							onClick={handleReset}
+							type="button"
+						>
+							Explore Another
+						</button>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	// Input view
+	return (
+		<div className="text-white flex font-sans justify-center min-h-screen">
+			<div className="flex flex-col gap-6 max-w-3xl p-8 md:p-16 w-full">
+				{/* Header */}
+				<div className="items-center flex flex-col gap-2 justify-center mb-8 text-center">
+					<Logo className="h-auto mb-4 w-12" />
+					<h1 className="text-5xl font-thin">Web Explorer</h1>
+					<p className="text-gray-400 text-lg">
+						AI-guided <span className="italic font-serif">autonomous</span> web exploration in a
+						sandbox
+					</p>
+				</div>
+
+				{/* Loading state */}
+				{isLoading && (
+					<div className="bg-black border border-gray-900 rounded-lg p-8 flex flex-col items-center gap-4">
+						<div className="w-8 h-8 border-2 border-gray-700 border-t-cyan-500 rounded-full animate-spin" />
+						<div className="text-center">
+							<p className="text-white text-sm" data-loading="true">
+								Exploring
+							</p>
+							<p className="text-gray-500 text-xs mt-1">
+								The AI is navigating and taking screenshots in a sandbox browser
+							</p>
+						</div>
+					</div>
+				)}
+
+				{/* Error state */}
+				{error && (
+					<div className="bg-red-950/30 border border-red-900 rounded-lg p-4 text-red-400 text-sm">
+						{String(error)}
+					</div>
+				)}
+
+				{/* Target cards */}
+				{!isLoading && (
+					<>
+						<div className="grid gap-4 sm:grid-cols-3">
+							{TARGETS.map((target) => (
+								<button
+									key={target.url}
+									type="button"
+									className="bg-black border border-gray-900 rounded-lg p-5 text-left cursor-pointer transition-all duration-200 hover:border-cyan-900 hover:bg-gray-950 group"
+									onClick={() => handleExplore(target.url)}
+								>
+									<h3 className="text-white text-sm font-medium mb-1.5 group-hover:text-cyan-500 transition-colors">
+										{target.label}
+									</h3>
+									<p className="text-gray-500 text-xs leading-relaxed">
+										{target.description}
+									</p>
+								</button>
+							))}
+						</div>
+
+						{/* Custom URL input */}
+						<div className="bg-black border border-gray-900 rounded-lg p-6 flex flex-col gap-4">
+							<p className="text-gray-400 text-sm">Or enter a custom URL to explore:</p>
+							<div className="flex gap-3">
+								<input
+									type="url"
+									value={customUrl}
+									onChange={(e) => setCustomUrl(e.currentTarget.value)}
+									placeholder="https://..."
+									className="flex-1 text-sm bg-gray-950 border border-gray-800 rounded-md text-white py-2.5 px-4 focus:outline-cyan-500 focus:outline-2 focus:outline-offset-2"
+									onKeyDown={(e) => {
+										if (e.key === 'Enter') handleCustomExplore();
+									}}
+								/>
+
+								<div className="relative group z-0">
+									<div className="absolute inset-0 bg-linear-to-r from-cyan-700 via-blue-500 to-purple-600 rounded-lg blur-xl opacity-75 group-hover:blur-2xl group-hover:opacity-100 transition-all duration-700" />
+									<div className="absolute inset-0 bg-cyan-500/50 rounded-lg blur-3xl opacity-50" />
+									<button
+										className="relative font-semibold text-white px-5 py-2.5 bg-gray-950 rounded-lg shadow-2xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+										disabled={!customUrl.trim()}
+										onClick={handleCustomExplore}
+										type="button"
+									>
+										Explore
+									</button>
+								</div>
+							</div>
+						</div>
+					</>
+				)}
+			</div>
+		</div>
+	);
+}
+
+// Agentuity logo SVG component
+function Logo({ className }: { className?: string }) {
+	return (
+		<svg
+			aria-hidden="true"
+			className={className}
+			fill="none"
+			height="191"
+			viewBox="0 0 220 191"
+			width="220"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path
+				clipRule="evenodd"
+				d="M220 191H0L31.427 136.5H0L8 122.5H180.5L220 191ZM47.5879 136.5L24.2339 177H195.766L172.412 136.5H47.5879Z"
+				fill="var(--color-cyan-500)"
+				fillRule="evenodd"
+			/>
+			<path
+				clipRule="evenodd"
+				d="M110 0L157.448 82.5H189L197 96.5H54.5L110 0ZM78.7021 82.5L110 28.0811L141.298 82.5H78.7021Z"
+				fill="var(--color-cyan-500)"
+				fillRule="evenodd"
+			/>
+		</svg>
+	);
+}

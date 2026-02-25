@@ -2,7 +2,8 @@ import type { AgentuityConfig } from '@agentuity/cli';
 
 const config: AgentuityConfig = {
 	workbench: {
-		enabled: false,
+		route: '/workbench',
+		headers: {},
 	},
 };
 

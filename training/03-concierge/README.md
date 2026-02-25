@@ -1,147 +1,92 @@
-# concierge-ts-v1
+# Concierge
 
-A new Agentuity project created with `agentuity create`.
+A multi-agent orchestration example where a concierge agent classifies user intent and delegates to specialist agents, with conversation history persisted across turns in KV.
 
-## What You Get
+## Getting Started
 
-A fully configured Agentuity project with:
+```bash
+bun install
+bun run dev
+```
 
-- ✅ **TypeScript** - Full type safety out of the box
-- ✅ **Bun runtime** - Fast JavaScript runtime and package manager
-- ✅ **Hot reload** - Development server with auto-rebuild
-- ✅ **Example agent** - Sample "hello" agent to get started
-- ✅ **React frontend** - Pre-configured web interface
-- ✅ **API routes** - Example API endpoints
-- ✅ **Type checking** - TypeScript configuration ready to go
+Open [localhost:3500](http://localhost:3500) for the frontend, or [localhost:3500/workbench](http://localhost:3500/workbench) to test agents directly.
+
+## What's Inside
+
+The `concierge` agent is the entry point. It classifies each incoming message with OpenAI, then calls the appropriate specialist agent via `.run()`:
+
+```typescript
+// Classify intent
+const intentResponse = await openai.chat.completions.create({
+  model: 'gpt-4o-mini',
+  messages: [{ role: 'system', content: `Classify as: sanfrancisco, conference, agentuity, or other` },
+             { role: 'user', content: prompt }],
+  temperature: 0,
+});
+
+// Route to specialist
+if (intent === 'conference') {
+  const result = await conferenceAgent.run({
+    prompt,
+    conversationHistory: conversationHistory.slice(-10),
+  });
+} else if (intent === 'sanfrancisco') {
+  const result = await sanfranciscoAgent.run({ prompt, conversationHistory });
+} else if (intent === 'agentuity') {
+  const result = await developerAgent.run({ prompt, conversationHistory });
+}
+```
+
+After routing, the concierge appends both sides of the exchange to conversation history and saves it to KV with a 24-hour TTL:
+
+```typescript
+await ctx.kv.set('conversations', convId, { messages: conversationHistory }, { ttl: 86400 });
+```
+
+On the next request, the same `conversationId` reloads the prior messages so each specialist agent receives the last 10 turns as context.
+
+The three specialist agents each use a different provider and knowledge source:
+
+- **`conference`**: answers questions about AI Engineer World Fair 2025 using content loaded from `src/content/conference/llms.txt` via `Bun.file()`. Uses OpenAI (`gpt-4o-mini`) via the AI SDK. Content is cached in KV after the first load.
+- **`sanfrancisco`**: local SF guide backed by Perplexity (`sonar-pro`) for live web search. Fetches current weather via `src/lib/weather.ts` when the query mentions weather keywords, and appends sources extracted from Perplexity's response.
+- **`developer`**: Agentuity platform expert using documentation loaded from `src/content/agentuity/llms.txt`. Uses OpenAI (`gpt-4o-mini`) and caches the doc content in KV.
 
 ## Project Structure
 
 ```
-my-app/
-├── src/
-│   ├── agent/            # Agent definitions
-│   │   └── hello/
-│   │       ├── agent.ts  # Example agent
-│   │       └── index.ts  # Default exports
-│   ├── api/              # API definitions
-│   │   └── index.ts      # Example routes
-│   └── web/              # React web application
-│       ├── public/       # Static assets
-│       ├── App.tsx       # Main React component
-│       ├── frontend.tsx  # Entry point
-│       └── index.html    # HTML template
-├── AGENTS.md             # Agent guidelines
-├── app.ts                # Application entry point
-├── tsconfig.json         # TypeScript configuration
-├── package.json          # Dependencies and scripts
-└── README.md             # Project documentation
+src/
+├── agent/
+│   ├── concierge/
+│   │   ├── agent.ts        # Orchestrator: intent classification + routing
+│   │   └── index.ts
+│   ├── conference/
+│   │   ├── agent.ts        # AI Engineer World Fair expert (OpenAI)
+│   │   └── index.ts
+│   ├── sanfrancisco/
+│   │   ├── agent.ts        # SF local guide (Perplexity + weather)
+│   │   └── index.ts
+│   └── developer/
+│       ├── agent.ts        # Agentuity platform expert (OpenAI)
+│       └── index.ts
+├── api/
+│   └── index.ts            # API routes for direct agent access
+├── content/
+│   ├── conference/
+│   │   └── llms.txt        # Conference knowledge base
+│   └── agentuity/
+│       └── llms.txt        # Agentuity documentation
+├── lib/
+│   └── weather.ts          # Reusable weather fetch function
+└── web/
+    ├── App.tsx             # React frontend
+    ├── frontend.tsx
+    └── index.html
 ```
 
-## Available Commands
+## Related
 
-After creating your project, you can run:
-
-### Development
-
-```bash
-bun dev
-```
-
-Starts the development server at `http://localhost:3500`
-
-### Build
-
-```bash
-bun build
-```
-
-Compiles your application into the `.agentuity/` directory
-
-### Type Check
-
-```bash
-bun typecheck
-```
-
-Runs TypeScript type checking
-
-### Deploy to Agentuity
-
-```bash
-bun run deploy
-```
-
-Deploys your application to the Agentuity cloud
-
-## Next Steps
-
-After creating your project:
-
-1. **Customize the example agent** - Edit `src/agent/hello/agent.ts`
-2. **Add new agents** - Create new folders in `src/agent/`
-3. **Add new APIs** - Create new folders in `src/api/`
-4. **Add Web files** - Create new routes in `src/web/`
-5. **Customize the UI** - Edit `src/web/app.tsx`
-6. **Configure your app** - Modify `app.ts` to add middleware, configure services, etc.
-
-## Creating Custom Agents
-
-Create a new agent by adding a folder in `src/agent/`:
-
-```typescript
-// src/agent/my-agent/agent.ts
-import { createAgent } from '@agentuity/runtime';
-import { s } from '@agentuity/schema';
-
-const agent = createAgent({
-	description: 'My amazing agent',
-	schema: {
-		input: s.object({
-			name: s.string(),
-		}),
-		output: s.string(),
-	},
-	handler: async (_ctx, { name }) => {
-		return `Hello, ${name}! This is my custom agent.`;
-	},
-});
-
-export default agent;
-```
-
-## Adding API Routes
-
-Create custom routes in `src/api/`:
-
-```typescript
-// src/api/my-agent/route.ts
-import { createRouter } from '@agentuity/runtime';
-import myAgent from './agent';
-
-const router = createRouter();
-
-router.get('/', async (c) => {
-	const result = await myAgent.run({ message: 'Hello!' });
-	return c.json(result);
-});
-
-router.post('/', myAgent.validator(), async (c) => {
-	const data = c.req.valid('json');
-	const result = await myAgent.run(data);
-	return c.json(result);
-});
-
-export default router;
-```
-
-## Learn More
-
-- [Agentuity Documentation](https://agentuity.dev)
-- [Bun Documentation](https://bun.sh/docs)
-- [Hono Documentation](https://hono.dev/)
-- [Zod Documentation](https://zod.dev/)
-
-## Requirements
-
-- [Bun](https://bun.sh/) v1.0 or higher
-- TypeScript 5+
+- [Calling other agents](https://agentuity.dev/agents/calling-other-agents)
+- [State management](https://agentuity.dev/agents/state-management)
+- [AI SDK integration](https://agentuity.dev/agents/ai-sdk-integration)
+- [KV storage](https://agentuity.dev/services/storage/key-value)
+- [Agentuity SDK](https://github.com/agentuity/sdk)

@@ -13,8 +13,6 @@
 
 # Agentuity Examples
 
-[![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
-
 Examples for building agents with the [Agentuity SDK](https://github.com/agentuity/sdk).
 
 ## Examples
@@ -37,9 +35,30 @@ Add Agentuity to your existing frontend app.
 
 | Example | Framework | Description |
 |---------|-----------|-------------|
-| [nextjs](./integrations/nextjs) | Next.js App Router | API rewrites + useAPI hook |
-| [tanstack-start](./integrations/tanstack-start) | TanStack Start | SSR with lazy-loaded components |
+| [nextjs](./integrations/nextjs) | Next.js App Router | Brownfield translate/history + evals with rewrite or baseUrl modes |
+| [tanstack-start](./integrations/tanstack-start) | TanStack Start | Brownfield translate/history + evals with proxy or baseUrl modes |
 | [turborepo](./integrations/turborepo) | Turborepo | Monorepo with shared schemas |
+
+### [frameworks/](./frameworks)
+
+Framework-specific agent patterns built on Agentuity.
+
+| Framework | Description |
+|-----------|-------------|
+| [mastra](./frameworks/mastra) | Memory, tools, approvals, and network patterns |
+| [langchain](./frameworks/langchain) | Dynamic models/tools, prompts, streaming, structured output |
+| [openai](./frameworks/openai) | OpenAI Agents SDK handoffs, tool calling, streaming, context |
+
+### [features/](./features)
+
+Agentuity platform capabilities that frameworks don't provide.
+
+| Example | Description |
+|---------|-------------|
+| [code-runner](./features/code-runner) | Parallel sandbox execution + evals |
+| [scheduled-digest](./features/scheduled-digest) | Cron jobs + KV storage + durable streams |
+| [web-explorer](./features/web-explorer) | Interactive sandbox + browser automation |
+| [opencode-server](./features/opencode-server) | OpenCode IDE in a sandbox with port exposure |
 
 ## Getting Started
 
@@ -56,11 +75,15 @@ bun install
 bun run dev
 ```
 
+```bash
+# Or run a framework example
+cd frameworks/mastra/agent-memory
+cp .env.example .env
+bun install
+bun run dev
+```
+
 For documentation, visit [agentuity.dev](https://agentuity.dev).
-
-## v0 Examples
-
-Looking for v0 SDK examples? Run `git checkout v0`.
 
 ## Contributing
 

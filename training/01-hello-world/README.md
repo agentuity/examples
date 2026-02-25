@@ -1,147 +1,59 @@
-# hello-world-ts-v1
+# Hello World
 
-A new Agentuity project created with `agentuity create`.
+A minimal agent that greets users by name, generates a unique greeting with an LLM, and tracks how many times each name has been greeted using KV storage.
 
-## What You Get
+## Getting Started
 
-A fully configured Agentuity project with:
+```bash
+bun install
+bun run dev
+```
 
-- ✅ **TypeScript** - Full type safety out of the box
-- ✅ **Bun runtime** - Fast JavaScript runtime and package manager
-- ✅ **Hot reload** - Development server with auto-rebuild
-- ✅ **Example agent** - Sample "hello" agent to get started
-- ✅ **React frontend** - Pre-configured web interface
-- ✅ **API routes** - Example API endpoints
-- ✅ **Type checking** - TypeScript configuration ready to go
+Open [localhost:3500](http://localhost:3500) for the frontend, or [localhost:3500/workbench](http://localhost:3500/workbench) to test the agent directly.
+
+## What's Inside
+
+The `hello` agent takes a `name` as input, calls OpenAI to generate a creative one-sentence greeting, then reads and increments a per-name counter stored in KV. The counter resets after 24 hours via TTL:
+
+```typescript
+const counterResult = await ctx.kv.get('greetings', nameKey);
+
+let newCount: number;
+if (counterResult.exists && counterResult.data) {
+  const data = counterResult.data as { count: number };
+  newCount = data.count + 1;
+} else {
+  newCount = 1;
+}
+
+await ctx.kv.set('greetings', nameKey, { count: newCount }, {
+  ttl: 86400,
+  contentType: 'application/json',
+});
+
+return { greeting, personal_count: newCount };
+```
+
+Input and output shapes are declared with `@agentuity/schema`, which validates requests automatically and generates the workbench UI. The React frontend sends a name to `POST /api/hello` and renders the greeting text alongside the running count.
 
 ## Project Structure
 
 ```
-my-app/
-├── src/
-│   ├── agent/            # Agent definitions
-│   │   └── hello/
-│   │       ├── agent.ts  # Example agent
-│   │       └── index.ts  # Default exports
-│   ├── api/              # API definitions
-│   │   └── index.ts      # Example routes
-│   └── web/              # React web application
-│       ├── public/       # Static assets
-│       ├── App.tsx       # Main React component
-│       ├── frontend.tsx  # Entry point
-│       └── index.html    # HTML template
-├── AGENTS.md             # Agent guidelines
-├── app.ts                # Application entry point
-├── tsconfig.json         # TypeScript configuration
-├── package.json          # Dependencies and scripts
-└── README.md             # Project documentation
+src/
+├── agent/hello/
+│   ├── agent.ts      # LLM greeting + KV counter logic
+│   └── index.ts
+├── api/index.ts      # POST /api/hello
+└── web/
+    ├── App.tsx        # React UI with name input + greeting display
+    ├── frontend.tsx   # Entry point
+    └── index.html
 ```
 
-## Available Commands
+## Related
 
-After creating your project, you can run:
-
-### Development
-
-```bash
-bun dev
-```
-
-Starts the development server at `http://localhost:3500`
-
-### Build
-
-```bash
-bun build
-```
-
-Compiles your application into the `.agentuity/` directory
-
-### Type Check
-
-```bash
-bun typecheck
-```
-
-Runs TypeScript type checking
-
-### Deploy to Agentuity
-
-```bash
-bun run deploy
-```
-
-Deploys your application to the Agentuity cloud
-
-## Next Steps
-
-After creating your project:
-
-1. **Customize the example agent** - Edit `src/agent/hello/agent.ts`
-2. **Add new agents** - Create new folders in `src/agent/`
-3. **Add new APIs** - Create new folders in `src/api/`
-4. **Add Web files** - Create new routes in `src/web/`
-5. **Customize the UI** - Edit `src/web/app.tsx`
-6. **Configure your app** - Modify `app.ts` to add middleware, configure services, etc.
-
-## Creating Custom Agents
-
-Create a new agent by adding a folder in `src/agent/`:
-
-```typescript
-// src/agent/my-agent/agent.ts
-import { createAgent } from '@agentuity/runtime';
-import { s } from '@agentuity/schema';
-
-const agent = createAgent({
-	description: 'My amazing agent',
-	schema: {
-		input: s.object({
-			name: s.string(),
-		}),
-		output: s.string(),
-	},
-	handler: async (_ctx, { name }) => {
-		return `Hello, ${name}! This is my custom agent.`;
-	},
-});
-
-export default agent;
-```
-
-## Adding API Routes
-
-Create custom routes in `src/api/`:
-
-```typescript
-// src/api/my-agent/route.ts
-import { createRouter } from '@agentuity/runtime';
-import myAgent from './agent';
-
-const router = createRouter();
-
-router.get('/', async (c) => {
-	const result = await myAgent.run({ message: 'Hello!' });
-	return c.json(result);
-});
-
-router.post('/', myAgent.validator(), async (c) => {
-	const data = c.req.valid('json');
-	const result = await myAgent.run(data);
-	return c.json(result);
-});
-
-export default router;
-```
-
-## Learn More
-
-- [Agentuity Documentation](https://agentuity.dev)
-- [Bun Documentation](https://bun.sh/docs)
-- [Hono Documentation](https://hono.dev/)
-- [Zod Documentation](https://zod.dev/)
-
-## Requirements
-
-- [Bun](https://bun.sh/) v1.0 or higher
-- TypeScript 5+
+- [Creating agents](https://agentuity.dev/agents/creating-agents)
+- [Schema libraries](https://agentuity.dev/agents/schema-libraries)
+- [KV storage](https://agentuity.dev/services/storage/key-value)
+- [React hooks](https://agentuity.dev/frontend/react-hooks)
+- [Agentuity SDK](https://github.com/agentuity/sdk)

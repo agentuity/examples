@@ -1,147 +1,79 @@
-# storage-types-v1
+# Storage Types
 
-A new Agentuity project created with `agentuity create`.
+Demonstrates all three Agentuity storage backends in a single agent workflow: Object Storage for binary files, Vector Storage for semantic search, and KV Storage for query history.
 
-## What You Get
+## Getting Started
 
-A fully configured Agentuity project with:
+```bash
+bun install
+bun run dev
+```
 
-- ✅ **TypeScript** - Full type safety out of the box
-- ✅ **Bun runtime** - Fast JavaScript runtime and package manager
-- ✅ **Hot reload** - Development server with auto-rebuild
-- ✅ **Example agent** - Sample "hello" agent to get started
-- ✅ **React frontend** - Pre-configured web interface
-- ✅ **API routes** - Example API endpoints
-- ✅ **Type checking** - TypeScript configuration ready to go
+Open [localhost:3500](http://localhost:3500) for the frontend, or [localhost:3500/workbench](http://localhost:3500/workbench) to test the agent directly.
+
+## What's Inside
+
+The `storage-types` agent runs two modes depending on whether the input looks like a file or a query.
+
+**Upload mode** — when the agent receives document content:
+
+1. Writes the raw bytes to Object Storage via Bun's `S3Client`, generating a public URL
+2. Splits the document into sections by header and upserts each section into Vector Storage as a separate embedding
+3. Returns a structured receipt with bucket key, byte size, and the vector IDs created
+
+**Search mode** — when the agent receives a plain query:
+
+1. Searches Vector Storage for the top matching sections (similarity threshold: 0.5)
+2. Appends the query to KV Storage under a running history key with timestamp and result count
+3. Passes the top two sections as context to `generateText` (gpt-5-nano) and returns the answer
+
+```typescript
+// Upload: write binary to Object Storage
+const binaryData = new TextEncoder().encode(textContent);
+const file = s3.file(`${OBJECT_STORAGE_BUCKET}/${key}`);
+await file.write(binaryData);
+
+// Index each section into Vector Storage
+const ids = await ctx.vector.upsert(VECTOR_STORAGE_NAME, {
+  key: `${key}-section-${i}`,
+  document: sectionContent,
+  metadata: { source: key, sectionTitle, content: sectionContent },
+});
+
+// Search and retrieve relevant chunks
+const searchResults = await ctx.vector.search(VECTOR_STORAGE_NAME, {
+  query: textContent,
+  limit: 3,
+  similarity: 0.5,
+});
+
+// Track the query in KV Storage
+const existing = await ctx.kv.get(KV_STORAGE_NAME, 'demo-user-queries');
+const history = existing.exists ? (existing.data as any[]) : [];
+history.push({ query: textContent, timestamp: new Date().toLocaleTimeString() });
+await ctx.kv.set(KV_STORAGE_NAME, 'demo-user-queries', JSON.stringify(history, null, 2));
+```
+
+The output schema is a union: upload mode returns a structured object with `mode: 'upload'` and storage receipts; search mode returns a plain string answer from the LLM.
 
 ## Project Structure
 
 ```
-my-app/
-├── src/
-│   ├── agent/            # Agent definitions
-│   │   └── hello/
-│   │       ├── agent.ts  # Example agent
-│   │       └── index.ts  # Default exports
-│   ├── api/              # API definitions
-│   │   └── index.ts      # Example routes
-│   └── web/              # React web application
-│       ├── public/       # Static assets
-│       ├── App.tsx       # Main React component
-│       ├── frontend.tsx  # Entry point
-│       └── index.html    # HTML template
-├── AGENTS.md             # Agent guidelines
-├── app.ts                # Application entry point
-├── tsconfig.json         # TypeScript configuration
-├── package.json          # Dependencies and scripts
-└── README.md             # Project documentation
+src/
+├── agent/storage-types/
+│   ├── agent.ts      # Upload + search workflow across all three storage backends
+│   └── index.ts
+├── api/index.ts      # POST /api/hello
+└── web/
+    ├── App.tsx        # React frontend
+    ├── frontend.tsx
+    └── index.html
 ```
 
-## Available Commands
+## Related
 
-After creating your project, you can run:
-
-### Development
-
-```bash
-bun dev
-```
-
-Starts the development server at `http://localhost:3500`
-
-### Build
-
-```bash
-bun build
-```
-
-Compiles your application into the `.agentuity/` directory
-
-### Type Check
-
-```bash
-bun typecheck
-```
-
-Runs TypeScript type checking
-
-### Deploy to Agentuity
-
-```bash
-bun run deploy
-```
-
-Deploys your application to the Agentuity cloud
-
-## Next Steps
-
-After creating your project:
-
-1. **Customize the example agent** - Edit `src/agent/hello/agent.ts`
-2. **Add new agents** - Create new folders in `src/agent/`
-3. **Add new APIs** - Create new folders in `src/api/`
-4. **Add Web files** - Create new routes in `src/web/`
-5. **Customize the UI** - Edit `src/web/app.tsx`
-6. **Configure your app** - Modify `app.ts` to add middleware, configure services, etc.
-
-## Creating Custom Agents
-
-Create a new agent by adding a folder in `src/agent/`:
-
-```typescript
-// src/agent/my-agent/agent.ts
-import { createAgent } from '@agentuity/runtime';
-import { s } from '@agentuity/schema';
-
-const agent = createAgent({
-	description: 'My amazing agent',
-	schema: {
-		input: s.object({
-			name: s.string(),
-		}),
-		output: s.string(),
-	},
-	handler: async (_ctx, { name }) => {
-		return `Hello, ${name}! This is my custom agent.`;
-	},
-});
-
-export default agent;
-```
-
-## Adding API Routes
-
-Create custom routes in `src/api/`:
-
-```typescript
-// src/api/my-agent/route.ts
-import { createRouter } from '@agentuity/runtime';
-import myAgent from './agent';
-
-const router = createRouter();
-
-router.get('/', async (c) => {
-	const result = await myAgent.run({ message: 'Hello!' });
-	return c.json(result);
-});
-
-router.post('/', myAgent.validator(), async (c) => {
-	const data = c.req.valid('json');
-	const result = await myAgent.run(data);
-	return c.json(result);
-});
-
-export default router;
-```
-
-## Learn More
-
-- [Agentuity Documentation](https://agentuity.dev)
-- [Bun Documentation](https://bun.sh/docs)
-- [Hono Documentation](https://hono.dev/)
-- [Zod Documentation](https://zod.dev/)
-
-## Requirements
-
-- [Bun](https://bun.sh/) v1.0 or higher
-- TypeScript 5+
+- [KV storage](https://agentuity.dev/services/storage/key-value)
+- [Object storage](https://agentuity.dev/services/storage/object)
+- [Vector storage](https://agentuity.dev/services/storage/vector)
+- [AI SDK integration](https://agentuity.dev/agents/ai-sdk-integration)
+- [Agentuity SDK](https://github.com/agentuity/sdk)
