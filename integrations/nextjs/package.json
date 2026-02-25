@@ -5,9 +5,9 @@
 	"type": "module",
 	"scripts": {
 		"dev": "concurrently -n web,agent -c blue,cyan \"bun run dev:web\" \"bun run dev:agent\"",
-		"dev:web": "bun run wait:agent && next dev --port 3001",
-		"dev:agent": "cd agentuity && agentuity dev --port 3501",
-		"wait:agent": "wait-on http-get://127.0.0.1:3501/api/health --timeout 30000",
+		"dev:web": "bun run wait:agent && next dev",
+		"dev:agent": "cd agentuity && agentuity dev",
+		"wait:agent": "wait-on http-get://127.0.0.1:3500/api/health --timeout 30000",
 		"build": "bun run build:agent && bun run build:web",
 		"build:web": "next build",
 		"build:agent": "cd agentuity && agentuity build --dev",

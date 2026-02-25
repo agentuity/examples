@@ -6,7 +6,7 @@
 		"dev": "concurrently -n web,agent -c blue,cyan \"bun run dev:web\" \"bun run dev:agent\"",
 		"dev:web": "bun run wait:agent && vite dev --port 3000",
 		"wait:agent": "wait-on http-get://127.0.0.1:3500/api/health --timeout 30000",
-		"dev:agent": "cd agentuity && agentuity dev --port 3500",
+		"dev:agent": "cd agentuity && agentuity dev",
 		"build": "bun run build:agent && bun run build:web",
 		"build:web": "vite build && tsc",
 		"build:agent": "cd agentuity && agentuity build --dev",
