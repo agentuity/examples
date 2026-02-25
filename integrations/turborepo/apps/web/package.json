@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port 3000",
+    "dev": "wait-on http-get://127.0.0.1:3500/api/health --timeout 30000 && vite --port 3000",
     "build": "vite build && bunx tsc --noEmit",
     "preview": "vite preview",
     "typecheck": "bunx tsc --noEmit"
@@ -25,6 +25,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^4.5.2",
+    "wait-on": "^8.0.3",
     "typescript": "^5",
     "vite": "^7.2.7"
   }

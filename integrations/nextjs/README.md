@@ -41,6 +41,8 @@ nextjs/
 
 ## Running Locally
 
+Run from the **project root** (`integrations/nextjs`), not from inside `agentuity/`. The root `dev` script starts both the frontend and backend together:
+
 ```bash
 cd integrations/nextjs
 bun install
@@ -48,7 +50,7 @@ bun run build:agent
 bun run dev
 ```
 
-`bun run dev` starts both runtimes concurrently, and the web process uses `wait-on` to check `http://127.0.0.1:3501/api/health` before launching Next.js. This makes startup deterministic, so the UI does not call history endpoints while the backend is still warming up.
+`bun run dev` starts both runtimes concurrently, and the web process uses `wait-on` to check `http://127.0.0.1:3501/api/health` before launching Next.js. Running `bun run dev` inside `agentuity/` starts only the backend, which serves the API and workbench but not the frontend page.
 
 - Frontend: http://localhost:3001
 - Backend: http://localhost:3501
@@ -66,7 +68,8 @@ Without credentials, the backend still starts and history endpoints work, but `P
 ## Warnings and Local-vs-Cloud Notes
 
 - If Next.js warns about workspace root detection, keep `outputFileTracingRoot` in `next.config.ts` pointed to the monorepo root.
-- Local default mode uses rewrite proxying: `/api/:path* -> http://localhost:3501/api/:path*`.
+- Local default mode uses rewrite proxying in development: `/api/:path* -> http://localhost:3501/api/:path*`.
+- To override proxy target, set `AGENTUITY_PROXY_TARGET` (for example `https://backend.example.com`).
 - Cross-origin mode skips the rewrite and uses `NEXT_PUBLIC_AGENTUITY_BASE_URL` in `AgentuityProvider`.
 - In local-only mode without provider credentials, `POST /api/translate` can return `500`; history endpoints still work.
 - If backend startup is delayed, `wait-on` waits up to 30 seconds before failing with a timeout error.

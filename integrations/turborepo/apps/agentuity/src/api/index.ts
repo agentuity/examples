@@ -9,6 +9,11 @@ import { TranslateOutputSchema, type HistoryEntry } from '@tanstack-turborepo/sh
 
 const api = createRouter();
 
+// Health check for wait-on and external readiness probes
+api.get('/health', (c) => {
+	return c.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // State subset for history endpoints (derived from TranslateOutputSchema)
 export const StateSchema = TranslateOutputSchema.pick(['history', 'threadId', 'translationCount']);
 

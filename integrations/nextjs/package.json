@@ -8,16 +8,16 @@
 		"dev:web": "bun run wait:agent && next dev --port 3001",
 		"dev:agent": "cd agentuity && agentuity dev --port 3501",
 		"wait:agent": "wait-on http-get://127.0.0.1:3501/api/health --timeout 30000",
-		"build": "concurrently \"bun run build:web\" \"bun run build:agent\"",
+		"build": "bun run build:agent && bun run build:web",
 		"build:web": "next build",
 		"build:agent": "cd agentuity && agentuity build --dev",
 		"test": "bun run build:agent && bun run typecheck",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@agentuity/react": "latest",
 		"@agentuity/core": "latest",
 		"@agentuity/frontend": "latest",
+		"@agentuity/react": "latest",
 		"next": "^15.3.0",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0"

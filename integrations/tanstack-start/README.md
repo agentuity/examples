@@ -16,11 +16,14 @@ Upgrade pattern for an existing TanStack Start frontend that adds an Agentuity b
   - `language-match` custom eval
 - Type-safe route augmentation via `@agentuity/routes`
 - Local proxy mode and cross-origin `baseUrl` mode
+- Route-scoped dev proxy for `'/api/translate*'` to the Agentuity backend
 
 ## Official References
 
 - TanStack Start hosting: https://tanstack.com/start/latest/docs/framework/react/guide/hosting
 - TanStack Start server routes: https://tanstack.com/start/latest/docs/framework/react/guide/server-routes
+- TanStack Start hydration errors: https://tanstack.com/start/latest/docs/framework/react/guide/hydration-errors
+- TanStack Router data loading: https://tanstack.com/router/latest/docs/guide/data-loading
 - Vite proxy options: https://vite.dev/config/server-options#server-proxy
 
 ## Project Layout
@@ -44,6 +47,8 @@ tanstack-start/
 
 ## Running Locally
 
+Run from the **project root** (`integrations/tanstack-start`), not from inside `agentuity/`. The root `dev` script starts both the frontend and backend together:
+
 ```bash
 cd integrations/tanstack-start
 bun install
@@ -51,9 +56,13 @@ bun run build:agent
 bun run dev
 ```
 
+`bun run dev` starts both runtimes concurrently, and the web process uses `wait-on` to check `http://127.0.0.1:3500/api/health` before launching Vite. Running `bun run dev` inside `agentuity/` starts only the backend, which serves the API and workbench but not the frontend page.
+
 - Frontend: http://localhost:3000
 - Backend: http://localhost:3500
 - Workbench: http://localhost:3500/workbench
+
+In local dev, Vite proxies all `/api` requests to `http://localhost:3500`.
 
 ### AI Credentials in Local-Only Mode
 

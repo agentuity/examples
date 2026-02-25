@@ -23,11 +23,11 @@
     },
   },
   "packages": {
-    "@agentuity/core": ["@agentuity/core@0.1.15", "", { "dependencies": { "zod": "^4.3.5" } }, "sha512-Po4G4X1zmAuMyP9ofXchZUWfmrAN5lusFnzM9EOg/5CGLvrn0b3f9yKhyvOKIg9Yyj1dV9kfKI3ww8M+3jZnLg=="],
+    "@agentuity/core": ["@agentuity/core@1.0.22", "", { "dependencies": { "zod": "^4.3.5" } }, "sha512-RozPpRJ6LOO8laMiOnnxh3Zmo4p/keSMnCHanIWddhM7ptcIJHiQ95XXYhQmSUoGGGaPcCJyRlGSJo+PIU7xQw=="],
 
-    "@agentuity/frontend": ["@agentuity/frontend@0.1.15", "", { "dependencies": { "@agentuity/core": "0.1.15" } }, "sha512-BRirQaK3Iqgk/fuimis/CkZYndFP+I4VSJYbX55043l+DtpG2B1IQrESNLrkq8T7AvcISLsLx1kJpdqZ+hgPLQ=="],
+    "@agentuity/frontend": ["@agentuity/frontend@1.0.22", "", { "dependencies": { "@agentuity/core": "1.0.22" } }, "sha512-EwiCZYHSRHZ/cl2ns0u02mvAGbsUUyCnspJhet8z3ZvQCyx/gK/LFr2nZ0n2RTiX12PuGgI/fDk14NTbQ6iOgw=="],
 
-    "@agentuity/react": ["@agentuity/react@0.1.15", "", { "dependencies": { "@agentuity/core": "0.1.15", "@agentuity/frontend": "0.1.15" }, "peerDependencies": { "@types/react": "^19.0.0", "react": "^19.0.0" } }, "sha512-IgQ5nVN7LSQVTfw0UKNhsjHGuVqvUCGsuUp481xfI+xGvJEcZqCQ/ZgIbDOUR/X6ESYUMfcdwwU5CkdSsLgBpA=="],
+    "@agentuity/react": ["@agentuity/react@1.0.22", "", { "dependencies": { "@agentuity/core": "1.0.22", "@agentuity/frontend": "1.0.22" }, "peerDependencies": { "@types/react": "^19.0.0", "react": "^19.0.0" } }, "sha512-hODJe/kfd4ntnMj4C/jYNbPXiaIImt7bgcFMSVz77Zi6n+UnAGUeIANNiOoI3P4jibOrVLgS9Ge/NUe5L2A39w=="],
 
     "@emnapi/runtime": ["@emnapi/runtime@1.8.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-mehfKSMWjjNol8659Z8KxEMrdSJDDot5SXMq00dM8BN4o+CLNXQ0xH2V7EchNHV4RmbZLmmPdEaXZc5H2FXmDg=="],
 

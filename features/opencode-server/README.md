@@ -2,6 +2,8 @@
 
 Run [OpenCode](https://opencode.ai) as a server in an Agentuity sandbox, then attach from your terminal to start coding with AI.
 
+This project uses Agentuity platform services (sandboxes, KV storage) directly from API routes, without defining any agents. Not every project on Agentuity needs agents: the platform's first-class primitives are available to any route or handler.
+
 ## Getting Started
 
 ```bash
@@ -46,8 +48,6 @@ The frontend provides start/stop controls and displays the server URL, attach co
 
 ```
 src/
-├── agent/opencode-server/
-│   └── index.ts      # Agent stub (not used for lifecycle)
 ├── api/index.ts      # Sandbox lifecycle: start, status, stop + KV persistence
 ├── lib/types.ts      # Shared schemas (ServerState, responses)
 └── web/

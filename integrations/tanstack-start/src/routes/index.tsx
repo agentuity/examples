@@ -1,4 +1,4 @@
-import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, useMemo, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { AgentuityProvider, useAPI } from '@agentuity/react';
 import '@agentuity/routes';
@@ -14,25 +14,6 @@ export const Route = createFileRoute('/')({
 });
 
 export function TranslateRoute() {
-	const [isClient, setIsClient] = useState(false);
-
-	useEffect(() => {
-		setIsClient(true);
-	}, []);
-
-	if (!isClient) {
-		return (
-			<main className="demo-page">
-				<div className="demo-shell">
-					<header className="demo-header">
-						<h1 className="demo-title">Agentuity + TanStack Start Integration</h1>
-						<p className="demo-subtitle">Loading translate demo...</p>
-					</header>
-				</div>
-			</main>
-		);
-	}
-
 	return (
 		<AgentuityProvider baseUrl={import.meta.env.VITE_AGENTUITY_BASE_URL}>
 			<TranslateDemo />
@@ -60,21 +41,29 @@ function TranslateDemo() {
 	const threadId = translateData?.threadId;
 
 	const onTranslate = async () => {
-		setLastCleared(false);
-		await translate({ text, toLanguage, model });
+		try {
+			setLastCleared(false);
+			await translate({ text, toLanguage, model });
+		} catch {
+			return;
+		}
 	};
 
 	const onClearHistory = async () => {
-		await clearHistory();
-		setLastCleared(true);
-		await refetchHistory();
+		try {
+			await clearHistory();
+			setLastCleared(true);
+			await refetchHistory();
+		} catch {
+			return;
+		}
 	};
 
 	return (
 		<main className="demo-page">
 			<div className="demo-shell">
 				<header className="demo-header">
-					<h1 className="demo-title">Agentuity + TanStack Start Integration</h1>
+					<h1 className="demo-title">TanStack Start + Agentuity Integration</h1>
 					<p className="demo-subtitle">
 						Run your frontend in TanStack Start and your AI backend in Agentuity.
 					</p>

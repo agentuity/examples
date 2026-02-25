@@ -53,7 +53,7 @@ export function TranslateDemo() {
 		<main className="demo-page">
 			<div className="demo-shell">
 				<header className="demo-header">
-					<h1 className="demo-title">Agentuity + Turborepo Integration</h1>
+					<h1 className="demo-title">Turborepo + Agentuity Integration</h1>
 					<p className="demo-subtitle">Run your frontend and AI backend in a monorepo with Turborepo.</p>
 				</header>
 

@@ -52,7 +52,7 @@ function TranslateDemoInner() {
 		<main className="demo-page">
 			<div className="demo-shell">
 				<header className="demo-header">
-					<h1 className="demo-title">Agentuity + Next.js Integration</h1>
+					<h1 className="demo-title">Next.js + Agentuity Integration</h1>
 					<p className="demo-subtitle">Run your frontend in Next.js and your AI backend in Agentuity.</p>
 				</header>
 

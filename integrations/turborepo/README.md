@@ -13,7 +13,7 @@ cp apps/agentuity/.env.example apps/agentuity/.env
 # Edit apps/agentuity/.env and add your AGENTUITY_SDK_KEY
 
 # Start development (both frontend and backend)
-bun dev
+bun run dev
 ```
 
 Open http://localhost:3000 to use the translation app.
@@ -75,17 +75,17 @@ const { data, invoke } = useAPI('POST /api/translate');
 ### 4. Turborepo Orchestrates Everything
 
 ```bash
-bun dev    # Builds routes first, then runs both apps in parallel
-bun build  # Builds agentuity first (for route types), then web
+bun run dev    # Builds routes first, then runs both apps in parallel
+bun run build  # Builds agentuity first (for route types), then web
 ```
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `bun dev` | Start both frontend and backend |
-| `bun build` | Build all packages |
-| `bun typecheck` | Type-check all packages |
+| `bun run dev` | Start both frontend and backend |
+| `bun run build` | Build all packages |
+| `bun run typecheck` | Type-check all packages |
 
 ## Ports
 
@@ -97,7 +97,7 @@ bun build  # Builds agentuity first (for route types), then web
 
 1. Schemas defined in `packages/shared`
 2. Agent uses schemas → `agentuity build` generates `routes.ts`
-3. Frontend imports `@agentuity/routes` (TS path alias)
+3. Frontend imports `@tanstack-turborepo/agentuity/routes`
 4. `useAPI('POST /api/translate')` is fully typed
 
 ## Deploying

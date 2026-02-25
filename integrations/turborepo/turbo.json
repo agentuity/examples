@@ -1,8 +1,7 @@
 {
-	"$schema": "https://turbo.build/schema.json",
+	"$schema": "https://turborepo.dev/schema.json",
 	"tasks": {
 		"build:routes": {
-			"cache": false,
 			"outputs": ["src/generated/**"]
 		},
 		"dev": {
@@ -15,8 +14,7 @@
 			"outputs": ["dist/**", ".agentuity/**"]
 		},
 		"typecheck": {
-			"dependsOn": ["^build"]
-		},
-		"lint": {}
+			"dependsOn": ["^typecheck", "@tanstack-turborepo/agentuity#build:routes"]
+		}
 	}
 }

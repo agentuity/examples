@@ -21,24 +21,16 @@
     "@agentuity/core": "latest",
     "@agentuity/evals": "latest",
     "@agentuity/frontend": "latest",
-    "@agentuity/react": "latest",
     "@agentuity/runtime": "latest",
     "@agentuity/schema": "latest",
     "@agentuity/workbench": "latest",
     "@tanstack-turborepo/shared": "workspace:*",
     "hono": "^4.7.13",
-    "openai": "latest",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "openai": "latest"
   },
   "devDependencies": {
     "@agentuity/cli": "latest",
-    "@tailwindcss/vite": "^4.1.18",
     "@types/bun": "latest",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^4.5.2",
-    "tailwindcss": "^4.1.18",
     "typescript": "^5",
     "vite": "^7.2.7"
   }

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-	title: 'Agentuity + Next.js Demo',
+	title: 'Next.js + Agentuity',
 	description: 'End-to-end type-safe Agentuity integration with Next.js',
 };
 

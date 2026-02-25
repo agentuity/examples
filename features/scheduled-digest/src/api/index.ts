@@ -93,15 +93,6 @@ async function generateDigest(c: { var: { logger: any; kv: any; stream: any } })
 	await kv.set('digests', 'latest', entry, { ttl: 86400 * 30 });
 	await kv.set('digests', `digest-${Date.now()}`, entry, { ttl: 86400 * 30 });
 
-	// Update the history index
-	const keys = await kv.getKeys('digests');
-	const historyKeys = keys
-		.filter((k: string) => k.startsWith('digest-'))
-		.sort()
-		.reverse()
-		.slice(0, 20);
-	await kv.set('digests', 'history', historyKeys, { ttl: 86400 * 30 });
-
 	logger.info('Digest published', { url: durableStream.url, items: digest.itemCount });
 
 	return entry;
@@ -143,19 +134,12 @@ api.get('/digests/latest', validator({ output: DigestResponseSchema }), async (c
 
 // GET: Frontend fetches digest history
 api.get('/digests/history', validator({ output: HistoryResponseSchema }), async (c) => {
-	const historyResult = await c.var.kv.get<string[]>('digests', 'history');
-	if (!historyResult.exists) {
-		return c.json({ digests: [] });
-	}
-
-	const digests = await Promise.all(
-		historyResult.data.map(async (key) => {
-			const result = await c.var.kv.get<DigestEntry>('digests', key);
-			return result.exists ? result.data : null;
-		}),
-	);
-
-	return c.json({ digests: digests.filter((d): d is DigestEntry => d !== null) });
+	const results = await c.var.kv.search<DigestEntry>('digests', 'digest-');
+	const digests = Object.values(results)
+		.sort((a, b) => b.created_at.localeCompare(a.created_at))
+		.slice(0, 20)
+		.map((item) => item.value);
+	return c.json({ digests });
 });
 
 export default api;

@@ -31,17 +31,7 @@ export const StopResponse = s.object({
 	stopped: s.boolean(),
 });
 
-export const AgentInput = s.object({
-	action: s.string(),
-});
-
-export const AgentOutput = s.object({
-	status: s.string(),
-});
-
 export type ServerState = s.infer<typeof ServerState>;
 export type StartResponse = s.infer<typeof StartResponse>;
 export type StatusResponse = s.infer<typeof StatusResponse>;
 export type StopResponse = s.infer<typeof StopResponse>;
-export type AgentInput = s.infer<typeof AgentInput>;
-export type AgentOutput = s.infer<typeof AgentOutput>;
