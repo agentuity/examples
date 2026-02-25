@@ -36,7 +36,7 @@ export const adversarialEval = agent.createEval(
 /**
  * Custom Eval (binary type): Language Match
  * Verifies the translation is in the requested target language.
- * Uses generateText with Output.object for structured output.
+ * Uses OpenAI response_format JSON schema for structured output.
  */
 const LanguageCheckSchema = s.object({
 	detectedLanguage: s.string().describe('The detected language of the text'),

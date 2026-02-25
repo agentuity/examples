@@ -2,6 +2,7 @@ import { createRouter, validator } from '@agentuity/runtime';
 import { StartResponse, StatusResponse, StopResponse } from '@lib/types';
 import type { ServerState } from '@lib/types';
 
+// KV namespace and key for persisting sandbox state across requests
 const KV_NAMESPACE = 'opencode';
 const KV_KEY = 'server';
 
@@ -87,6 +88,7 @@ api.post('/server/start', validator({ output: StartResponse }), async (c) => {
 	// Poll GET {url}/config with Basic Auth for up to ~30s
 	const authHeader = `Basic ${btoa(`opencode:${password}`)}`;
 	let ready = false;
+	// Poll every 2s for up to ~30s (15 attempts) while server boots
 	const maxAttempts = 15;
 
 	for (let i = 0; i < maxAttempts; i++) {

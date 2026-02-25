@@ -7,10 +7,9 @@ Upgrade pattern for an existing Next.js App Router frontend that adds an Agentui
 - Two-runtime architecture:
   - Next.js frontend runtime (`localhost:3001`)
   - Agentuity backend runtime (`localhost:3501`)
-- Dev startup gate: web server waits for backend health (`/api/health`) before Next.js boots
+- Dev startup gate: `wait-on` checks backend health (`/api/health`) before Next.js boots
 - Translate workflow:
-  - `GET /api/translate/history` bootstrap uses `fetch` with retry/timeout
-  - `POST /api/translate` and `DELETE /api/translate/history` use `useAPI`
+  - `GET /api/translate/history`, `POST /api/translate`, and `DELETE /api/translate/history` use `useAPI`
 - Eval wiring on the translate agent:
   - `adversarial` preset eval
   - `language-match` custom eval
@@ -27,7 +26,7 @@ Upgrade pattern for an existing Next.js App Router frontend that adds an Agentui
 ```text
 nextjs/
 ├── app/                                # Next.js frontend
-│   ├── components/TranslateDemo.tsx     # Translate/history UI (fetch bootstrap + useAPI actions)
+│   ├── components/TranslateDemo.tsx     # Translate + history UI
 │   ├── layout.tsx
 │   └── page.tsx
 ├── agentuity/                          # Agentuity backend
@@ -49,7 +48,7 @@ bun run build:agent
 bun run dev
 ```
 
-`bun run dev` starts both runtimes concurrently, and the web process waits until `http://127.0.0.1:3501/api/health` responds successfully before launching Next.js. This makes startup deterministic, so the UI does not bootstrap history calls while the backend is still warming up.
+`bun run dev` starts both runtimes concurrently, and the web process uses `wait-on` to check `http://127.0.0.1:3501/api/health` before launching Next.js. This makes startup deterministic, so the UI does not call history endpoints while the backend is still warming up.
 
 - Frontend: http://localhost:3001
 - Backend: http://localhost:3501
@@ -70,7 +69,7 @@ Without credentials, the backend still starts and history endpoints work, but `P
 - Local default mode uses rewrite proxying: `/api/:path* -> http://localhost:3501/api/:path*`.
 - Cross-origin mode skips the rewrite and uses `NEXT_PUBLIC_AGENTUITY_BASE_URL` in `AgentuityProvider`.
 - In local-only mode without provider credentials, `POST /api/translate` can return `500`; history endpoints still work.
-- If backend startup is delayed, `bun run dev` waits up to 30 seconds before failing with a clear wait-script error.
+- If backend startup is delayed, `wait-on` waits up to 30 seconds before failing with a timeout error.
 - If you see a `DEP0060` warning while using Next.js rewrites/proxy in dev, treat it as a known transitive dev-time warning unless request routing is actually failing.
 
 ## Frontend Type Safety
@@ -84,9 +83,8 @@ import '@agentuity/routes';
 That enables typed `useAPI` route keys and payloads for:
 
 - `useAPI('POST /api/translate')`
+- `useAPI('GET /api/translate/history')`
 - `useAPI('DELETE /api/translate/history')`
-
-History bootstrap uses `fetch('/api/translate/history', { method: 'GET' })` with retry/timeout behavior.
 
 ## Verification Workflow
 

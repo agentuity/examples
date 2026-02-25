@@ -1,5 +1,5 @@
 import { createAgent } from '@agentuity/runtime';
-import { generateObject, generateText } from 'ai';
+import { generateText, Output } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 import { AgentInput, AgentOutput, type ExplorationStep } from '@lib/types';
@@ -39,6 +39,7 @@ export default createAgent('web-explorer', {
 		output: AgentOutput,
 	},
 	handler: async (ctx, input) => {
+		// Default to 4 steps to balance thoroughness with sandbox execution time
 		const maxSteps = input.maxSteps ?? 4;
 		const steps: ExplorationStep[] = [];
 
@@ -73,6 +74,7 @@ export default createAgent('web-explorer', {
 			const pageTitle = (await getStdout(titleExec)).trim();
 
 			// Ask LLM to observe the initial page
+			// NOTE: Accessibility trees are truncated to 4000 chars to stay within LLM context limits
 			const { text: initialObservation } = await generateText({
 				model: anthropic('claude-sonnet-4-6'),
 				prompt: `You are observing a web page. Describe what you see on this page in 1-2 sentences.
@@ -102,16 +104,18 @@ ${accessibilityTree.slice(0, 4000)}`,
 				const currentTree = await getStdout(currentSnapshotExec);
 
 				// Ask LLM to pick the next action
-				const { object: nextAction } = await generateObject({
+				const { output: nextAction } = await generateText({
 					model: anthropic('claude-sonnet-4-6'),
-					schema: z.object({
-						ref: z.string().describe('The element reference to interact with, e.g. @e5'),
-						action: z
-							.enum(['click', 'hover', 'scroll'])
-							.describe('The action to take on the element'),
-						reason: z
-							.string()
-							.describe('Brief explanation of why this action is interesting to explore'),
+					output: Output.object({
+						schema: z.object({
+							ref: z.string().describe('The element reference to interact with, e.g. @e5'),
+							action: z
+								.enum(['click', 'hover', 'scroll'])
+								.describe('The action to take on the element'),
+							reason: z
+								.string()
+								.describe('Brief explanation of why this action is interesting to explore'),
+						}),
 					}),
 					prompt: `You are an AI exploring a web page. Based on the accessibility tree below, choose ONE interesting element to interact with. Pick something that would reveal more content or navigate to something interesting.
 
@@ -202,7 +206,7 @@ ${steps.map((s) => `${s.stepNumber}. ${s.action} => ${s.observation}`).join('\n'
 				stepsCompleted: steps.length,
 			});
 
-			// Return partial results on error
+			// Partial results are more useful than a hard failure for the frontend
 			return {
 				url: input.url,
 				title: steps.length > 0 ? 'Partial exploration' : 'Failed to explore',

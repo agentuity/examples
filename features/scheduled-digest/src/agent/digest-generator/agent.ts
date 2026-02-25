@@ -1,10 +1,10 @@
 import { createAgent } from '@agentuity/runtime';
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { xai } from '@ai-sdk/xai';
 import { z } from 'zod';
 import { AgentInput, AgentOutput } from '@lib/types';
 
-// Zod schema for generateObject (AI SDK requires Zod, not @agentuity/schema)
+// Zod schema for structured output generation
 const LLMOutputSchema = z.object({
 	title: z.string().describe('Digest title like "Tech Digest — Feb 19, 2026"'),
 	htmlContent: z.string().describe('Complete HTML document with inline dark-theme styles'),
@@ -34,9 +34,9 @@ const agent = createAgent('digest-generator', {
 
 		const sourcesJSON = JSON.stringify(input.sources, null, 2);
 
-		const result = await generateObject({
+		const result = await generateText({
 			model: xai('grok-4-1-fast-reasoning'),
-			schema: LLMOutputSchema,
+			output: Output.object({ schema: LLMOutputSchema }),
 			prompt: `You are a tech content curator. Generate a concise, well-formatted HTML digest from the following source data.
 
 Date: ${dateStr}
@@ -45,7 +45,7 @@ Sources:
 ${sourcesJSON}
 
 Requirements:
-- Create a complete HTML document with inline styles using a dark theme (background: #0a0a0a, text: #e5e5e5, accent: #00FFFF)
+- Create a complete HTML document with inline styles using a dark theme (background: #0a0a0a, text: #e5e5e5, accent: #00FFFF) — colors match the Agentuity brand palette
 - Use clean, modern typography (system-ui font stack)
 - Group content by source with clear headings styled with the cyan accent color
 - For each item, write a 1-2 sentence summary. Include the link if available.
@@ -59,11 +59,11 @@ Return the digest as { title, htmlContent, summary, itemCount }.`,
 		});
 
 		ctx.logger.info('Digest generated', {
-			title: result.object.title,
-			itemCount: result.object.itemCount,
+			title: result.output.title,
+			itemCount: result.output.itemCount,
 		});
 
-		return result.object;
+		return result.output;
 	},
 });
 

@@ -45,22 +45,28 @@ function TranslateDemo() {
 	const [toLanguage, setToLanguage] = useState<(typeof LANGUAGES)[number]>('Spanish');
 	const [model, setModel] = useState<(typeof MODELS)[number]>('gpt-5-nano');
 
+	const [lastCleared, setLastCleared] = useState(false);
+
 	const { data: historyData, refetch: refetchHistory } = useAPI('GET /api/translate/history');
 	const { data: translateData, invoke: translate, isLoading, error } = useAPI('POST /api/translate');
 	const { invoke: clearHistory, isLoading: isClearing } = useAPI('DELETE /api/translate/history');
 
 	const history = useMemo(
-		() => translateData?.history ?? historyData?.history ?? [],
-		[historyData?.history, translateData?.history]
+		() => lastCleared
+			? historyData?.history ?? []
+			: translateData?.history ?? historyData?.history ?? [],
+		[historyData?.history, translateData?.history, lastCleared]
 	);
 	const threadId = translateData?.threadId;
 
 	const onTranslate = async () => {
+		setLastCleared(false);
 		await translate({ text, toLanguage, model });
 	};
 
 	const onClearHistory = async () => {
 		await clearHistory();
+		setLastCleared(true);
 		await refetchHistory();
 	};
 
@@ -156,7 +162,7 @@ function TranslateDemo() {
 						</h2>
 						<button
 							className="demo-button demo-button-secondary"
-							disabled={!history.length || isClearing}
+							disabled={isLoading || isClearing || !history.length}
 							onClick={onClearHistory}
 							type="button"
 						>

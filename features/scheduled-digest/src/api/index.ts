@@ -89,6 +89,7 @@ async function generateDigest(c: { var: { logger: any; kv: any; stream: any } })
 	};
 
 	// Store as "latest" and as date-keyed entry
+	// 30-day TTL; history is rebuilt from date-keyed entries
 	await kv.set('digests', 'latest', entry, { ttl: 86400 * 30 });
 	await kv.set('digests', `digest-${Date.now()}`, entry, { ttl: 86400 * 30 });
 

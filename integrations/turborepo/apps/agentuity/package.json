@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@agentuity/core": "latest",
+    "@agentuity/evals": "latest",
     "@agentuity/frontend": "latest",
     "@agentuity/react": "latest",
     "@agentuity/runtime": "latest",
@@ -26,10 +27,9 @@
     "@agentuity/workbench": "latest",
     "@tanstack-turborepo/shared": "workspace:*",
     "hono": "^4.7.13",
+    "openai": "latest",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "@agentuity/evals": "latest",
-    "openai": "latest"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@agentuity/cli": "latest",
