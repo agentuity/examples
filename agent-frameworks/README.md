@@ -6,7 +6,7 @@ Agentuity examples organized by AI framework.
 
 ```bash
 # From repo root
-cd frameworks/mastra/agent-memory
+cd agent-frameworks/mastra/agent-memory
 cp .env.example .env
 bun install
 bun run typecheck

@@ -31,7 +31,7 @@ Learn Agentuity from basics to advanced. Full-stack examples with React frontend
 
 ### [integrations/](./integrations)
 
-Add Agentuity to your existing frontend app.
+Connect Agentuity agents to existing apps, frameworks, and platforms.
 
 | Example | Framework | Description |
 |---------|-----------|-------------|
@@ -40,15 +40,15 @@ Add Agentuity to your existing frontend app.
 | [turborepo](./integrations/turborepo) | Turborepo | Monorepo with shared schemas |
 | [chat-sdk](./integrations/chat-sdk) | Chat SDK | Multi-platform chatbot (Slack, Discord) with conversation memory |
 
-### [frameworks/](./frameworks)
+### [agent-frameworks/](./frameworks)
 
 Framework-specific agent patterns built on Agentuity.
 
 | Framework | Description |
 |-----------|-------------|
-| [mastra](./frameworks/mastra) | Memory, tools, approvals, and network patterns |
-| [langchain](./frameworks/langchain) | Dynamic models/tools, prompts, streaming, structured output |
-| [openai](./frameworks/openai) | OpenAI Agents SDK handoffs, tool calling, streaming, context |
+| [mastra](./agent-frameworks/mastra) | Memory, tools, approvals, and network patterns |
+| [langchain](./agent-frameworks/langchain) | Dynamic models/tools, prompts, streaming, structured output |
+| [openai](./agent-frameworks/openai) | OpenAI Agents SDK handoffs, tool calling, streaming, context |
 
 ### [features/](./features)
 
@@ -78,13 +78,13 @@ bun run dev
 
 ```bash
 # Or run a framework example
-cd frameworks/mastra/agent-memory
+cd agent-frameworks/mastra/agent-memory
 cp .env.example .env
 bun install
 bun run dev
 ```
 
-For documentation, visit [agentuity.dev](https://agentuity.dev).
+New to Agentuity? Try the [SDK Explorer](https://agentuity.dev) in the docs to learn key features and services with interactive examples. Or, start with [training/01-hello-world](./training/01-hello-world) for a more structured, course-like walkthrough.
 
 ## Contributing
 
