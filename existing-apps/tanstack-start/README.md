@@ -47,10 +47,10 @@ tanstack-start/
 
 ## Running Locally
 
-Run from the **project root** (`integrations/tanstack-start`), not from inside `agentuity/`. The root `dev` script starts both the frontend and backend together:
+Run from the **project root** (`existing-apps/tanstack-start`), not from inside `agentuity/`. The root `dev` script starts both the frontend and backend together:
 
 ```bash
-cd integrations/tanstack-start
+cd existing-apps/tanstack-start
 bun install
 bun run build:agent
 bun run dev
@@ -92,7 +92,7 @@ That enables typed `useAPI` route keys and payloads for:
 Run this after changing backend routes, schemas, or frontend route calls:
 
 ```bash
-cd integrations/tanstack-start
+cd existing-apps/tanstack-start
 bun run build:agent
 bun run typecheck
 bun run test

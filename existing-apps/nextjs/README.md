@@ -41,10 +41,10 @@ nextjs/
 
 ## Running Locally
 
-Run from the **project root** (`integrations/nextjs`), not from inside `agentuity/`. The root `dev` script starts both the frontend and backend together:
+Run from the **project root** (`existing-apps/nextjs`), not from inside `agentuity/`. The root `dev` script starts both the frontend and backend together:
 
 ```bash
-cd integrations/nextjs
+cd existing-apps/nextjs
 bun install
 bun run build:agent
 bun run dev
@@ -94,7 +94,7 @@ That enables typed `useAPI` route keys and payloads for:
 Run this after changing backend routes, schemas, or frontend route calls:
 
 ```bash
-cd integrations/nextjs
+cd existing-apps/nextjs
 bun run build:agent
 bun run test
 ```

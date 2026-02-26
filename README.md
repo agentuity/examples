@@ -17,9 +17,14 @@ Examples for building agents with the [Agentuity SDK](https://github.com/agentui
 
 ## Examples
 
-### [training/](./training)
+| Folder | Purpose |
+|--------|---------|
+| `training/` | Learn Agentuity step by step |
+| `existing-apps/` | Add Agentuity agents to an existing app (e.g., Next.js, TanStack Start) |
+| `integrations/` | Use Agentuity with another library, framework, or SDK |
+| `features/` | See what the platform can do |
 
-Learn Agentuity from basics to advanced. Full-stack examples with React frontends.
+### [training/](./training)
 
 | Example | Description |
 |---------|-------------|
@@ -29,30 +34,24 @@ Learn Agentuity from basics to advanced. Full-stack examples with React frontend
 | [04-storage-types](./training/04-storage-types) | Key-value, object store, vector search |
 | [05-deep-research](./training/05-deep-research) | Complex agent workflows |
 
-### [integrations/](./integrations)
-
-Connect Agentuity agents to existing apps, frameworks, and platforms.
+### [existing-apps/](./existing-apps)
 
 | Example | Framework | Description |
 |---------|-----------|-------------|
-| [nextjs](./integrations/nextjs) | Next.js App Router | Brownfield translate/history + evals with rewrite or baseUrl modes |
-| [tanstack-start](./integrations/tanstack-start) | TanStack Start | Brownfield translate/history + evals with proxy or baseUrl modes |
-| [turborepo](./integrations/turborepo) | Turborepo | Monorepo with shared schemas |
-| [chat-sdk](./integrations/chat-sdk) | Chat SDK | Multi-platform chatbot (Slack, Discord) with conversation memory |
+| [nextjs](./existing-apps/nextjs) | Next.js App Router | Brownfield translate/history + evals with rewrite or baseUrl modes |
+| [tanstack-start](./existing-apps/tanstack-start) | TanStack Start | Brownfield translate/history + evals with proxy or baseUrl modes |
+| [turborepo](./existing-apps/turborepo) | Turborepo | Monorepo with shared schemas |
 
-### [agent-frameworks/](./frameworks)
+### [integrations/](./integrations)
 
-Framework-specific agent patterns built on Agentuity.
-
-| Framework | Description |
-|-----------|-------------|
-| [mastra](./agent-frameworks/mastra) | Memory, tools, approvals, and network patterns |
-| [langchain](./agent-frameworks/langchain) | Dynamic models/tools, prompts, streaming, structured output |
-| [openai](./agent-frameworks/openai) | OpenAI Agents SDK handoffs, tool calling, streaming, context |
+| Integration | Description |
+|-------------|-------------|
+| [mastra](./integrations/mastra) | Memory, tools, approvals, and network patterns |
+| [langchain](./integrations/langchain) | Dynamic models/tools, prompts, streaming, structured output |
+| [openai](./integrations/openai) | OpenAI Agents SDK handoffs, tool calling, streaming, context |
+| [chat-sdk](./integrations/chat-sdk) | Multi-platform chatbot (Slack, Discord) with conversation memory |
 
 ### [features/](./features)
-
-Agentuity platform capabilities that frameworks don't provide.
 
 | Example | Description |
 |---------|-------------|
@@ -77,8 +76,8 @@ bun run dev
 ```
 
 ```bash
-# Or run a framework example
-cd agent-frameworks/mastra/agent-memory
+# Or run an integration example
+cd integrations/mastra/agent-memory
 cp .env.example .env
 bun install
 bun run dev

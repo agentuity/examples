@@ -1,46 +1,75 @@
 # Integrations
 
-Connect Agentuity agents to existing apps, frameworks, and platforms.
+Build with Agentuity and another SDK. Each example shows how to use an external framework or library alongside the Agentuity runtime.
 
-### Frontend
-
-Add agents to an app you already have. Each one runs two processes side by side: your framework's dev server and the Agentuity backend.
-
-| Example | Framework | What It Demonstrates |
-|---------|-----------|----------------------|
-| [nextjs](./nextjs) | Next.js App Router | Translate agent with history, evals, and rewrite proxy |
-| [tanstack-start](./tanstack-start) | TanStack Start | Translate agent with history, evals, and Vite proxy |
-| [turborepo](./turborepo) | Turborepo | Monorepo with shared schemas across frontend and agents |
-
-### Platforms
-
-Standalone Agentuity projects that integrate with external services.
-
-| Example | Platform | What It Demonstrates |
-|---------|----------|----------------------|
-| [chat-sdk](./chat-sdk) | Chat SDK | Multi-platform chatbot (Slack, Discord) with conversation memory |
-
-## Getting Started
-
-Frontend examples:
+## Quick Start
 
 ```bash
-cd nextjs        # or tanstack-start, turborepo
+# From repo root
+cd integrations/mastra/agent-memory
+cp .env.example .env
 bun install
-bun run build:agent
+bun run typecheck
+bun run build
 bun run dev
 ```
 
-Platform examples:
+## Common Environment Variables
 
-```bash
-cd chat-sdk
-bun install
-bun run dev
-```
+All integration examples support this baseline set:
 
-Each example includes its own setup instructions and project layout.
+- `AGENTUITY_SDK_KEY`
+- `OPENAI_API_KEY`
 
-## New to Agentuity?
+Optional runtime vars:
 
-Try the [SDK Explorer](https://agentuity.dev) in the Agentuity docs to learn key features and services with interactive examples. Or, start with the [training examples](../training) for a more structured, course-like walkthrough.
+- `PORT` (default backend port)
+- `VITE_PORT` (frontend dev server port)
+- `AGENTUITY_LOG_LEVEL`
+- `AGENTUITY_PUBLIC_WORKBENCH_PATH` (used by examples that include embedded web UIs)
+
+## Integration Matrix
+
+### Mastra
+
+| Example | Pattern |
+|---|---|
+| `mastra/agent-memory` | Conversation memory + thread state |
+| `mastra/structured-output` | Schema-driven structured output |
+| `mastra/using-tools` | Tool/function calling |
+| `mastra/network-agent` | Multi-agent network flow |
+| `mastra/agent-approval` | Human approval pattern |
+| `mastra/network-approval` | Network + human-in-the-loop approvals |
+| `mastra/processors-agent` | Processor pipeline/moderation |
+
+### LangChain
+
+| Example | Pattern |
+|---|---|
+| `langchain/basic-agent` | ReAct basics + static tools |
+| `langchain/system-prompt` | Static + dynamic system prompts |
+| `langchain/dynamic-model` | Middleware model switching |
+| `langchain/dynamic-tools` | Runtime tool selection |
+| `langchain/streaming-agent` | Response/event streaming pattern |
+| `langchain/structured-agent-output` | Typed structured responses |
+
+### OpenAI Agents SDK
+
+| Example | Pattern |
+|---|---|
+| `openai/tool-calling` | Tool calls + trace reconstruction |
+| `openai/structured-context` | Typed run context |
+| `openai/streaming-events` | Streaming event timelines |
+| `openai/agent-handoffs` | Multi-agent handoffs |
+
+### Chat SDK
+
+| Example | Pattern |
+|---|---|
+| `chat-sdk` | Multi-platform chatbot (Slack, Discord) |
+
+## Known Limitations
+
+- Most examples focus on framework behavior and do not include full auth hardening by default.
+- Many examples use thread-scoped state and demo data rather than durable, multi-tenant persistence.
+- External API/tool implementations are intentionally simplified in several examples.
