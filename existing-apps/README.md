@@ -19,6 +19,10 @@ bun run dev
 
 Each example includes its own setup instructions and project layout.
 
-## New to Agentuity?
+## More Examples
 
-Try the [SDK Explorer](https://agentuity.dev) in the Agentuity docs to learn key features and services with interactive examples. Or, start with the [training examples](../training) for a more structured, course-like walkthrough.
+For step-by-step tutorials see [training/](../training).
+
+For integrations with other SDKs (e.g., Mastra, LangChain) see [integrations/](../integrations).
+
+For platform features (e.g., sandboxes, cron jobs) see [features/](../features).

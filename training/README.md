@@ -25,8 +25,8 @@ Start with `01-hello-world` if you're new — examples build on each other and l
 
 ## More Examples
 
-For platform features (sandboxes, cron jobs, durable streams) see [features/](../features).
+For platform features (e.g., sandboxes, cron jobs) see [features/](../features).
 
-For adding agents to an existing app (Next.js, TanStack Start) see [existing-apps/](../existing-apps).
+For adding agents to an existing app (e.g., Next.js, TanStack Start) see [existing-apps/](../existing-apps).
 
-For integrations with other SDKs (Mastra, LangChain, OpenAI, Chat SDK) see [integrations/](../integrations).
+For integrations with other SDKs (e.g., Mastra, LangChain) see [integrations/](../integrations).

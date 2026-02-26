@@ -28,7 +28,7 @@ Optional runtime vars:
 - `AGENTUITY_LOG_LEVEL`
 - `AGENTUITY_PUBLIC_WORKBENCH_PATH` (used by examples that include embedded web UIs)
 
-## Integration Matrix
+## Examples
 
 ### Mastra
 
@@ -68,8 +68,10 @@ Optional runtime vars:
 |---|---|
 | `chat-sdk` | Multi-platform chatbot (Slack, Discord) |
 
-## Known Limitations
+## More Examples
 
-- Most examples focus on framework behavior and do not include full auth hardening by default.
-- Many examples use thread-scoped state and demo data rather than durable, multi-tenant persistence.
-- External API/tool implementations are intentionally simplified in several examples.
+For step-by-step tutorials see [training/](../training).
+
+For adding agents to an existing app (e.g., Next.js, TanStack Start) see [existing-apps/](../existing-apps).
+
+For platform features (e.g., sandboxes, cron jobs) see [features/](../features).

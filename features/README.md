@@ -20,4 +20,10 @@ bun run dev
 
 Each example includes setup instructions in its README.
 
-If you're new to Agentuity, start with the [training examples](../training) first.
+## More Examples
+
+For step-by-step tutorials see [training/](../training).
+
+For adding agents to an existing app (e.g., Next.js, TanStack Start) see [existing-apps/](../existing-apps).
+
+For integrations with other SDKs (e.g., Mastra, LangChain) see [integrations/](../integrations).
