@@ -1,0 +1,30 @@
+{
+  "name": "chat-sdk-integration",
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "private": true,
+  "module": ".agentuity/app.js",
+  "type": "module",
+  "scripts": {
+    "build": "agentuity build",
+    "dev": "agentuity dev",
+    "start": "bun .agentuity/app.js",
+    "deploy": "agentuity deploy",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@agentuity/runtime": "latest",
+    "@agentuity/schema": "latest",
+    "@ai-sdk/anthropic": "latest",
+    "@chat-adapter/discord": "latest",
+    "@chat-adapter/slack": "latest",
+    "@chat-adapter/state-memory": "latest",
+    "ai": "latest",
+    "chat": "latest"
+  },
+  "devDependencies": {
+    "@agentuity/cli": "latest",
+    "@types/bun": "latest",
+    "typescript": "^5"
+  }
+}

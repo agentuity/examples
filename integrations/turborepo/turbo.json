@@ -2,6 +2,13 @@
 	"$schema": "https://turborepo.dev/schema.json",
 	"tasks": {
 		"build:routes": {
+			"inputs": [
+				"agentuity.json",
+				"src/agent/**",
+				"src/api/**",
+				"app.ts",
+				"package.json"
+			],
 			"outputs": ["src/generated/**"]
 		},
 		"dev": {

@@ -38,6 +38,7 @@ Add Agentuity to your existing frontend app.
 | [nextjs](./integrations/nextjs) | Next.js App Router | Brownfield translate/history + evals with rewrite or baseUrl modes |
 | [tanstack-start](./integrations/tanstack-start) | TanStack Start | Brownfield translate/history + evals with proxy or baseUrl modes |
 | [turborepo](./integrations/turborepo) | Turborepo | Monorepo with shared schemas |
+| [chat-sdk](./integrations/chat-sdk) | Chat SDK | Multi-platform chatbot (Slack, Discord) with conversation memory |
 
 ### [frameworks/](./frameworks)
 
