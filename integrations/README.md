@@ -7,26 +7,11 @@ Build with Agentuity and another SDK. Each example shows how to use an external 
 ```bash
 # From repo root
 cd integrations/mastra/agent-memory
-cp .env.example .env
 bun install
 bun run typecheck
 bun run build
 bun run dev
 ```
-
-## Common Environment Variables
-
-All integration examples support this baseline set:
-
-- `AGENTUITY_SDK_KEY`
-- `OPENAI_API_KEY`
-
-Optional runtime vars:
-
-- `PORT` (default backend port)
-- `VITE_PORT` (frontend dev server port)
-- `AGENTUITY_LOG_LEVEL`
-- `AGENTUITY_PUBLIC_WORKBENCH_PATH` (used by examples that include embedded web UIs)
 
 ## Examples
 

@@ -7,7 +7,6 @@ This project uses Agentuity platform services (sandboxes, KV storage) directly f
 ## Getting Started
 
 ```bash
-cp .env.example .env   # add your OPENAI_API_KEY (forwarded to the sandbox)
 bun install
 bun run dev
 ```

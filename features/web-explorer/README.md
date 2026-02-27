@@ -5,7 +5,6 @@ AI-guided autonomous web exploration using the Agentuity sandbox with browser au
 ## Getting Started
 
 ```bash
-cp .env.example .env   # add your API keys
 bun install
 bun run dev
 ```

@@ -13,7 +13,6 @@ Examples showcasing Agentuity platform capabilities: sandboxes, cron jobs, KV st
 
 ```bash
 cd code-runner
-cp .env.example .env   # add your API keys
 bun install
 bun run dev
 ```

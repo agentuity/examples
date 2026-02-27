@@ -14,7 +14,6 @@ Progressive tutorials for learning Agentuity, from a basic agent to recursive mu
 
 ```bash
 cd 01-hello-world
-cp .env.example .env   # add your API keys
 bun install
 bun run dev
 ```

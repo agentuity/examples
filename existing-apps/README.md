@@ -13,7 +13,6 @@ Add Agentuity agents to an app you already have. Each one runs two processes sid
 ```bash
 cd nextjs        # or tanstack-start, turborepo
 bun install
-bun run build:agent
 bun run dev
 ```
 

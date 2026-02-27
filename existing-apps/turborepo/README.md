@@ -5,14 +5,7 @@ A monorepo example demonstrating type-safe integration between TanStack frontend
 ## Quick Start
 
 ```bash
-# Install dependencies
 bun install
-
-# Set up your Agentuity credentials
-cp apps/agentuity/.env.example apps/agentuity/.env
-# Edit apps/agentuity/.env and add your AGENTUITY_SDK_KEY
-
-# Start development (both frontend and backend)
 bun run dev
 ```
 
@@ -111,17 +104,6 @@ cd apps/agentuity && bun run deploy
 # Build frontend for production
 cd apps/web && bun run build
 ```
-
-## Environment Variables
-
-Create `apps/agentuity/.env` with:
-
-```bash
-# Required: Agentuity SDK key
-AGENTUITY_SDK_KEY=your_key_here
-```
-
-Get your SDK key from [agentuity.com](https://agentuity.com).
 
 ## Related
 

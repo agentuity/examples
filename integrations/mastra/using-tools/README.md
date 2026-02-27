@@ -107,7 +107,6 @@ using-tools/
 ### Prerequisites
 
 - [Bun](https://bun.sh/) v1.0 or higher
-- OpenAI API key (set as `OPENAI_API_KEY` environment variable)
 
 ### Installation
 

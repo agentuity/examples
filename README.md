@@ -78,7 +78,6 @@ bun run dev
 ```bash
 # Or run an integration example
 cd integrations/mastra/agent-memory
-cp .env.example .env
 bun install
 bun run dev
 ```
