@@ -20,8 +20,6 @@ Each example includes its own setup instructions and project layout.
 
 ## More Examples
 
-For step-by-step tutorials see [training/](../training).
-
-For integrations with other SDKs (e.g., Mastra, LangChain) see [integrations/](../integrations).
-
-For platform features (e.g., sandboxes, cron jobs) see [features/](../features).
+- Step-by-step tutorials: [training/](../training)
+- Integrations with other SDKs (e.g., Mastra, LangChain): [integrations/](../integrations)
+- Agentuity platform features (e.g., sandboxes, cron jobs): [features/](../features)

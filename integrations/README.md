@@ -55,8 +55,6 @@ bun run dev
 
 ## More Examples
 
-For step-by-step tutorials see [training/](../training).
-
-For adding agents to an existing app (e.g., Next.js, TanStack Start) see [existing-apps/](../existing-apps).
-
-For platform features (e.g., sandboxes, cron jobs) see [features/](../features).
+- Step-by-step tutorials: [training/](../training)
+- Add agents to an existing app (e.g., Next.js, TanStack Start): [existing-apps/](../existing-apps)
+- Agentuity platform features (e.g., sandboxes, cron jobs): [features/](../features)

@@ -67,17 +67,10 @@ Examples for building agents with the [Agentuity SDK](https://github.com/agentui
 git clone https://github.com/agentuity/examples
 cd examples
 
-# Pick an example
+# Pick an example (e.g., training/01-hello-world, integrations/mastra/agent-memory)
 cd training/01-hello-world
 
 # Install and run
-bun install
-bun run dev
-```
-
-```bash
-# Or run an integration example
-cd integrations/mastra/agent-memory
 bun install
 bun run dev
 ```
@@ -86,7 +79,7 @@ New to Agentuity? Try the [SDK Explorer](https://agentuity.dev) in the docs to l
 
 ## Contributing
 
-Contributions are welcome! If you have an example you'd like to add, please submit a pull request.
+Contributions are welcome! If you have an example you'd like to add, please submit a [pull request](https://github.com/agentuity/examples/pulls).
 
 ## License
 

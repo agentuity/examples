@@ -21,8 +21,6 @@ Each example includes setup instructions in its README.
 
 ## More Examples
 
-For step-by-step tutorials see [training/](../training).
-
-For adding agents to an existing app (e.g., Next.js, TanStack Start) see [existing-apps/](../existing-apps).
-
-For integrations with other SDKs (e.g., Mastra, LangChain) see [integrations/](../integrations).
+- Step-by-step tutorials: [training/](../training)
+- Add agents to an existing app (e.g., Next.js, TanStack Start): [existing-apps/](../existing-apps)
+- Integrations with other SDKs (e.g., Mastra, LangChain): [integrations/](../integrations)
