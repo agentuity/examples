@@ -50,3 +50,9 @@ bot.onNewMention(async (thread, message) => {
 bot.onSubscribedMessage(async (thread, message) => {
 	await handleMessage(thread, message);
 });
+
+// When a user reacts to a message in a subscribed thread
+bot.onReaction(async (event) => {
+	if (!event.added) return;
+	await event.thread.post(`Thanks for the ${event.emoji}!`);
+});

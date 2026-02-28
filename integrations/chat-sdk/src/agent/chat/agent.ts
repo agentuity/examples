@@ -21,7 +21,10 @@ const agent = createAgent('chat', {
 	handler: async (ctx, { text, threadId }) => {
 		ctx.logger.info('Chat request', { messageLength: text.length, threadId });
 
-		// Load conversation history from KV storage
+		// Conversation history uses Agentuity KV (keyed by Chat SDK thread ID) rather than
+		// ctx.thread.state (1-hour TTL, cookie-based IDs that don't work for webhooks) or
+		// Chat SDK's thread.state (lost on restart with in-memory state adapter).
+		// KV gives us longer retention (24h) and visibility in the Agentuity dashboard.
 		const history = await ctx.kv.get('chat-sdk-conversations', threadId);
 		const stored = history.exists
 			? (history.data as { messages: Array<{ role: 'user' | 'assistant'; content: string }> })
