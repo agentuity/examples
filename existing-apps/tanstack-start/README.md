@@ -113,10 +113,7 @@ This example runs two separate runtimes when deployed.
 2. Fallback: explicit backend base URL from the frontend
 - Set frontend env: `VITE_AGENTUITY_BASE_URL=https://your-agentuity-backend.example.com`
 - Passes through `AgentuityProvider baseUrl`.
-- Enable cross-origin backend access with:
-  - `AGENTUITY_CORS_ALLOWED_ORIGINS=https://your-frontend.example.com`
-
-Backend CORS is configured with trusted-origin mode plus optional extra origins from that env variable.
+- The backend uses `cors: { sameOrigin: true }`, which automatically trusts platform-set origins (`AGENTUITY_CLOUD_DOMAINS`) and same-origin requests. For custom domains, set `AUTH_TRUSTED_DOMAINS=https://your-frontend.example.com`.
 
 ## Related
 

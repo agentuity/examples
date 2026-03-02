@@ -2,6 +2,7 @@ import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { join } from 'path';
 
 const agent = createAgent('conference', {
 	description:
@@ -37,7 +38,7 @@ const agent = createAgent('conference', {
 				conferenceContent = cached.data as string;
 			} else {
 				ctx.logger.info('Loading conference content from file');
-				conferenceContent = await Bun.file('src/content/conference/llms.txt').text();
+				conferenceContent = await Bun.file(join(import.meta.dir, '../../content/conference/llms.txt')).text();
 
 				// Cache indefinitely (content is static)
 				await ctx.kv.set('content', cacheKey, conferenceContent);

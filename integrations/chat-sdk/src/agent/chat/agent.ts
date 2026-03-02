@@ -39,6 +39,9 @@ const agent = createAgent('chat', {
 			{ role: 'user' as const, content: text },
 		];
 
+		// generateText is used here because the agent returns typed output ({ response: string }).
+		// For streaming, call streamText() directly in the message handler (bot.tsx) and pass
+		// result.textStream to thread.post(), which accepts AsyncIterable<string>.
 		const result = await generateText({
 			model: anthropic('claude-haiku-4-5'),
 			system:
@@ -46,7 +49,7 @@ const agent = createAgent('chat', {
 			messages: aiMessages,
 		});
 
-		// Append user + assistant messages, then trim to sliding window (20 messages = 10 turns)
+		// Append user + assistant messages, then trim stored history to 20 messages (10 turns)
 		messages.push({ role: 'user', content: text });
 		messages.push({ role: 'assistant', content: result.text });
 		const trimmed = messages.slice(-20);

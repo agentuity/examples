@@ -17,6 +17,10 @@ const adapters = {
 		: {}),
 } satisfies Record<string, Adapter>;
 
+if (Object.keys(adapters).length === 0) {
+	console.warn('[chat-bot] No adapters configured. Set SLACK_BOT_TOKEN + SLACK_SIGNING_SECRET for Slack, or DISCORD_BOT_TOKEN + DISCORD_PUBLIC_KEY + DISCORD_APPLICATION_ID for Discord.');
+}
+
 export const bot = new Chat({
 	userName: 'agentuity-bot',
 	adapters,

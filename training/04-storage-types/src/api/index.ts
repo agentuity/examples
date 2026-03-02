@@ -1,11 +1,11 @@
 import { createRouter } from '@agentuity/runtime';
-import hello from '@agent/storage-types';
+import storageTypes from '@agent/storage-types';
 
 const api = createRouter();
 
-api.post('/hello', hello.validator(), async (c) => {
+api.post('/storage-types', storageTypes.validator(), async (c) => {
 	const data = c.req.valid('json');
-	const result = await hello.run(data);
+	const result = await storageTypes.run(data);
 	return c.json(result);
 });
 

@@ -5,7 +5,7 @@ const WORKBENCH_PATH = process.env.AGENTUITY_PUBLIC_WORKBENCH_PATH;
 
 export function App() {
 	const [prompt, setPrompt] = useState('Tell me a joke');
-	const { data: greeting, invoke, isLoading: running } = useAPI('POST /api/hello');
+	const { data: greeting, invoke, isLoading: running } = useAPI('POST /api/storage-types');
 
 	return (
 		<div className="app-container">
@@ -44,7 +44,7 @@ export function App() {
 
 				<div className="card card-interactive">
 					<h2 className="card-title">
-						Try the <span className="highlight">OpenAI powered AI Agent</span>
+						Try the <span className="highlight">Storage Types Demo</span>
 					</h2>
 
 					<div className="input-group">
@@ -65,7 +65,7 @@ export function App() {
 							<button
 								className={`button ${running ? 'disabled' : ''}`}
 								disabled={running}
-								onClick={() => invoke({ prompt })}
+								onClick={() => invoke({ textContent: prompt })}
 								type="button"
 							>
 								{running ? 'Running...' : 'Ask AI'}
@@ -88,7 +88,7 @@ export function App() {
 								title: 'Customize your agent',
 								text: (
 									<>
-										Edit <code>src/agent/hello/agent.ts</code> to change how your agent
+										Edit <code>src/agent/storage-types/agent.ts</code> to change how your agent
 										responds.
 									</>
 								),

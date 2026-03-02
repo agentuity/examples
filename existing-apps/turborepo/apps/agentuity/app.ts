@@ -1,17 +1,11 @@
 import { createApp } from '@agentuity/runtime';
 
+// sameOrigin: true automatically trusts platform-set origins (AGENTUITY_CLOUD_DOMAINS),
+// the deployment base URL, and same-origin requests. For additional custom domains,
+// set AUTH_TRUSTED_DOMAINS in your environment. To allow all origins instead (useful
+// during development), omit the cors option entirely.
 const { server, logger } = await createApp({
-	setup: async () => {
-		// anything you return from this will be automatically
-		// available in the ctx.app. this allows you to initialize
-		// global resources and make them available to routes and
-		// agents in a typesafe way
-	},
-	shutdown: async (_state) => {
-		// the state variable will be the same value was what you
-		// return from setup above. you can use this callback to
-		// close any resources or other shutdown related tasks
-	},
+	cors: { sameOrigin: true },
 });
 
 logger.debug('Running %s', server.url);
