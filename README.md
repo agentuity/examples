@@ -46,7 +46,6 @@ Examples for building agents with the [Agentuity SDK](https://github.com/agentui
 
 | Integration | Description |
 |-------------|-------------|
-| [mastra](./integrations/mastra) | Memory, tools, approvals, and network patterns |
 | [langchain](./integrations/langchain) | Dynamic models/tools, prompts, streaming, structured output |
 | [openai](./integrations/openai) | OpenAI Agents SDK handoffs, tool calling, streaming, context |
 | [chat-sdk](./integrations/chat-sdk) | Multi-platform chatbot (Slack, Discord) with conversation memory |
@@ -64,7 +63,7 @@ Examples for building agents with the [Agentuity SDK](https://github.com/agentui
 git clone https://github.com/agentuity/examples
 cd examples
 
-# Pick an example (e.g., training/01-hello-world, integrations/mastra/agent-memory)
+# Pick an example
 cd training/01-hello-world
 
 # Install and run

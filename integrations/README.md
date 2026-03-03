@@ -6,7 +6,7 @@ Build with Agentuity and another SDK. Each example shows how to use an external 
 
 ```bash
 # From repo root
-cd integrations/mastra/agent-memory
+cd integrations/langchain/basic-agent
 bun install
 bun run typecheck
 bun run build
@@ -14,18 +14,6 @@ bun run dev
 ```
 
 ## Examples
-
-### Mastra
-
-| Example | Pattern |
-|---|---|
-| `mastra/agent-memory` | Conversation memory + thread state |
-| `mastra/structured-output` | Schema-driven structured output |
-| `mastra/using-tools` | Tool/function calling |
-| `mastra/network-agent` | Multi-agent network flow |
-| `mastra/agent-approval` | Human approval pattern |
-| `mastra/network-approval` | Network + human-in-the-loop approvals |
-| `mastra/processors-agent` | Processor pipeline/moderation |
 
 ### LangChain
 
@@ -57,4 +45,4 @@ bun run dev
 
 - Step-by-step tutorials: [training/](../training)
 - Add agents to an existing app (e.g., Next.js, TanStack Start): [existing-apps/](../existing-apps)
-- Agentuity platform features (e.g., sandboxes, cron jobs): [features/](../features)
+- Agentuity platform features (e.g., cron jobs, KV storage): [features/](../features)
