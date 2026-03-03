@@ -218,7 +218,7 @@ const agent = createAgent('weather', {
     // Check if we have recent data (5 minutes)
     const cached = await ctx.kv.get('weather', cacheKey);
     if (cached.exists) {
-      const cachedWeather = cached.data as WeatherResult;
+      const cachedWeather = cached.data as any;
       ctx.logger.info(`Returning cached weather for ${location}`);
       return cachedWeather;
     }

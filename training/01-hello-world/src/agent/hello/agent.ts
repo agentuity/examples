@@ -78,7 +78,7 @@ const agent = createAgent('hello', {
 			personal_count: newCount,
 		};
 
-		ctx.logger.info(`Generated greeting #${newCount} for ${name}`);
+		ctx.logger.info(`Generated greeting #${1} for ${name}`);
 
 		return responseData;
 	},})

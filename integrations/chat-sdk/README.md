@@ -75,12 +75,6 @@ You only need to configure the platforms you want to use: set the environment va
 
 Chat SDK also supports [GitHub, Teams, Google Chat, and Linear](https://chat-sdk.dev/docs/adapters) adapters.
 
-### Updating Your Slack App After Adding Features
-
-Discord receives all events automatically via its Gateway WebSocket, so new features (reactions, slash commands, etc.) work immediately after deploy.
-
-Slack requires explicit event subscriptions. If you add new event handlers (e.g., `onReaction`) after creating your Slack app, update the app's manifest at [api.slack.com/apps](https://api.slack.com/apps) > **App Manifest**: paste the current [`slack-manifest.yaml`](./slack-manifest.yaml) and save. No reinstall is needed unless you add new OAuth scopes.
-
 ## Related
 
 - [Chat SDK Documentation](https://chat-sdk.dev/docs)

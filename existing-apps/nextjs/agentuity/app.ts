@@ -1,11 +1,17 @@
-import { createApp } from '@agentuity/runtime';
+import { createApp, createTrustedCorsOrigin } from '@agentuity/runtime';
 
-// sameOrigin: true automatically trusts platform-set origins (AGENTUITY_CLOUD_DOMAINS),
-// the deployment base URL, and same-origin requests. For additional custom domains,
-// set AUTH_TRUSTED_DOMAINS in your environment. To allow all origins instead (useful
-// during development), omit the cors option entirely.
+const allowedOrigins = process.env.AGENTUITY_CORS_ALLOWED_ORIGINS?.split(',')
+	.map((origin) => origin.trim())
+	.filter(Boolean);
+
 const app = await createApp({
-	cors: { sameOrigin: true },
+	cors: {
+		origin: createTrustedCorsOrigin({
+			allowedOrigins,
+		}),
+		sameOrigin: true,
+		allowedOrigins: allowedOrigins?.length ? allowedOrigins : undefined,
+	},
 });
 
 app.logger.info(`[NextJS-Agentuity] Server started: ${app.server.url}`);

@@ -4,8 +4,8 @@ import { type ChangeEvent, useState } from 'react';
 const WORKBENCH_PATH = process.env.AGENTUITY_PUBLIC_WORKBENCH_PATH;
 
 export function App() {
-	const [location, setLocation] = useState('San Francisco');
-	const { data: weather, invoke, isLoading: running } = useAPI('POST /api/weather');
+	const [prompt, setPrompt] = useState('Tell me a joke');
+	const { data: greeting, invoke, isLoading: running } = useAPI('POST /api/hello');
 
 	return (
 		<div className="app-container">
@@ -44,7 +44,7 @@ export function App() {
 
 				<div className="card card-interactive">
 					<h2 className="card-title">
-						Try the <span className="highlight">Agentuity Weather Agent</span>
+						Try the <span className="highlight">OpenAI powered AI Agent</span>
 					</h2>
 
 					<div className="input-group">
@@ -52,11 +52,11 @@ export function App() {
 							className="input"
 							disabled={running}
 							onChange={(e: ChangeEvent<HTMLInputElement>) =>
-								setLocation(e.currentTarget.value)
+								setPrompt(e.currentTarget.value)
 							}
-							placeholder="Enter a city name"
+							placeholder="Enter your prompt"
 							type="text"
-							value={location}
+							value={prompt}
 						/>
 
 						<div className="glow-btn">
@@ -65,16 +65,16 @@ export function App() {
 							<button
 								className={`button ${running ? 'disabled' : ''}`}
 								disabled={running}
-								onClick={() => invoke({ location })}
+								onClick={() => invoke({ prompt })}
 								type="button"
 							>
-								{running ? 'Running...' : 'Get Weather'}
+								{running ? 'Running...' : 'Ask AI'}
 							</button>
 						</div>
 					</div>
 
-					<div className="output" data-loading={!weather}>
-						{weather ?? 'Enter a location to get the weather forecast'}
+					<div className="output" data-loading={!greeting}>
+						{greeting ?? 'Waiting for request'}
 					</div>
 				</div>
 
@@ -88,7 +88,7 @@ export function App() {
 								title: 'Customize your agent',
 								text: (
 									<>
-										Edit <code>src/agent/weather/agent.ts</code> to change how your agent
+										Edit <code>src/agent/hello/agent.ts</code> to change how your agent
 										responds.
 									</>
 								),
