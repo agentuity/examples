@@ -1,1 +1,24 @@
 .DS_Store
+
+# dependencies (bun install)
+node_modules/
+
+# environment variables
+.env
+.env.*
+!.env.example
+
+# build artifacts
+.agentuity/
+*.tsbuildinfo
+
+# editor
+.vscode/
+
+# coding agents
+.claude/
+CLAUDE.md
+AGENTS.md
+!/AGENTS.md
+.agents/
+.firecrawl/

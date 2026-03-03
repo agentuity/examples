@@ -1,0 +1,29 @@
+{
+  "name": "nextjs-agentuity-backend",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "agentuity dev",
+    "build": "agentuity build --dev",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@agentuity/core": "latest",
+    "@agentuity/evals": "latest",
+    "@agentuity/frontend": "latest",
+    "@agentuity/runtime": "latest",
+    "@agentuity/schema": "latest",
+    "@agentuity/workbench": "latest",
+    "groq-sdk": "latest",
+    "hono": "^4.7.13",
+    "openai": "latest"
+  },
+  "devDependencies": {
+    "@agentuity/cli": "latest",
+    "@types/bun": "latest",
+    "@vitejs/plugin-react": "^4.5.2",
+    "typescript": "^5",
+    "vite": "^7.2.7"
+  }
+}

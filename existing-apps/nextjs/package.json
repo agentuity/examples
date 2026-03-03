@@ -1,0 +1,33 @@
+{
+	"name": "nextjs-agentuity-example",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "concurrently -n web,agent -c blue,cyan \"bun run dev:web\" \"bun run dev:agent\"",
+		"dev:web": "bun run wait:agent && next dev",
+		"dev:agent": "cd agentuity && agentuity dev",
+		"wait:agent": "wait-on http-get://127.0.0.1:3500/api/health --timeout 30000",
+		"build": "bun run build:agent && bun run build:web",
+		"build:web": "next build",
+		"build:agent": "cd agentuity && agentuity build --dev",
+		"test": "bun run build:agent && bun run typecheck",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@agentuity/core": "latest",
+		"@agentuity/frontend": "latest",
+		"@agentuity/react": "latest",
+		"next": "^15.3.0",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0"
+	},
+	"devDependencies": {
+		"@types/node": "^22.10.2",
+		"@types/react": "^19.2.0",
+		"@types/react-dom": "^19.2.0",
+		"concurrently": "^9.2.1",
+		"typescript": "^5.7.2",
+		"wait-on": "^8.0.3"
+	}
+}

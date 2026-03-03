@@ -1,0 +1,32 @@
+{
+  "name": "@tanstack-turborepo/web",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wait-on http-get://127.0.0.1:3500/api/health --timeout 30000 && vite --port 3000",
+    "build": "vite build && bunx tsc --noEmit",
+    "preview": "vite preview",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@agentuity/core": "latest",
+    "@agentuity/frontend": "latest",
+    "@agentuity/react": "latest",
+    "@tanstack/react-router": "^1.121.0",
+    "@tanstack/react-router-devtools": "^1.121.0",
+    "@tanstack-turborepo/shared": "workspace:*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@tanstack-turborepo/agentuity": "workspace:*",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^4.5.2",
+    "wait-on": "^8.0.3",
+    "typescript": "^5",
+    "vite": "^7.2.7"
+  }
+}

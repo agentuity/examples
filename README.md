@@ -13,34 +13,69 @@
 
 # Agentuity Examples
 
-[![Deploy with Agentuity](https://app.agentuity.com/img/deploy.svg)](https://app.agentuity.com/deploy)
+Examples for building agents with the [Agentuity SDK](https://github.com/agentuity/sdk).
 
-> [!WARNING]  
-> This repository is under heavy development and it is not yet stable or ready for use.
+## Examples
 
-This repository contains a collection of examples that demonstrate how to build and deploy agents using the Agentuity platform. These examples are designed to help you get started with Agentuity and provide reference implementations that you can use, copy, or adapt for your own projects.
+| Folder | Purpose |
+|--------|---------|
+| `training/` | Learn Agentuity step by step |
+| `existing-apps/` | Add Agentuity agents to an existing app (e.g., Next.js, TanStack Start) |
+| `integrations/` | Use Agentuity with another library, framework, or SDK |
+| `features/` | See what the platform can do |
 
-## New to Agentuity? Try the Kitchen Sink
+### [training/](./training)
 
-The [**Kitchen Sink**](https://github.com/agentuity/kitchen-sink-ts) is an interactive SDK showcase with 20+ live agents demonstrating:
+| Example | Description |
+|---------|-------------|
+| [01-hello-world](./training/01-hello-world) | Your first agent |
+| [02-weather-agent](./training/02-weather-agent) | External API integration |
+| [03-concierge](./training/03-concierge) | Multi-agent orchestration |
+| [04-storage-types](./training/04-storage-types) | Key-value, object store, vector search |
+| [05-deep-research](./training/05-deep-research) | Complex agent workflows |
 
-- **Handler APIs** - Request/response handling, context management
-- **I/O Methods** - Agent communication, webhooks, cron, email, SMS
-- **Storage** - Key-value, object store, vector search
-- **AI Integrations** - Multiple frameworks, AI Gateway, BYO tokens
-- **Observability** - Logging and tracing
+### [existing-apps/](./existing-apps)
 
-Perfect for **hands-on learning** before building your own agents. Deploy in minutes, test features interactively, and see working code for every SDK capability.
+| Example | Framework | Description |
+|---------|-----------|-------------|
+| [nextjs](./existing-apps/nextjs) | Next.js App Router | Brownfield translate/history + evals with rewrite or baseUrl modes |
+| [tanstack-start](./existing-apps/tanstack-start) | TanStack Start | Brownfield translate/history + evals with proxy or baseUrl modes |
+| [turborepo](./existing-apps/turborepo) | Turborepo | Monorepo with shared schemas |
 
-The examples in this repo showcase **practical implementations** for real-world use cases.
+### [integrations/](./integrations)
+
+| Integration | Description |
+|-------------|-------------|
+| [langchain](./integrations/langchain) | Dynamic models/tools, prompts, streaming, structured output |
+| [openai](./integrations/openai) | OpenAI Agents SDK handoffs, tool calling, streaming, context |
+| [chat-sdk](./integrations/chat-sdk) | Multi-platform chatbot (Slack, Discord) with conversation memory |
+
+### [features/](./features)
+
+| Example | Description |
+|---------|-------------|
+| [scheduled-digest](./features/scheduled-digest) | Cron jobs + KV storage + durable streams |
 
 ## Getting Started
 
-For comprehensive documentation and getting started guides, please visit our documentation site at [agentuity.dev](https://agentuity.dev).
+```bash
+# Clone this repo
+git clone https://github.com/agentuity/examples
+cd examples
+
+# Pick an example
+cd training/01-hello-world
+
+# Install and run
+bun install
+bun run dev
+```
+
+New to Agentuity? Try the [SDK Explorer](https://agentuity.dev) in the docs to learn key features and services with interactive examples. Or, start with [training/01-hello-world](./training/01-hello-world) for a more structured, course-like walkthrough.
 
 ## Contributing
 
-Contributions are welcome! If you have an example you'd like to add, please submit a pull request.
+Contributions are welcome! If you have an example you'd like to add, please submit a [pull request](https://github.com/agentuity/examples/pulls).
 
 ## License
 

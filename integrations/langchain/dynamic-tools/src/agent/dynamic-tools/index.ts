@@ -1,0 +1,310 @@
+/**
+ * Dynamic Tools Agent: Demonstrates LangChain's dynamic tool filtering and runtime registration.
+ *
+ * LangChain concepts shown:
+ * - Filtering pre-registered tools by state (authentication + message count)
+ * - Filtering tools by runtime context (user role: admin/editor/viewer)
+ * - Conditional tool visibility + custom tool execution via wrapModelCall + wrapToolCall
+ * - Multiple middleware layers composed together
+ */
+import { createAgent } from '@agentuity/runtime';
+import { s } from '@agentuity/schema';
+import {
+	createAgent as createLangChainAgent,
+	createMiddleware,
+	tool,
+} from 'langchain';
+import { ChatOpenAI } from '@langchain/openai';
+import * as z from 'zod';
+
+// ---------------------------------------------------------------------------
+// LangChain Tools — all pre-registered, selectively exposed
+// ---------------------------------------------------------------------------
+
+const publicSearch = tool(
+	async ({ query }) => {
+		return `Public search results for "${query}": Found 3 articles.`;
+	},
+	{
+		name: 'public_search',
+		description: 'Search publicly available information',
+		schema: z.object({ query: z.string().describe('The search query') }),
+	},
+);
+
+const publicWeather = tool(
+	async ({ location }) => {
+		const data: Record<string, string> = {
+			'san francisco': '62°F, Foggy',
+			'new york': '75°F, Partly cloudy',
+			tokyo: '80°F, Sunny',
+			london: '58°F, Rainy',
+		};
+		return data[location.toLowerCase()] ?? `${location}: 72°F, Sunny`;
+	},
+	{
+		name: 'public_weather',
+		description: 'Get current weather for a city',
+		schema: z.object({ location: z.string().describe('The city') }),
+	},
+);
+
+const readDatabase = tool(
+	async ({ table }) => {
+		return `Read ${table}: 42 records found. Sample: {id: 1, name: "Example", status: "active"}`;
+	},
+	{
+		name: 'read_database',
+		description: 'Read records from a database table',
+		schema: z.object({ table: z.string().describe('Table name to query') }),
+	},
+);
+
+const writeDatabase = tool(
+	async ({ table, data }) => {
+		return `Wrote to ${table}: ${data}. Record created with id: 43.`;
+	},
+	{
+		name: 'write_database',
+		description: 'Write a record to a database table',
+		schema: z.object({
+			table: z.string().describe('Table name'),
+			data: z.string().describe('JSON data to write'),
+		}),
+	},
+);
+
+const deleteData = tool(
+	async ({ table, id }) => {
+		return `Deleted record ${id} from ${table}. Operation logged.`;
+	},
+	{
+		name: 'delete_data',
+		description: 'Delete a record from a database table (admin only)',
+		schema: z.object({
+			table: z.string().describe('Table name'),
+			id: z.string().describe('Record ID to delete'),
+		}),
+	},
+);
+
+const advancedSearch = tool(
+	async ({ query, filters }) => {
+		return `Advanced search for "${query}" with filters [${filters}]: Found 12 results with relevance scoring.`;
+	},
+	{
+		name: 'advanced_search',
+		description: 'Advanced search with filters (requires 5+ messages in conversation)',
+		schema: z.object({
+			query: z.string().describe('The search query'),
+			filters: z.string().optional().describe('Comma-separated filters'),
+		}),
+	},
+);
+
+// Conditionally visible tool — pre-registered but hidden/shown by middleware
+const calculateTip = tool(
+	async ({ billAmount, tipPercentage = 20 }) => {
+		const tip = billAmount * (tipPercentage / 100);
+		return `Tip: $${tip.toFixed(2)}, Total: $${(billAmount + tip).toFixed(2)}`;
+	},
+	{
+		name: 'calculate_tip',
+		description: 'Calculate the tip amount for a bill',
+		schema: z.object({
+			billAmount: z.number().describe('The bill amount'),
+			tipPercentage: z.number().default(20).describe('Tip percentage'),
+		}),
+	},
+);
+
+const allTools = [publicSearch, publicWeather, readDatabase, writeDatabase, deleteData, advancedSearch, calculateTip];
+
+// ---------------------------------------------------------------------------
+// LangChain Model
+// ---------------------------------------------------------------------------
+
+const model = new ChatOpenAI({ model: 'gpt-4.1', temperature: 0.1, maxTokens: 1000 });
+
+// ---------------------------------------------------------------------------
+// Middleware 1: Filter by state (authentication + message count)
+// ---------------------------------------------------------------------------
+
+let appliedFilters: string[] = [];
+
+const stateBasedTools = createMiddleware({
+	name: 'StateBasedTools',
+	wrapModelCall: (request, handler) => {
+		const runtime = request.runtime as { context?: { authenticated?: boolean } } | undefined;
+		const isAuthenticated = runtime?.context?.authenticated ?? false;
+		const messageCount = request.state.messages.length;
+
+		let filteredTools = request.tools;
+		const filters: string[] = [];
+
+		// Only show public_ tools if not authenticated
+		if (!isAuthenticated) {
+			filteredTools = request.tools.filter(
+				(t: any) => typeof t.name === 'string' && t.name.startsWith('public_'),
+			);
+			filters.push('unauthenticated: public_ tools only');
+		} else if (messageCount < 5) {
+			// Authenticated but early in conversation: hide advanced_search
+			filteredTools = request.tools.filter(
+				(t: any) => typeof t.name === 'string' && t.name !== 'advanced_search',
+			);
+			filters.push('authenticated, <5 msgs: no advanced_search');
+		} else {
+			filters.push('authenticated, 5+ msgs: all tools');
+		}
+
+		appliedFilters = filters;
+		return handler({ ...request, tools: filteredTools });
+	},
+});
+
+// ---------------------------------------------------------------------------
+// Middleware 2: Filter by runtime context (user role)
+// ---------------------------------------------------------------------------
+
+const contextBasedTools = createMiddleware({
+	name: 'ContextBasedTools',
+	wrapModelCall: (request, handler) => {
+		const runtime = request.runtime as { context?: { userRole?: string } } | undefined;
+		const userRole = runtime?.context?.userRole ?? 'viewer';
+
+		let filteredTools = request.tools;
+
+		if (userRole === 'admin') {
+			// Admins get all tools
+			appliedFilters.push(`role=${userRole}: all tools`);
+		} else if (userRole === 'editor') {
+			filteredTools = request.tools.filter((t: any) => t.name !== 'delete_data');
+			appliedFilters.push(`role=${userRole}: no delete_data`);
+		} else {
+			// viewer: only read_ and public_ tools
+			filteredTools = request.tools.filter(
+				(t: any) =>
+					typeof t.name === 'string' &&
+					(t.name.startsWith('read_') || t.name.startsWith('public_')),
+			);
+			appliedFilters.push(`role=${userRole}: read/public only`);
+		}
+
+		return handler({ ...request, tools: filteredTools });
+	},
+});
+
+// ---------------------------------------------------------------------------
+// Middleware 3: Conditional tool visibility + custom tool execution (calculate_tip)
+// ---------------------------------------------------------------------------
+
+const dynamicToolMiddleware = createMiddleware({
+	name: 'DynamicToolMiddleware',
+	wrapModelCall: (request, handler) => {
+		// calculate_tip is always visible (it survived the previous filters)
+		const hasTip = request.tools.some((t: any) => t.name === 'calculate_tip');
+		appliedFilters.push(hasTip ? 'dynamic: calculate_tip visible' : 'dynamic: calculate_tip filtered out');
+		return handler(request);
+	},
+	wrapToolCall: (request, handler) => {
+		// Custom execution wrapper — e.g. add logging around calculate_tip calls
+		if (request.toolCall.name === 'calculate_tip') {
+			appliedFilters.push('dynamic: intercepted calculate_tip execution');
+		}
+		return handler(request);
+	},
+});
+
+// ---------------------------------------------------------------------------
+// LangChain Agent — all three middleware layers composed
+// ---------------------------------------------------------------------------
+
+const langchainAgent = createLangChainAgent({
+	model,
+	tools: allTools,
+	middleware: [stateBasedTools, contextBasedTools, dynamicToolMiddleware],
+	systemPrompt:
+		'You are a helpful assistant. Use the available tools to answer questions. If a tool is not available, explain that the user may need different permissions.',
+});
+
+// ---------------------------------------------------------------------------
+// Agentuity Agent Wrapper
+// ---------------------------------------------------------------------------
+
+export const AgentInput = s.object({
+	message: s.string().describe('The user message'),
+	userRole: s
+		.enum(['admin', 'editor', 'viewer'] as const)
+		.optional()
+		.describe('User role for context-based filtering'),
+	authenticated: s.boolean().optional().describe('Whether the user is authenticated'),
+	conversationHistory: s
+		.array(
+			s.object({
+				role: s.string(),
+				content: s.string(),
+			}),
+		)
+		.optional()
+		.describe('Previous messages to affect state-based filtering'),
+});
+
+export const AgentOutput = s.object({
+	response: s.string().describe('The agent response'),
+	filtersApplied: s.array(s.string()).describe('Which middleware filters were applied'),
+	availableToolCount: s.number().describe('Number of tools available after filtering'),
+	threadId: s.string().describe('Thread ID'),
+	sessionId: s.string().describe('Session ID'),
+});
+
+const agent = createAgent('dynamic-tools', {
+	description: 'LangChain agent with dynamic tool filtering by state, context, and runtime registration',
+	schema: { input: AgentInput, output: AgentOutput },
+	handler: async (ctx, { message, userRole = 'viewer', authenticated = false, conversationHistory = [] }) => {
+		ctx.logger.info('──── Dynamic Tools Agent ────');
+		ctx.logger.info({ message, userRole, authenticated, historyLength: conversationHistory.length });
+
+		// Reset filters for this invocation
+		appliedFilters = [];
+
+		// Build messages
+		const messages = [
+			...conversationHistory.map((m) => ({
+				role: m.role as 'user' | 'assistant',
+				content: m.content,
+			})),
+			{ role: 'user' as const, content: message },
+		];
+
+		// Invoke with context for the middleware to read
+		const result = await langchainAgent.invoke(
+			{ messages },
+			{
+				context: { userRole, authenticated },
+			},
+		);
+
+		// Extract response
+		const lastAi = [...result.messages]
+			.reverse()
+			.find((m: any) => (m as any)._getType?.() === 'ai');
+		const response = lastAi?.content
+			? typeof lastAi.content === 'string'
+				? lastAi.content
+				: JSON.stringify(lastAi.content)
+			: 'No response generated';
+
+		ctx.logger.info('Agent complete', { filtersApplied: appliedFilters });
+
+		return {
+			response,
+			filtersApplied: appliedFilters,
+			availableToolCount: allTools.length,
+			threadId: ctx.thread.id,
+			sessionId: ctx.sessionId,
+		};
+	},
+});
+
+export default agent;

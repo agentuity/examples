@@ -1,0 +1,49 @@
+{
+	"name": "tanstack-start-agentuity-example",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "concurrently -n web,agent -c blue,cyan \"bun run dev:web\" \"bun run dev:agent\"",
+		"dev:web": "bun run wait:agent && vite dev --port 3000",
+		"wait:agent": "wait-on http-get://127.0.0.1:3500/api/health --timeout 30000",
+		"dev:agent": "cd agentuity && agentuity dev",
+		"build": "bun run build:agent && bun run build:web",
+		"build:web": "vite build && tsc",
+		"build:agent": "cd agentuity && agentuity build --dev",
+		"preview": "vite preview",
+		"test": "vitest run",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@agentuity/core": "latest",
+		"@agentuity/frontend": "latest",
+		"@agentuity/react": "latest",
+		"@tailwindcss/vite": "^4.0.6",
+		"@tanstack/react-devtools": "^0.7.0",
+		"@tanstack/react-router": "^1.132.0",
+		"@tanstack/react-router-devtools": "^1.132.0",
+		"@tanstack/react-router-ssr-query": "^1.131.7",
+		"@tanstack/react-start": "^1.132.0",
+		"@tanstack/router-plugin": "^1.132.0",
+		"lucide-react": "^0.545.0",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
+		"tailwindcss": "^4.0.6"
+	},
+	"devDependencies": {
+		"@tanstack/devtools-vite": "^0.3.11",
+		"@testing-library/dom": "^10.4.0",
+		"@testing-library/react": "^16.2.0",
+		"@types/node": "^22.10.2",
+		"@types/react": "^19.2.0",
+		"@types/react-dom": "^19.2.0",
+		"@vitejs/plugin-react": "^5.0.4",
+		"concurrently": "^8.2.2",
+		"wait-on": "^8.0.3",
+		"jsdom": "^27.0.0",
+		"typescript": "^5.7.2",
+		"vite": "^7.1.7",
+		"vite-tsconfig-paths": "^5.1.4",
+		"vitest": "^3.0.5"
+	}
+}
