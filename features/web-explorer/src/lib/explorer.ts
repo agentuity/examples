@@ -105,9 +105,18 @@ export async function explore(ctx: ExplorerContext, options: ExploreOptions): Pr
 		const snapshotExec = await exec(sandbox, ['agent-browser', 'snapshot', '-i']);
 		const accessibilityTree = await getStdout(snapshotExec);
 
+		// Emit preview immediately so the user sees the screenshot while the LLM thinks
+		await emitPreview(options, {
+			stepNumber: 1,
+			screenshotUrl: initialScreenshot.screenshotUrl,
+			action: `Opened ${options.url}`,
+			pageUrl: options.url,
+			cached: initialScreenshot.cached,
+		});
+
 		const { text: initialObservation } = await generateText({
 			model: openai('gpt-5-nano'),
-			prompt: `You are observing a web page. Describe what you see in 1-2 sentences.\n\nPage URL: ${options.url}\nPage title: ${pageTitle}\n\nAccessibility tree:\n${accessibilityTree.slice(0, 4000)}`,
+			prompt: `You are observing the Agentuity SDK Explorer page. Describe the interactive demos and sections you see in 1-2 sentences.\n\nPage URL: ${options.url}\nPage title: ${pageTitle}\n\nAccessibility tree:\n${accessibilityTree.slice(0, 4000)}`,
 		});
 
 		const firstStep: ExplorationStep = {
@@ -135,9 +144,16 @@ export async function explore(ctx: ExplorerContext, options: ExploreOptions): Pr
 				const { output: nextAction } = await generateText({
 					model: openai('gpt-5-nano'),
 					output: Output.object({ schema: ACTION_SCHEMA }),
-					prompt: `You are an AI exploring a web page autonomously. Choose ONE action to take next.
+					prompt: `You are exploring the Agentuity SDK Explorer at agentuity.dev. This page has interactive demos and runnable code examples.
 
 ${COMMAND_REFERENCE}
+
+Focus on:
+- Scrolling to discover demo cards on the main page before navigating away
+- Clicking "Run" buttons to try sandbox demos
+- Exploring different sections (Basics, Services, I/O Patterns) on the main page
+
+Avoid navigating to deep documentation pages. Stay on interactive content.
 
 ${pastContext ? `You've visited these pages before. Try to explore different areas:\n${pastContext}\n` : ''}
 Previous steps taken:
@@ -146,7 +162,7 @@ ${steps.map((s) => `- Step ${s.stepNumber}: ${s.action} => ${s.observation}`).jo
 Current accessibility tree:
 ${currentTree.slice(0, 4000)}
 
-Pick an action that reveals new content or navigates somewhere interesting. Prefer links, buttons, or interactive elements.`,
+Choose ONE action to take next.`,
 				});
 
 				ctx.logger.info('LLM chose action', { step: i, command: nextAction.command, reason: nextAction.reason });
@@ -173,6 +189,16 @@ Pick an action that reveals new content or navigates somewhere interesting. Pref
 				} else {
 					screenshotResult = await captureAndUpload(ctx, sandbox, currentUrl, `step-${i}.png`);
 				}
+
+				// Emit preview immediately so the user sees the screenshot while the LLM thinks
+				await emitPreview(options, {
+					stepNumber: i,
+					screenshotUrl: screenshotResult.screenshotUrl,
+					action: actionDescription,
+					pageUrl: currentUrl,
+					cached: screenshotResult.cached,
+					elementRef: nextAction.command[1],
+				});
 
 				// Observe the new state
 				const newSnapshotExec = await exec(sandbox, ['agent-browser', 'snapshot', '-i']);
@@ -410,6 +436,23 @@ async function storeVisit(
 		});
 	} catch (err) {
 		ctx.logger.warn('Vector upsert failed', { error: String(err) });
+	}
+}
+
+/** Emit a preview event (screenshot ready, observation pending). */
+async function emitPreview(
+	options: ExploreOptions,
+	preview: {
+		stepNumber: number;
+		screenshotUrl: string;
+		action: string;
+		pageUrl?: string;
+		cached?: boolean;
+		elementRef?: string;
+	},
+): Promise<void> {
+	if (options.onStep) {
+		await options.onStep({ type: 'preview', ...preview });
 	}
 }
 

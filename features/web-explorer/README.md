@@ -9,6 +9,9 @@ bun install
 bun run dev
 ```
 
+> **Note:** If you see `ReadableStream has already been used` errors, run with
+> `OTEL_SDK_DISABLED=true bun run dev` — this is a known SDK issue (#701).
+
 Open [localhost:3500](http://localhost:3500) for the frontend, or [localhost:3500/workbench](http://localhost:3500/workbench) to test the agent directly.
 
 ## What's Inside

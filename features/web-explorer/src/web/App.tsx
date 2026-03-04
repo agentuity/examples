@@ -44,8 +44,26 @@ export function App() {
 					const data = JSON.parse(event.data) as StreamEvent;
 
 					switch (data.type) {
+						case 'preview':
+							setSteps((prev) => [
+								...prev,
+								{
+									stepNumber: data.stepNumber,
+									screenshotUrl: data.screenshotUrl,
+									action: data.action,
+									observation: '',
+									pageUrl: data.pageUrl,
+									cached: data.cached,
+									elementRef: data.elementRef,
+								},
+							]);
+							break;
 						case 'step':
-							setSteps((prev) => [...prev, data.step]);
+							setSteps((prev) =>
+								prev.map((s) =>
+									s.stepNumber === data.step.stepNumber ? data.step : s
+								)
+							);
 							break;
 						case 'summary':
 							setSummary({ summary: data.summary, title: data.title, url: data.url });
@@ -217,7 +235,7 @@ export function App() {
 				{hasResults && (
 					<>
 						<div className="relative">
-							<div className="absolute left-4 top-8 bottom-8 w-px bg-gray-800" />
+							<div className="absolute left-4 top-8 bottom-0 w-px bg-gray-800" />
 							<div className="flex flex-col gap-8">
 								{steps.map((step) => (
 									<div
@@ -250,15 +268,19 @@ export function App() {
 												<span className="text-gray-500 text-xs uppercase tracking-wider">
 													Observation
 												</span>
-												<p className="text-gray-300 text-sm mt-1">
-													{step.observation}
-												</p>
+												{step.observation ? (
+													<p className="text-gray-300 text-sm mt-1">
+														{step.observation}
+													</p>
+												) : (
+													<div className="flex items-center gap-2 mt-1">
+														<div className="w-3 h-3 border-2 border-gray-700 border-t-cyan-500 rounded-full animate-spin" />
+														<span className="text-gray-500 text-sm" data-loading="true">
+															Observing
+														</span>
+													</div>
+												)}
 											</div>
-											{step.elementRef && (
-												<span className="self-start bg-gray-900 border border-gray-800 rounded text-gray-400 text-xs py-0.5 px-2 font-mono">
-													{step.elementRef}
-												</span>
-											)}
 										</div>
 									</div>
 								))}

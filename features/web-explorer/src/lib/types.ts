@@ -59,11 +59,21 @@ const ErrorEvent = s.object({
 	message: s.string(),
 });
 
+const PreviewEvent = s.object({
+	type: s.literal('preview'),
+	stepNumber: s.number(),
+	screenshotUrl: s.string(),
+	action: s.string(),
+	pageUrl: s.optional(s.string()),
+	cached: s.optional(s.boolean()),
+	elementRef: s.optional(s.string()),
+});
+
 const DoneEvent = s.object({
 	type: s.literal('done'),
 });
 
-export const StreamEvent = s.union(StepEvent, SummaryEvent, ErrorEvent, DoneEvent);
+export const StreamEvent = s.union(StepEvent, PreviewEvent, SummaryEvent, ErrorEvent, DoneEvent);
 export type StreamEvent = s.infer<typeof StreamEvent>;
 
 // SSE output schema (flat for stream.writeSSE compatibility)
