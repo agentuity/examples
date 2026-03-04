@@ -58,7 +58,7 @@ Examples for building agents with the [Agentuity SDK](https://github.com/agentui
 | [code-runner](./features/code-runner) | Parallel sandbox execution + evals |
 | [scheduled-digest](./features/scheduled-digest) | Cron jobs + KV storage + durable streams |
 | [web-explorer](./features/web-explorer) | Interactive sandbox + browser automation |
-| [opencode-server](./features/opencode-server) | OpenCode IDE in a sandbox with port exposure |
+| [opencode-assistant](./features/opencode-assistant) | Ask questions about any GitHub repo via OpenCode |
 
 ## Getting Started
 

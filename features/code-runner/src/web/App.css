@@ -46,7 +46,7 @@
 	}
 }
 
-[data-loading="true"]::after {
+[data-loading]::after {
 	content: '.';
 	@apply inline-block w-4 animate-ellipsis text-left;
 }

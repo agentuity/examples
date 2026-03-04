@@ -1,11 +1,16 @@
 import { useCallback, useState } from 'react';
 import { useAPI } from '@agentuity/react';
 import { PROMPTS } from '../lib/prompts';
+import { CodeBlock } from './CodeBlock';
+import { CopyButton } from './CopyButton';
 import './App.css';
 
 export function App() {
 	const [selectedPrompt, setSelectedPrompt] = useState(0);
-	const { data, invoke, isLoading, error } = useAPI('POST /api/run');
+
+	// useAPI provides typed fetch with loading/error state.
+	// The route string 'POST /api/run' matches the API route in src/api/index.ts.
+	const { data, invoke, isLoading, error, reset } = useAPI('POST /api/run');
 
 	const handleRun = useCallback(async () => {
 		await invoke({ prompt: PROMPTS[selectedPrompt]!.prompt });
@@ -68,10 +73,12 @@ export function App() {
 							))}
 						</div>
 
-						<p className="text-sm text-gray-400">{PROMPTS[selectedPrompt]!.prompt}</p>
+						<div className="bg-gray-950 border border-gray-800 rounded-md p-4">
+							<p className="text-sm text-gray-400">{PROMPTS[selectedPrompt]!.prompt}</p>
+						</div>
 					</div>
 
-					<div className="flex items-center gap-4">
+					<div className="flex items-center gap-3">
 						<div className="relative group z-0">
 							<div className="absolute inset-0 bg-linear-to-r from-cyan-700 via-blue-500 to-purple-600 rounded-lg blur-xl opacity-75 group-hover:blur-2xl group-hover:opacity-100 transition-all duration-700" />
 							<div className="absolute inset-0 bg-cyan-500/50 rounded-lg blur-3xl opacity-50" />
@@ -80,18 +87,30 @@ export function App() {
 								disabled={isLoading}
 								onClick={handleRun}
 								type="button"
-								data-loading={isLoading}
+								data-loading={isLoading || undefined}
 							>
 								{isLoading ? 'Running' : 'Run Code'}
 							</button>
 						</div>
+						{data && !isLoading && (
+							<button
+								onClick={reset}
+								type="button"
+								className="text-xs px-3 py-1.5 border border-gray-800 rounded text-gray-500 hover:text-white hover:border-gray-700 cursor-pointer transition-colors"
+							>
+								Clear
+							</button>
+						)}
 					</div>
 				</div>
 
 				{/* Loading State */}
 				{isLoading && (
-					<div className="text-gray-500 text-sm" data-loading="true">
-						Generating code and running sandboxes
+					<div className="bg-black border border-gray-900 rounded-lg p-6 flex items-center gap-3">
+						<div className="h-4 w-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+						<span className="text-gray-400 text-sm" data-loading>
+							Generating code and running sandboxes
+						</span>
 					</div>
 				)}
 
@@ -100,7 +119,7 @@ export function App() {
 					<div className="text-red-400 text-sm">{String(error)}</div>
 				)}
 
-				{/* Results Grid */}
+				{/* Results Grid — side-by-side cards for TypeScript and Python */}
 				{data && (
 					<div className="grid grid-cols-2 gap-6">
 						{(
@@ -109,7 +128,7 @@ export function App() {
 								{ key: 'python', label: 'Python', result: data.python },
 							] as const
 						).map(({ key, label, result }) => (
-							<div key={key} className="bg-black border border-gray-900 rounded-lg p-6 flex flex-col gap-4">
+							<div key={key} className="bg-black border border-gray-900 rounded-lg p-6 shadow-2xl flex flex-col gap-4">
 								{/* Card Header */}
 								<div className="flex items-center justify-between">
 									<span className="text-white font-medium">{label}</span>
@@ -128,44 +147,47 @@ export function App() {
 								</div>
 
 								{/* Generated Code */}
-								<div>
-									<p className="text-xs text-gray-600 uppercase tracking-wider mb-2">Code</p>
-									<pre className="bg-gray-950 border border-gray-800 rounded-md p-4 text-sm font-mono overflow-x-auto">
-										<code className="text-gray-300">{result.code}</code>
-									</pre>
+								<div className="bg-gray-950 border border-gray-800 rounded-md font-mono max-h-80 overflow-y-auto">
+									<CodeBlock code={result.code} language={key === 'typescript' ? 'typescript' : 'python'} />
 								</div>
 
-								{/* stdout */}
-								{result.stdout && (
-									<div>
-										<p className="text-xs text-gray-600 uppercase tracking-wider mb-2">Output</p>
-										<pre className="bg-gray-950 border border-gray-800 rounded-md p-4 text-sm font-mono overflow-x-auto">
-											<code className="text-cyan-500">{result.stdout}</code>
+								{/* Output */}
+								<div>
+									<div className="flex items-center gap-3 mb-3">
+										<span className="text-xs text-gray-600 uppercase tracking-wider shrink-0">Output</span>
+										<div className="h-px bg-gray-800 w-full" />
+									</div>
+									<div className="relative group">
+										{result.stdout && <CopyButton text={result.stdout} />}
+										<pre className="bg-gray-950 border border-gray-800 rounded-md p-4 text-sm font-mono overflow-x-auto max-h-48 overflow-y-auto">
+											{result.stdout ? (
+												<code className="text-cyan-500">{result.stdout}</code>
+											) : (
+												<code className="text-gray-600">No output</code>
+											)}
 										</pre>
 									</div>
-								)}
+								</div>
 
-								{/* stderr */}
-								{result.stderr && (
+								{/* Stderr (only when different from stdout) */}
+								{result.stderr && result.stderr !== result.stdout && (
 									<div>
-										<p className="text-xs text-gray-600 uppercase tracking-wider mb-2">Stderr</p>
-										<pre className="bg-gray-950 border border-gray-800 rounded-md p-4 text-sm font-mono overflow-x-auto">
-											<code className="text-red-400">{result.stderr}</code>
-										</pre>
+										<div className="flex items-center gap-3 mb-3">
+											<span className="text-xs text-gray-600 uppercase tracking-wider shrink-0">Stderr</span>
+											<div className="h-px bg-gray-800 w-full" />
+										</div>
+										<div className="relative group">
+											<CopyButton text={result.stderr} />
+											<pre className="bg-gray-950 border border-gray-800 rounded-md p-4 text-sm font-mono overflow-x-auto max-h-48 overflow-y-auto">
+												<code className="text-red-400">{result.stderr}</code>
+											</pre>
+										</div>
 									</div>
 								)}
 							</div>
 						))}
 					</div>
 				)}
-
-				{/* Footer */}
-				<div className="text-center text-xs text-gray-600">
-					<span>Test the agent directly in the </span>
-					<a href="/workbench" className="text-gray-500 hover:text-gray-400 transition-colors underline">
-						Workbench
-					</a>
-				</div>
 			</div>
 		</div>
 	);

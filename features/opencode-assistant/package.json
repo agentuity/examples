@@ -1,5 +1,5 @@
 {
-  "name": "opencode-server-v1",
+  "name": "opencode-assistant-v1",
   "version": "0.0.1",
   "license": "Apache-2.0",
   "private": true,
@@ -18,8 +18,11 @@
     "@agentuity/runtime": "latest",
     "@agentuity/schema": "latest",
     "@agentuity/workbench": "latest",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "@tailwindcss/typography": "^0.5.19",
+"react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@agentuity/cli": "latest",

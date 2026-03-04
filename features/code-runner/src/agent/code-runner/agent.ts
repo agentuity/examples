@@ -1,21 +1,25 @@
 import { createAgent } from '@agentuity/runtime';
 import { generateText, Output } from 'ai';
 import { openai } from '@ai-sdk/openai';
-// NOTE: Structured outputs use Zod schemas via Output.object
 import { z } from 'zod';
 import { AgentInput, AgentOutput } from '@lib/types';
 
 export default createAgent('code-runner', {
 	description:
 		'Takes a coding prompt, generates TypeScript and Python implementations, and executes both in parallel sandboxes',
+
+	// Registering input/output schemas enables validation and workbench type hints
 	schema: {
 		input: AgentInput,
 		output: AgentOutput,
 	},
+
 	handler: async (ctx, input) => {
 		ctx.logger.info('Generating code for prompt', { prompt: input.prompt });
 
-		// Generate TypeScript and Python implementations via LLM
+		// Step 1: Ask the LLM to produce both implementations in a single call.
+		// Output.object() with a Zod schema enforces structured JSON output,
+		// so we get typed `typescript` and `python` fields directly.
 		const { output } = await generateText({
 			model: openai('gpt-5.2'),
 			output: Output.object({
@@ -37,10 +41,13 @@ export default createAgent('code-runner', {
 Prompt: ${input.prompt}`,
 		});
 
-		// Run both solutions in parallel sandboxes
+		// Step 2: Execute both scripts in isolated sandboxes, in parallel.
+		// ctx.sandbox.run() spins up a short-lived container with the chosen runtime,
+		// writes the generated code as a file, and returns stdout/stderr/exitCode.
 		const [tsResult, pyResult] = await Promise.all([
 			ctx.sandbox.run({
 				runtime: 'bun:1',
+				stream: { timestamps: false },
 				command: {
 					exec: ['bun', 'run', 'solution.ts'],
 					files: [
@@ -50,6 +57,7 @@ Prompt: ${input.prompt}`,
 			}),
 			ctx.sandbox.run({
 				runtime: 'python:3.14',
+				stream: { timestamps: false },
 				command: {
 					exec: ['python', 'solution.py'],
 					files: [
@@ -59,6 +67,7 @@ Prompt: ${input.prompt}`,
 			}),
 		]);
 
+		// Step 3: Return structured results matching AgentOutput schema
 		return {
 			prompt: input.prompt,
 			typescript: {

@@ -6,6 +6,8 @@ declare global {
 	namespace NodeJS {
 		interface ProcessEnv {
 		readonly AGENTUITY_SDK_KEY: string;
+		readonly GOOGLE_GENERATIVE_AI_API_KEY: string;
+		readonly OPENAI_API_KEY: string;
 		}
 	}
 }

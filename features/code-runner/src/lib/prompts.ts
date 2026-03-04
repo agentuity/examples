@@ -1,3 +1,5 @@
+// Pre-defined coding challenges shown as selectable options in the UI.
+// Each prompt is sent to the agent, which generates and executes solutions.
 export const PROMPTS = [
 	{
 		label: 'Fibonacci Sequence',

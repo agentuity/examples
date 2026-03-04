@@ -7,7 +7,7 @@ Examples showcasing Agentuity platform capabilities: sandboxes, cron jobs, KV st
 | [code-runner](./code-runner) | Sandbox, Evals | Parallel sandbox execution across runtimes with LLM-as-judge evals |
 | [scheduled-digest](./scheduled-digest) | Cron, KV, Streams | Cron-powered content digest published to shareable URLs |
 | [web-explorer](./web-explorer) | Sandbox (interactive), agent-browser | AI-guided web exploration with screenshots |
-| [opencode-server](./opencode-server) | Sandbox, Port Exposure, KV | OpenCode IDE running in a sandbox, attach from your terminal |
+| [opencode-assistant](./opencode-assistant) | Sandbox, SSE, KV | Ask questions about any GitHub repo via OpenCode in a sandbox |
 
 ## Getting Started
 

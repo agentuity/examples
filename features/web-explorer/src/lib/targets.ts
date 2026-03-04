@@ -1,8 +1,7 @@
-// Add more targets here to populate the quick-select cards
 export const TARGETS = [
 	{
-		label: 'SDK Explorer',
+		label: 'Agentuity',
 		url: 'https://agentuity.dev',
-		description: 'Agentuity SDK Explorer, an interactive way to learn the platform',
+		description: 'Agentuity platform docs and SDK explorer',
 	},
 ] as const;

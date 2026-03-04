@@ -18,7 +18,7 @@
 		"@agentuity/runtime": "latest",
 		"@agentuity/schema": "latest",
 		"@agentuity/workbench": "latest",
-		"@ai-sdk/anthropic": "latest",
+		"@ai-sdk/openai": "latest",
 		"ai": "latest",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0",
