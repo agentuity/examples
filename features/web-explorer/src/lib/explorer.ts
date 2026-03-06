@@ -56,21 +56,19 @@ const MAX_ACTIONS_STORED = 8;
 // --- System Prompt ---
 
 function buildSystemPrompt(url: string, hints?: string): string {
-	let prompt = `You are an autonomous web explorer. Your job is to understand what pages DO by using them, not by hopping through them like a crawler.
+	let prompt = `You are an autonomous web explorer. Your goal is to understand what a site offers and how its key features work by actually using them.
 
 Start URL: ${url}
 
-## Workflow
-1. Take a screenshot to see the current page and get element refs
-2. Study the interactive elements: buttons, inputs, links, toggles, editors
-3. Use the page deeply before leaving it. Prioritize:
-   - Run / Execute / Submit buttons — click them and see what happens
-   - Form inputs, search boxes, toggles, selects — fill them and submit
-   - Tab-like navigation buttons — click each tab to see different content
-   - Code editors — try editing and running code
-4. After a meaningful interaction, take another screenshot to verify what changed
-5. Save 2-3 concrete discoveries with store_finding
-6. Call finish_exploration when done
+## Exploration Cycle
+Repeat this cycle for each area of the site:
+1. Take a screenshot to see the page and get element refs
+2. Interact with the page: click Run on code snippets, fill forms, click buttons, try toggles
+3. Take another screenshot to see what changed
+4. Once you understand what this feature does, call store_finding to capture it
+5. Navigate to a different section of the site and repeat
+
+After storing a finding for each section you explored, call finish_exploration to deliver your summary.
 
 ## Browser Actions
 - screenshot: Capture page and get interactive element refs (@e1, @e2, etc.)
@@ -85,14 +83,13 @@ Start URL: ${url}
 - wait: Wait for page to finish loading
 
 ## Rules
-- ALWAYS take a screenshot after each interaction to see what changed. Alternate: act, then screenshot.
-- Stay on the current page until you have exhausted meaningful interactions.
-- Prefer interaction over navigation. Use pages, do not just visit them.
+- Take a screenshot when you need to see new element refs or verify that something changed. You do not need one after every action — batch related interactions (fill then press Enter, click then click) before screenshotting.
+- Once you have seen what a feature does, move on. Do not repeat the same interaction.
 - Prefer clicking element refs (@e5) over scrolling or navigating.
-- Use fill for search boxes (clears first). Press Enter after filling to submit.
-- Do not use eval to click links. Use click with element refs instead.
+- Use fill for search boxes and form inputs. Press Enter after filling to submit.
+- Do not fill read-only code displays or editor panels that show reference code.
 - NEVER guess or construct URLs. Only navigate to URLs visible in the accessibility tree.
-- You have a limited number of actions. Use them for exploration, not documentation.
+- Do not exhaust your action budget. Wrap up when you have enough understanding to summarize the site.
 - Element refs (@e1) are only valid until the page changes. Take a new screenshot after navigation.`;
 
 	if (hints) {
@@ -154,7 +151,7 @@ function createExplorationTools(sandbox: Sandbox, ctx: ExplorerContext, state: E
 		}),
 
 		store_finding: tool({
-			description: 'Save a key discovery. Call 2-3 times before finishing.',
+			description: 'Checkpoint: capture what you learned about the current feature, then move on to a new section. Each finding should describe what the feature does based on your interaction, not just what you saw.',
 			inputSchema: z.object({
 				title: z.string().describe('Short title for this finding'),
 				observation: z.string().describe('What you discovered'),
@@ -186,7 +183,7 @@ function createExplorationTools(sandbox: Sandbox, ctx: ExplorerContext, state: E
 		}),
 
 		finish_exploration: tool({
-			description: 'End the exploration with a summary of what you found.',
+			description: 'End the exploration and deliver your summary to the user. Call this after you have stored a finding for each major section you interacted with. Do not call this if you have not stored any findings yet.',
 			inputSchema: z.object({
 				summary: z.string().describe('2-3 sentence summary of your exploration'),
 			}),
@@ -474,8 +471,8 @@ export async function exploreWithSandbox(
 		model: openai('gpt-5-nano'),
 		system: buildSystemPrompt(options.url, hints),
 		prompt: memoryContext
-			? `Begin exploring ${options.url}.\n\nPages already explored (DO NOT revisit these URLs unless you have a specific new interaction to try):\n${memoryContext}\n\nFocus on pages and interactions NOT listed above. Navigate to new areas of the site instead.`
-			: `Begin exploring ${options.url}. Take a screenshot to see the page, then start using the interactive elements you find.`,
+			? `Begin exploring ${options.url}.\n\nPages already explored (DO NOT revisit these URLs unless you have a specific new interaction to try):\n${memoryContext}\n\nFocus on new areas. Follow the Exploration Cycle: interact with a feature, store_finding when you understand it, then move on.`
+			: `Begin exploring ${options.url}. Take a screenshot first, then follow the Exploration Cycle: interact with a feature, store_finding when you understand it, then move on.`,
 		tools,
 		stopWhen: [stepCountIs(steps), hasToolCall('finish_exploration')],
 		abortSignal: options.abortSignal,
