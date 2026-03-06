@@ -1,0 +1,41 @@
+{
+	"name": "google-adk1",
+	"version": "0.0.1",
+	"license": "Apache-2.0",
+	"private": true,
+	"module": ".agentuity/app.js",
+	"type": "module",
+	"scripts": {
+		"build": "agentuity build",
+		"dev": "agentuity dev",
+		"start": "bun .agentuity/app.js",
+		"deploy": "agentuity deploy",
+		"typecheck": "bunx tsc --noEmit",
+		"adk:run": "bunx adk run src/adk/agent.ts",
+		"adk:web": "bunx adk web src/adk"
+	},
+	"dependencies": {
+		"@agentuity/evals": "latest",
+		"@agentuity/frontend": "latest",
+		"@agentuity/react": "latest",
+		"@agentuity/runtime": "latest",
+		"@agentuity/schema": "latest",
+		"@agentuity/workbench": "latest",
+		"@google/adk": "^0.4.0",
+		"groq-sdk": "latest",
+		"openai": "latest",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@agentuity/cli": "latest",
+		"@google/adk-devtools": "^0.4.0",
+		"@tailwindcss/vite": "^4.1.18",
+		"@types/bun": "latest",
+		"@types/react": "^19.2.0",
+		"@types/react-dom": "^19.2.0",
+		"tailwindcss": "^4.1.18",
+		"typescript": "^5"
+	}
+}
