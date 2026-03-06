@@ -1,2 +1,1 @@
-export { default } from './agent';
-export { AgentInput, AgentOutput } from '@lib/types';
+export { default, AgentInput, AgentOutput } from './agent';

@@ -128,7 +128,7 @@ export function App() {
 								{ key: 'python', label: 'Python', result: data.python },
 							] as const
 						).map(({ key, label, result }) => (
-							<div key={key} className="bg-black border border-gray-900 rounded-lg p-6 shadow-2xl flex flex-col gap-4">
+							<div key={key} className="bg-black border border-gray-900 rounded-lg p-6 shadow-2xl grid grid-rows-subgrid row-span-3 gap-4">
 								{/* Card Header */}
 								<div className="flex items-center justify-between">
 									<span className="text-white font-medium">{label}</span>

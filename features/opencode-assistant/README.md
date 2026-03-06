@@ -56,7 +56,11 @@ sbx.execute({
 }).catch((err) => logger.warn('execute() rejected', { error: String(err) }));
 ```
 
-Workspace state persists in KV, so refreshing the page reconnects to a running instance.
+## Session Persistence
+
+Workspace state (sandbox ID, server URL, session ID) persists in KV with a 30-minute TTL. Refreshing the page or restarting the dev server reconnects to the running sandbox automatically, no re-cloning or rebooting needed.
+
+The OpenCode session also persists server-side, so the AI retains full conversation context across page refreshes. Only the visual chat history resets (it lives in React state). You can keep asking follow-up questions and the model remembers what you discussed earlier.
 
 ## Project Structure
 

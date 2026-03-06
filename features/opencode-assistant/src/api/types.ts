@@ -39,11 +39,31 @@ export const StopResponse = s.object({
 	stopped: s.boolean(),
 });
 
+// Part data forwarded from OpenCode's message.part.updated events
+export type PartData = {
+	id: string;
+	type: 'text' | 'reasoning';
+	text: string;
+	time?: { start: number; end?: number };
+};
+
 // Flat SSE output schema for route registration (Valibot requires a single object).
 // The frontend uses the discriminated union StreamEvent (below) for type-safe branching.
 export const StreamEventOutput = s.object({
 	type: s.string(),
-	content: s.optional(s.string()),
+	part: s.optional(
+		s.object({
+			id: s.string(),
+			type: s.string(),
+			text: s.string(),
+			time: s.optional(
+				s.object({
+					start: s.number(),
+					end: s.optional(s.number()),
+				}),
+			),
+		}),
+	),
 	status: s.optional(s.string()),
 	message: s.optional(s.string()),
 	seq: s.number(),
@@ -59,6 +79,6 @@ export type StopResponse = s.infer<typeof StopResponse>;
 
 // Discriminated union for frontend consumption
 export type StreamEvent =
-	| { type: 'text'; content: string; seq: number }
+	| { type: 'part'; part: PartData; seq: number }
 	| { type: 'status'; status: string; seq: number }
 	| { type: 'error'; message: string; seq: number };

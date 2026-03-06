@@ -7,8 +7,8 @@ import {
 	AskResponse,
 	StopResponse,
 	StreamEventOutput,
-} from '@lib/types';
-import type { AssistantState } from '@lib/types';
+} from './types';
+import type { AssistantState } from './types';
 import { authHeader, checkHealth, checkWorkspaceFiles, createSession, sendPrompt } from '@lib/opencode';
 
 const KV_NAMESPACE = 'opencode';
@@ -133,7 +133,7 @@ api.post('/start', validator({ input: StartInput, output: StartResponse }), asyn
 				'git clone --depth 1 $REPO_URL ~/project || true',
 				'mkdir -p ~/project',
 				"nohup bash -c 'while true; do cd ~/project && opencode serve --port 4096 --hostname 0.0.0.0 >> /tmp/opencode.log 2>&1; sleep 2; done' > /dev/null 2>&1 &",
-			].join('\n'),
+			].join('; '),
 		],
 	}).catch((err: unknown) => {
 		logger.warn('execute() rejected (server may not start)', { error: String(err) });
@@ -309,9 +309,9 @@ api.get(
 			const decoder = new TextDecoder();
 			let buffer = '';
 
-			// Track which partIDs are "text" (answer) vs "reasoning" (chain-of-thought).
-			// message.part.updated fires first with part.type, then deltas reference the partID.
-			const textPartIds = new Set<string>();
+			// Track assistant message IDs so we only forward parts from assistant messages
+			// (user messages also produce text parts that echo the question).
+			const assistantMessageIds = new Set<string>();
 
 			const processLine = (line: string) => {
 				if (!line.startsWith('data: ')) return;
@@ -320,20 +320,26 @@ api.get(
 					const eventType = event.type as string;
 
 					// --- OpenCode Events ---
-					if (eventType === 'message.part.updated') {
-						// Register text parts so we can filter deltas
-						const part = event.properties?.part;
-						if (part?.type === 'text' && part?.id) {
-							textPartIds.add(part.id);
+					if (eventType === 'message.updated') {
+						// Register assistant message IDs for part filtering
+						const msg = event.properties?.info;
+						if (msg?.role === 'assistant' && msg?.id) {
+							assistantMessageIds.add(msg.id);
 						}
-					} else if (eventType === 'message.part.delta') {
-						// Only forward deltas belonging to "text" parts (skip reasoning)
-						const partID = event.properties?.partID as string | undefined;
-						if (partID && !textPartIds.has(partID)) return;
-						const delta = event.properties?.delta;
-						if (typeof delta === 'string') {
+					} else if (eventType === 'message.part.updated') {
+						// Only forward parts from assistant messages
+						const part = event.properties?.part;
+						if (
+							part &&
+							(part.type === 'text' || part.type === 'reasoning') &&
+							assistantMessageIds.has(part.messageID)
+						) {
 							void safeWrite({
-								data: JSON.stringify({ type: 'text', content: delta, seq: seq++ }),
+								data: JSON.stringify({
+									type: 'part',
+									part: { id: part.id, type: part.type, text: part.text, time: part.time },
+									seq: seq++,
+								}),
 							});
 						}
 					} else if (eventType === 'session.error') {

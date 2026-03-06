@@ -18,11 +18,10 @@
     "@agentuity/runtime": "latest",
     "@agentuity/schema": "latest",
     "@agentuity/workbench": "latest",
-    "@tailwindcss/typography": "^0.5.19",
-"react": "^19.2.0",
+    "@streamdown/code": "^1.0.2",
+    "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "streamdown": "^2.2.0"
   },
   "devDependencies": {
     "@agentuity/cli": "latest",

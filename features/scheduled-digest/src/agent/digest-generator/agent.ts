@@ -2,7 +2,7 @@ import { createAgent } from '@agentuity/runtime';
 import { generateText, Output } from 'ai';
 import { xai } from '@ai-sdk/xai';
 import { z } from 'zod';
-import { AgentInput, AgentOutput } from '@lib/types';
+import { AgentInput, AgentOutput } from './types';
 
 // Zod schema for structured output generation
 const LLMOutputSchema = z.object({

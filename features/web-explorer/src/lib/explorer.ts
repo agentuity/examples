@@ -1,10 +1,17 @@
-import { generateText, Output } from 'ai';
+import { generateText, tool, stepCountIs, hasToolCall } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 import type { Execution, Sandbox } from '@agentuity/core';
-import type { AgentOutput, ExplorationStep, StreamEvent, VisitRecord } from '@lib/types';
+import type {
+	AgentOutput,
+	ExplorationStep,
+	MemoryVisit,
+	StreamEvent,
+	VisitRecord,
+} from '@agent/web-explorer/types';
 import { normalizeUrl, screenshotKey } from '@lib/url';
-import { getS3, s3ScreenshotUrl, KV_NAMESPACE, VECTOR_COLLECTION } from '@lib/storage';
+import { uploadScreenshot, screenshotPresignedUrl, KV_NAMESPACE } from '@lib/storage';
+import { TARGETS } from '@lib/targets';
 
 // --- Public API ---
 
@@ -20,17 +27,6 @@ interface KVService {
 	set(namespace: string, key: string, value: unknown, options?: { ttl?: number }): Promise<void>;
 }
 
-interface VectorService {
-	search(
-		collection: string,
-		options: { query: string; limit: number; similarity: number },
-	): Promise<Array<{ metadata?: Record<string, unknown>; document?: string }>>;
-	upsert(
-		collection: string,
-		params: { key: string; document: string; metadata: Record<string, unknown> },
-	): Promise<Array<{ id: string }>>;
-}
-
 interface SandboxService {
 	create(config: {
 		runtime: string;
@@ -43,7 +39,6 @@ interface SandboxService {
 export interface ExplorerContext {
 	logger: Logger;
 	kv: KVService;
-	vector: VectorService;
 	sandbox: SandboxService;
 }
 
@@ -51,30 +46,339 @@ export interface ExploreOptions {
 	url: string;
 	maxSteps?: number;
 	onStep?: (event: StreamEvent) => Promise<void>;
+	abortSignal?: AbortSignal;
 }
 
-const ACTION_SCHEMA = z.object({
-	command: z
-		.array(z.string())
-		.describe('Agent-browser command, e.g. ["click", "@e5"] or ["open", "https://example.com/about"]'),
-	reason: z.string().describe('Why this action is interesting'),
-});
+const VISIT_TTL = 86400;
+const DOMAIN_INDEX_TTL = 86400 * 7;
+const MAX_ACTIONS_STORED = 8;
 
-const COMMAND_REFERENCE = `Available commands:
-- click <ref>      Click an element, e.g. ["click", "@e5"]
-- hover <ref>      Hover over an element
-- scroll down|up   Scroll the page
-- type <ref> <text> Type text into an input, e.g. ["type", "@e3", "search query"]
-- open <url>       Navigate to a URL directly
-- back             Go back in browser history
-- forward          Go forward in browser history
-- wait <ms>        Wait for a duration in milliseconds
-- get title        Get the current page title
-- get url          Get the current page URL`;
+// --- System Prompt ---
+
+function buildSystemPrompt(url: string, hints?: string): string {
+	let prompt = `You are an autonomous web explorer. Your job is to understand what pages DO by using them, not by hopping through them like a crawler.
+
+Start URL: ${url}
+
+## Workflow
+1. Take a screenshot to see the current page and get element refs
+2. Study the interactive elements: buttons, inputs, links, toggles, editors
+3. Use the page deeply before leaving it. Prioritize:
+   - Run / Execute / Submit buttons — click them and see what happens
+   - Form inputs, search boxes, toggles, selects — fill them and submit
+   - Tab-like navigation buttons — click each tab to see different content
+   - Code editors — try editing and running code
+4. After a meaningful interaction, take another screenshot to verify what changed
+5. Save 2-3 concrete discoveries with store_finding
+6. Call finish_exploration when done
+
+## Browser Actions
+- screenshot: Capture page and get interactive element refs (@e1, @e2, etc.)
+- click: Click an element (ref required, e.g. @e5)
+- fill: Clear and type into an input (ref + value required)
+- scroll: Scroll up or down (direction required)
+- navigate: Go to a URL (value = URL)
+- back: Go back in browser history
+- press: Press a key (value = key name: Enter, Tab, Escape, Control+a, etc.)
+- hover: Hover over an element (ref required)
+- eval: Run JavaScript on the page (value = JS code)
+- wait: Wait for page to finish loading
+
+## Rules
+- ALWAYS take a screenshot after each interaction to see what changed. Alternate: act, then screenshot.
+- Stay on the current page until you have exhausted meaningful interactions.
+- Prefer interaction over navigation. Use pages, do not just visit them.
+- Prefer clicking element refs (@e5) over scrolling or navigating.
+- Use fill for search boxes (clears first). Press Enter after filling to submit.
+- Do not use eval to click links. Use click with element refs instead.
+- NEVER guess or construct URLs. Only navigate to URLs visible in the accessibility tree.
+- You have a limited number of actions. Use them for exploration, not documentation.
+- Element refs (@e1) are only valid until the page changes. Take a new screenshot after navigation.`;
+
+	if (hints) {
+		prompt += `\n\n## Site-Specific Hints\n${hints}`;
+	}
+
+	return prompt;
+}
+
+// --- Tool Definitions ---
+
+function createExplorationTools(sandbox: Sandbox, ctx: ExplorerContext, state: ExplorationState, abortSignal?: AbortSignal) {
+	return {
+		browser: tool({
+			description: 'Control the sandbox browser. Use screenshot action to see the page and get element refs.',
+			inputSchema: z.object({
+				action: z.enum([
+					'screenshot',
+					'click',
+					'fill',
+					'scroll',
+					'navigate',
+					'back',
+					'press',
+					'hover',
+					'eval',
+					'wait',
+				]),
+				ref: z.string().nullable()
+					.describe('Element ref like @e5. Required for: click, fill, hover'),
+				value: z.string().nullable()
+					.describe('Text for fill, key for press, URL for navigate, JS for eval'),
+				direction: z.enum(['up', 'down']).nullable()
+					.describe('Scroll direction. Required for: scroll'),
+				reason: z.string()
+					.describe('Why this action — shown to the user'),
+			}),
+			strict: true,
+			execute: async ({ action, ref, value, direction, reason }, { toolCallId }) => {
+				// Screenshot is special: captures image, uploads to S3, generates observation
+				if (action === 'screenshot') {
+					return handleScreenshot(sandbox, ctx, state, toolCallId, abortSignal);
+				}
+
+				// Dispatch table for all other actions
+				const handler = BROWSER_DISPATCH[action];
+				if (!handler) return `Unknown action: ${action}`;
+
+				const validationError = handler.validate?.(ref, value, direction);
+				if (validationError) return validationError;
+
+				const result = await handler.run(sandbox, ref, value, direction);
+				if (typeof result === 'string' && (result.startsWith('Error:') || result.startsWith('Command failed:'))) return result;
+
+				const description = handler.describe(ref, value, direction, reason);
+				recordAction(state, state.currentUrl, description);
+				return description;
+			},
+		}),
+
+		store_finding: tool({
+			description: 'Save a key discovery. Call 2-3 times before finishing.',
+			inputSchema: z.object({
+				title: z.string().describe('Short title for this finding'),
+				observation: z.string().describe('What you discovered'),
+			}),
+			strict: true,
+			execute: async ({ title, observation }) => {
+				// Resolve the screenshot key for the current page, not the last screenshot taken
+				const page = await getCurrentPageInfo(sandbox, state.url);
+				state.currentUrl = page.url;
+				const normalizedCurrent = normalizeUrl(page.url);
+				const matchingToolCallId = [...state.urlHistory.entries()]
+					.reverse()
+					.find(([, u]) => {
+						try { return normalizeUrl(u) === normalizedCurrent; } catch { return false; }
+					})?.[0];
+				const resolvedKey = matchingToolCallId
+					? (state.screenshotKeyHistory.get(matchingToolCallId) ?? '')
+					: '';
+
+				await storeVisit(ctx, {
+					url: page.url,
+					title: page.title,
+					screenshotKey: resolvedKey,
+					observation,
+					action: `Stored finding: ${title}`,
+				});
+				return `Stored: ${title}`;
+			},
+		}),
+
+		finish_exploration: tool({
+			description: 'End the exploration with a summary of what you found.',
+			inputSchema: z.object({
+				summary: z.string().describe('2-3 sentence summary of your exploration'),
+			}),
+			strict: true,
+			// No execute — stops loop via hasToolCall('finish_exploration')
+		}),
+	};
+}
+
+// --- Browser Action Dispatch ---
+
+interface BrowserAction {
+	validate?: (ref: string | null, value: string | null, direction: string | null) => string | null;
+	run: (sandbox: Sandbox, ref: string | null, value: string | null, direction: string | null) => Promise<string>;
+	describe: (ref: string | null, value: string | null, direction: string | null, reason: string) => string;
+}
+
+const BROWSER_DISPATCH: Record<string, BrowserAction> = {
+	click: {
+		validate: (ref) => ref ? null : 'Error: ref is required for click',
+		run: async (sandbox, ref) => await runBrowserCmd(sandbox, ['click', ref!]) ?? `Clicked ${ref}`,
+		describe: (ref, _v, _d, reason) => `Clicked ${ref} (${reason})`,
+	},
+	fill: {
+		validate: (ref, value) => (!ref || !value) ? 'Error: ref and value are required for fill' : null,
+		run: async (sandbox, ref, value) => await runBrowserCmd(sandbox, ['fill', ref!, value!]) ?? `Filled ${ref} with "${value}"`,
+		describe: (ref, value, _d, reason) => `Filled ${ref} with "${value}" (${reason})`,
+	},
+	scroll: {
+		validate: (_r, _v, direction) => direction ? null : 'Error: direction is required for scroll',
+		run: async (sandbox, _r, _v, direction) => await runBrowserCmd(sandbox, ['scroll', direction!]) ?? `Scrolled ${direction}`,
+		describe: (_r, _v, direction, reason) => `Scrolled ${direction} (${reason})`,
+	},
+	navigate: {
+		validate: (_r, value) => value ? null : 'Error: value (URL) is required for navigate',
+		run: async (sandbox, _r, value) => {
+			const navErr = await runBrowserCmd(sandbox, ['open', value!]);
+			if (navErr) return navErr;
+			const waitErr = await runBrowserCmd(sandbox, ['wait', '--load', 'networkidle']);
+			return waitErr ? `Navigated to ${value} (page still loading)` : `Navigated to ${value}`;
+		},
+		describe: (_r, value, _d, reason) => `Navigated to ${value} (${reason})`,
+	},
+	back: {
+		run: async (sandbox) => await runBrowserCmd(sandbox, ['back']) ?? 'Went back',
+		describe: () => 'Went back',
+	},
+	press: {
+		validate: (_r, value) => value ? null : 'Error: value (key name) is required for press',
+		run: async (sandbox, _r, value) => await runBrowserCmd(sandbox, ['press', value!]) ?? `Pressed ${value}`,
+		describe: (_r, value, _d, reason) => `Pressed ${value} (${reason})`,
+	},
+	hover: {
+		validate: (ref) => ref ? null : 'Error: ref is required for hover',
+		run: async (sandbox, ref) => await runBrowserCmd(sandbox, ['hover', ref!]) ?? `Hovered ${ref}`,
+		describe: (ref, _v, _d, reason) => `Hovered ${ref} (${reason})`,
+	},
+	eval: {
+		validate: (_r, value) => value ? null : 'Error: value (JS code) is required for eval',
+		run: async (sandbox, _r, value) => {
+			const evalExec = await exec(sandbox, ['agent-browser', 'eval', value!]);
+			if (evalExec.exitCode != null && evalExec.exitCode !== 0) {
+				const stderr = await getStderr(evalExec);
+				return `Eval failed: ${stderr}`;
+			}
+			const evalResult = await getStdout(evalExec);
+			return `Eval result: ${evalResult.slice(0, 1000)}`;
+		},
+		describe: (_r, _v, _d, reason) => `Ran eval (${reason})`,
+	},
+	wait: {
+		run: async (sandbox) => await runBrowserCmd(sandbox, ['wait', '--load', 'networkidle']) ?? 'Waited for page to load',
+		describe: () => 'Waited for page to load',
+	},
+};
+
+// --- Screenshot Handler ---
+
+async function handleScreenshot(
+	sandbox: Sandbox,
+	ctx: ExplorerContext,
+	state: ExplorationState,
+	toolCallId: string,
+	abortSignal?: AbortSignal,
+): Promise<string> {
+	const filename = `step-${Date.now()}.png`;
+	const screenshotExec = await exec(sandbox, ['agent-browser', 'screenshot', filename]);
+	if (screenshotExec.exitCode != null && screenshotExec.exitCode !== 0) {
+		const stderr = await getStderr(screenshotExec);
+		return `Screenshot failed: ${stderr}`;
+	}
+
+	const b64Exec = await exec(sandbox, ['base64', filename]);
+	if (b64Exec.exitCode != null && b64Exec.exitCode !== 0) {
+		return 'Failed to read screenshot';
+	}
+
+	const base64 = (await getStdout(b64Exec)).trim();
+	const buffer = Buffer.from(base64, 'base64');
+
+	// Get current URL
+	const urlExec = await exec(sandbox, ['agent-browser', 'get', 'url']);
+	const currentUrl = (await getStdout(urlExec)).trim() || state.url;
+	state.currentUrl = currentUrl;
+
+	const key = screenshotKey(currentUrl);
+	const screenshotUrl = await uploadScreenshot(key, buffer);
+	state.lastScreenshotKey = key;
+	state.lastScreenshotUrl = screenshotUrl;
+	state.screenshotHistory.set(toolCallId, screenshotUrl);
+	state.screenshotKeyHistory.set(toolCallId, key);
+	state.urlHistory.set(toolCallId, currentUrl);
+
+	// Get accessibility tree for element refs
+	const snapshotExec = await exec(sandbox, ['agent-browser', 'snapshot', '-i']);
+	const elements = (snapshotExec.exitCode != null && snapshotExec.exitCode !== 0)
+		? '(snapshot unavailable)'
+		: await getStdout(snapshotExec);
+
+	// Generate observation with context from recent actions and previous observation
+	try {
+		let normalizedCurrent: string | null = null;
+		try { normalizedCurrent = normalizeUrl(currentUrl); } catch {}
+
+		const recentActions = normalizedCurrent ? (state.actionsByUrl.get(normalizedCurrent) ?? []).slice(-3) : [];
+		const prevObservation = normalizedCurrent ? state.lastObservationByUrl.get(normalizedCurrent) : undefined;
+
+		let observationPrompt = `Write a brief factual caption for this web page screenshot in 1-2 sentences. Do not address the reader.\n\nPage URL: ${currentUrl}`;
+		if (recentActions.length > 0) {
+			observationPrompt += `\n\nRecent actions:\n${recentActions.map((a) => `- ${a}`).join('\n')}`;
+		}
+		if (prevObservation) {
+			observationPrompt += `\n\nPrevious observation: ${prevObservation}`;
+			observationPrompt += '\n\nFocus on what changed or what is new compared to the previous observation.';
+		}
+		observationPrompt += `\n\nAccessibility tree:\n${elements.slice(0, 4000)}`;
+
+		const { text: obs } = await generateText({
+			model: openai('gpt-5-nano'),
+			prompt: observationPrompt,
+			abortSignal,
+		});
+		if (obs) {
+			state.observations.set(toolCallId, obs);
+			if (normalizedCurrent) state.lastObservationByUrl.set(normalizedCurrent, obs);
+			// Auto-persist visit to KV
+			const titleExec = await exec(sandbox, ['agent-browser', 'get', 'title']);
+			const pageTitle = (titleExec.exitCode === 0 ? (await getStdout(titleExec)).trim() : '') || currentUrl;
+			storeVisit(ctx, {
+				url: currentUrl,
+				title: pageTitle,
+				screenshotKey: key,
+				observation: obs,
+			}).catch(() => {});
+		}
+	} catch {
+		// Observation generation is non-critical
+	}
+
+	return `Screenshot captured. URL: ${currentUrl}\n\nInteractive elements:\n${elements.slice(0, 4000)}`;
+}
+
+// --- Exploration State ---
+
+interface ExplorationState {
+	url: string;
+	currentUrl: string;
+	lastScreenshotKey: string;
+	lastScreenshotUrl: string;
+	screenshotHistory: Map<string, string>; // toolCallId → presigned URL
+	screenshotKeyHistory: Map<string, string>; // toolCallId → S3 key
+	urlHistory: Map<string, string>; // toolCallId → page URL at time of screenshot
+	observations: Map<string, string>; // toolCallId → observation text
+	actionsByUrl: Map<string, string[]>; // normalizedUrl → action descriptions
+	lastObservationByUrl: Map<string, string>; // normalizedUrl → most recent observation
+}
+
+function recordAction(state: ExplorationState, rawUrl: string, description: string): void {
+	try {
+		const key = normalizeUrl(rawUrl);
+		const actions = state.actionsByUrl.get(key) ?? [];
+		actions.push(description);
+		state.actionsByUrl.set(key, actions.slice(-MAX_ACTIONS_STORED));
+	} catch {
+		// normalizeUrl can throw on malformed URLs
+	}
+}
+
+// --- Main Exploration Function ---
 
 export async function explore(ctx: ExplorerContext, options: ExploreOptions): Promise<AgentOutput> {
-	const maxSteps = options.maxSteps ?? 4;
-	const steps: ExplorationStep[] = [];
+	const maxSteps = options.maxSteps ?? 8;
 	let pageTitle = '';
 
 	ctx.logger.info('Starting web exploration', { url: options.url, maxSteps });
@@ -87,176 +391,19 @@ export async function explore(ctx: ExplorerContext, options: ExploreOptions): Pr
 	});
 
 	try {
-		// Load past visit context from vector store for diversity
-		const pastContext = await loadPastVisits(ctx, options.url);
-
-		// Step 1: Open URL and capture initial state
-		ctx.logger.info('Opening URL', { url: options.url });
-		await exec(sandbox, ['agent-browser', 'open', options.url]);
-		await exec(sandbox, ['agent-browser', 'wait', '--load', 'networkidle']);
-
-		const titleExec = await exec(sandbox, ['agent-browser', 'get', 'title']);
-		pageTitle = (await getStdout(titleExec)).trim() || options.url;
-
-		// Take and upload initial screenshot
-		const initialScreenshot = await captureAndUpload(ctx, sandbox, options.url, 'step-1.png');
-
-		// Get accessibility tree for initial observation
-		const snapshotExec = await exec(sandbox, ['agent-browser', 'snapshot', '-i']);
-		const accessibilityTree = await getStdout(snapshotExec);
-
-		// Emit preview immediately so the user sees the screenshot while the LLM thinks
-		await emitPreview(options, {
-			stepNumber: 1,
-			screenshotUrl: initialScreenshot.screenshotUrl,
-			action: `Opened ${options.url}`,
-			pageUrl: options.url,
-			cached: initialScreenshot.cached,
-		});
-
-		const { text: initialObservation } = await generateText({
-			model: openai('gpt-5-nano'),
-			prompt: `You are observing the Agentuity SDK Explorer page. Describe the interactive demos and sections you see in 1-2 sentences.\n\nPage URL: ${options.url}\nPage title: ${pageTitle}\n\nAccessibility tree:\n${accessibilityTree.slice(0, 4000)}`,
-		});
-
-		const firstStep: ExplorationStep = {
-			stepNumber: 1,
-			screenshotUrl: initialScreenshot.screenshotUrl,
-			action: `Opened ${options.url}`,
-			observation: initialObservation,
-			pageUrl: options.url,
-			cached: initialScreenshot.cached,
-		};
-		steps.push(firstStep);
-		await storeVisit(ctx, options.url, pageTitle, initialScreenshot.key, initialObservation);
-		await emitStep(options, firstStep);
-
-		ctx.logger.info('Initial page captured', { title: pageTitle, step: 1 });
-
-		// Exploration loop: LLM picks actions, we execute them
-		for (let i = 2; i <= maxSteps; i++) {
-			try {
-				ctx.logger.info('Starting exploration step', { step: i });
-
-				const currentSnapshotExec = await exec(sandbox, ['agent-browser', 'snapshot', '-i']);
-				const currentTree = await getStdout(currentSnapshotExec);
-
-				const { output: nextAction } = await generateText({
-					model: openai('gpt-5-nano'),
-					output: Output.object({ schema: ACTION_SCHEMA }),
-					prompt: `You are exploring the Agentuity SDK Explorer at agentuity.dev. This page has interactive demos and runnable code examples.
-
-${COMMAND_REFERENCE}
-
-Focus on:
-- Scrolling to discover demo cards on the main page before navigating away
-- Clicking "Run" buttons to try sandbox demos
-- Exploring different sections (Basics, Services, I/O Patterns) on the main page
-
-Avoid navigating to deep documentation pages. Stay on interactive content.
-
-${pastContext ? `You've visited these pages before. Try to explore different areas:\n${pastContext}\n` : ''}
-Previous steps taken:
-${steps.map((s) => `- Step ${s.stepNumber}: ${s.action} => ${s.observation}`).join('\n')}
-
-Current accessibility tree:
-${currentTree.slice(0, 4000)}
-
-Choose ONE action to take next.`,
-				});
-
-				ctx.logger.info('LLM chose action', { step: i, command: nextAction.command, reason: nextAction.reason });
-
-				// Execute the chosen command
-				const actionDescription = await executeCommand(sandbox, nextAction.command, nextAction.reason);
-
-				// Wait for page transitions
-				await exec(sandbox, ['agent-browser', 'wait', '--load', 'networkidle']);
-
-				// Resolve the current page URL after action
-				const urlExec = await exec(sandbox, ['agent-browser', 'get', 'url']);
-				const currentUrl = (await getStdout(urlExec)).trim() || options.url;
-				const normalizedCurrentUrl = normalizeUrl(currentUrl);
-
-				// Always re-capture the starting page to show current state; use cache for other pages
-				const isStartingUrl = normalizedCurrentUrl === normalizeUrl(options.url);
-				const cached = !isStartingUrl ? await checkKvCache(ctx, normalizedCurrentUrl) : null;
-
-				let screenshotResult: ScreenshotResult;
-				if (cached) {
-					ctx.logger.debug('Using cached screenshot', { url: currentUrl });
-					screenshotResult = { screenshotUrl: cached.screenshotUrl, key: cached.key, cached: true };
-				} else {
-					screenshotResult = await captureAndUpload(ctx, sandbox, currentUrl, `step-${i}.png`);
-				}
-
-				// Emit preview immediately so the user sees the screenshot while the LLM thinks
-				await emitPreview(options, {
-					stepNumber: i,
-					screenshotUrl: screenshotResult.screenshotUrl,
-					action: actionDescription,
-					pageUrl: currentUrl,
-					cached: screenshotResult.cached,
-					elementRef: nextAction.command[1],
-				});
-
-				// Observe the new state
-				const newSnapshotExec = await exec(sandbox, ['agent-browser', 'snapshot', '-i']);
-				const newTree = await getStdout(newSnapshotExec);
-
-				const { text: observation } = await generateText({
-					model: openai('gpt-5-nano'),
-					prompt: `You are observing a web page after performing an action. Describe what changed or what you now see in 1-2 sentences.\n\nAction taken: ${actionDescription}\n\nNew accessibility tree:\n${newTree.slice(0, 4000)}`,
-				});
-
-				const step: ExplorationStep = {
-					stepNumber: i,
-					screenshotUrl: screenshotResult.screenshotUrl,
-					action: actionDescription,
-					observation,
-					pageUrl: currentUrl,
-					cached: screenshotResult.cached,
-					elementRef: nextAction.command[1],
-				};
-				steps.push(step);
-
-				// Get title for storage
-				const stepTitleExec = await exec(sandbox, ['agent-browser', 'get', 'title']);
-				const stepTitle = (await getStdout(stepTitleExec)).trim() || currentUrl;
-				await storeVisit(ctx, normalizedCurrentUrl, stepTitle, screenshotResult.key, observation);
-				await emitStep(options, step);
-
-				ctx.logger.info('Step completed', { step: i, observation });
-			} catch (stepError) {
-				ctx.logger.warn('Step failed, continuing', { step: i, error: String(stepError) });
-			}
-		}
-
-		// Generate final summary
-		const { text: summary } = await generateText({
-			model: openai('gpt-5-nano'),
-			prompt: `Summarize what was discovered during this web exploration in 2-3 sentences.\n\nURL: ${options.url}\nSteps taken:\n${steps.map((s) => `${s.stepNumber}. ${s.action} => ${s.observation}`).join('\n')}`,
-		});
-
-		ctx.logger.info('Exploration complete', { url: options.url, totalSteps: steps.length });
-
-		// Emit summary and done events
-		if (options.onStep) {
-			await options.onStep({ type: 'summary', summary, title: pageTitle, url: options.url });
-			await options.onStep({ type: 'done' });
-		}
-
-		return { url: options.url, title: pageTitle, steps, summary };
+		const result = await exploreWithSandbox(ctx, sandbox, options, maxSteps);
+		pageTitle = result.title;
+		return result;
 	} catch (error) {
-		ctx.logger.error('Exploration error, returning partial results', { error: String(error), stepsCompleted: steps.length });
+		ctx.logger.error('Exploration error', { error: String(error) });
 		if (options.onStep) {
 			await options.onStep({ type: 'error', message: String(error) });
 		}
 		return {
 			url: options.url,
 			title: pageTitle || 'Failed to explore',
-			steps,
-			summary: `Exploration encountered an error after ${steps.length} step(s): ${String(error)}`,
+			steps: [],
+			summary: `Exploration encountered an error: ${String(error)}`,
 		};
 	} finally {
 		await sandbox.destroy();
@@ -264,16 +411,190 @@ Choose ONE action to take next.`,
 	}
 }
 
-// --- Internal Helpers ---
+export async function exploreWithSandbox(
+	ctx: ExplorerContext,
+	sandbox: Sandbox,
+	options: ExploreOptions & { skipNavigation?: boolean },
+	maxSteps?: number,
+): Promise<AgentOutput> {
+	const steps = maxSteps ?? options.maxSteps ?? 8;
 
-interface ScreenshotResult {
-	screenshotUrl: string;
-	key: string;
-	cached?: boolean;
+	const state: ExplorationState = {
+		url: options.url,
+		currentUrl: options.url,
+		lastScreenshotKey: '',
+		lastScreenshotUrl: '',
+		screenshotHistory: new Map(),
+		screenshotKeyHistory: new Map(),
+		urlHistory: new Map(),
+		observations: new Map(),
+		actionsByUrl: new Map(),
+		lastObservationByUrl: new Map(),
+	};
+
+	// Load past visits from KV
+	const pastVisits = await loadPastVisits(ctx, options.url);
+
+	// Initial navigation (skip for continuations)
+	if (!options.skipNavigation) {
+		const openErr = await runBrowserCmd(sandbox, ['open', options.url]);
+		if (openErr) {
+			ctx.logger.warn('Initial navigation failed', { error: openErr });
+		}
+		await runBrowserCmd(sandbox, ['wait', '--load', 'networkidle']);
+	}
+
+	// Get page title
+	const titleExec = await exec(sandbox, ['agent-browser', 'get', 'title']);
+	const pageTitle = (titleExec.exitCode === 0 ? (await getStdout(titleExec)).trim() : '') || options.url;
+
+	// Emit memory event if past visits exist
+	if (pastVisits.length > 0 && options.onStep) {
+		await options.onStep({ type: 'memory', visits: pastVisits });
+	}
+
+	// Find site-specific hints
+	const target = TARGETS.find((t) => options.url.includes(new URL(t.url).hostname));
+	const hints = target?.hints;
+
+	const tools = createExplorationTools(sandbox, ctx, state, options.abortSignal);
+
+	// Build memory context for the model
+	const memoryContext = pastVisits.length > 0
+		? pastVisits.map((v) => {
+			const lines = [`- ${v.url}: ${v.observation}`];
+			if (v.actionsTaken.length > 0) {
+				lines.push(`  Already tried: ${v.actionsTaken.join(', ')}`);
+			}
+			return lines.join('\n');
+		}).join('\n')
+		: '';
+
+	const result = await generateText({
+		model: openai('gpt-5-nano'),
+		system: buildSystemPrompt(options.url, hints),
+		prompt: memoryContext
+			? `Begin exploring ${options.url}.\n\nPages already explored (DO NOT revisit these URLs unless you have a specific new interaction to try):\n${memoryContext}\n\nFocus on pages and interactions NOT listed above. Navigate to new areas of the site instead.`
+			: `Begin exploring ${options.url}. Take a screenshot to see the page, then start using the interactive elements you find.`,
+		tools,
+		stopWhen: [stepCountIs(steps), hasToolCall('finish_exploration')],
+		abortSignal: options.abortSignal,
+		onStepFinish: async (step) => {
+			if (step.text && options.onStep) {
+				await options.onStep({
+					type: 'thinking',
+					text: step.text,
+					stepNumber: step.stepNumber ?? 0,
+				});
+			}
+		},
+		experimental_onToolCallStart: async (event) => {
+			if (!options.onStep) return;
+			const tc = event.toolCall;
+			const args = tc.input as Record<string, unknown>;
+			await options.onStep({
+				type: 'tool_call_start',
+				toolCallId: tc.toolCallId,
+				toolName: tc.toolName,
+				action: tc.toolName === 'browser' ? (args.action as string) : undefined,
+				reason: (args.reason as string) ?? (args.title as string) ?? (args.summary as string),
+			});
+		},
+		experimental_onToolCallFinish: async (event) => {
+			if (!options.onStep) return;
+			const tc = event.toolCall;
+			const args = tc.input as Record<string, unknown>;
+			const isScreenshot = tc.toolName === 'browser' && args.action === 'screenshot';
+			await options.onStep({
+				type: 'tool_call_finish',
+				toolCallId: tc.toolCallId,
+				toolName: tc.toolName,
+				output: event.success ? String(event.output ?? '') : String(event.error),
+				screenshotUrl: isScreenshot && event.success ? state.screenshotHistory.get(tc.toolCallId) : undefined,
+				observation: isScreenshot && event.success ? state.observations.get(tc.toolCallId) : undefined,
+				durationMs: event.durationMs,
+			});
+		},
+	});
+
+	// Extract summary
+	let summary = result.text || '';
+	for (const step of result.steps) {
+		for (const tc of step.toolCalls) {
+			if (tc.toolName === 'finish_exploration') {
+				summary = (tc.input as { summary: string }).summary;
+			}
+		}
+	}
+
+	// Build ExplorationStep[] from result.steps
+	const explorationSteps: ExplorationStep[] = [];
+	let stepNumber = 0;
+	for (const step of result.steps) {
+		stepNumber++;
+		const browserCalls = step.toolCalls.filter((tc) => tc.toolName === 'browser');
+		const actions = browserCalls.map((tc) => {
+			const args = tc.input as Record<string, unknown>;
+			return `${args.action}${args.ref ? ` ${args.ref}` : ''}${args.value ? ` "${args.value}"` : ''} (${args.reason})`;
+		});
+
+		let screenshotUrl = '';
+		let pageUrl = state.currentUrl;
+		for (const tc of browserCalls) {
+			const args = tc.input as Record<string, unknown>;
+			if (args.action === 'screenshot') {
+				screenshotUrl = state.screenshotHistory.get(tc.toolCallId) ?? '';
+				pageUrl = state.urlHistory.get(tc.toolCallId) ?? state.currentUrl;
+			}
+		}
+
+		if (actions.length > 0) {
+			explorationSteps.push({
+				stepNumber,
+				screenshotUrl,
+				action: actions.join('; '),
+				observation: step.text || '',
+				pageUrl,
+			});
+		}
+	}
+
+	// Fallback summary
+	if (!summary && explorationSteps.length > 0) {
+		try {
+			const { text: fallbackSummary } = await generateText({
+				model: openai('gpt-5-nano'),
+				prompt: `Summarize this web exploration in 2-3 sentences.\n\nURL: ${options.url}\nActions taken:\n${explorationSteps.map((s) => `- ${s.action}`).join('\n')}`,
+				abortSignal: options.abortSignal,
+			});
+			summary = fallbackSummary || 'Exploration completed.';
+		} catch {
+			summary = 'Exploration completed.';
+		}
+	}
+
+	ctx.logger.info('Exploration complete', { url: options.url, totalSteps: explorationSteps.length });
+
+	if (options.onStep) {
+		await options.onStep({ type: 'summary', summary, title: pageTitle, url: options.url });
+	}
+
+	return { url: options.url, title: pageTitle, steps: explorationSteps, summary };
 }
+
+// --- Internal Helpers ---
 
 async function exec(sandbox: Sandbox, command: string[]): Promise<Execution> {
 	return sandbox.execute({ command });
+}
+
+async function runBrowserCmd(sandbox: Sandbox, args: string[]): Promise<string | null> {
+	const result = await exec(sandbox, ['agent-browser', ...args]);
+	if (result.exitCode != null && result.exitCode !== 0) {
+		const stderr = await getStderr(result);
+		return `Command failed: agent-browser ${args[0]} — ${stderr}`;
+	}
+	return null;
 }
 
 async function getStdout(execution: Execution): Promise<string> {
@@ -290,175 +611,115 @@ async function getStderr(execution: Execution): Promise<string> {
 	return response.text();
 }
 
-/** Take a screenshot, read it via stdout (bypasses /fs/ endpoint), upload to S3 or fall back to base64. */
-async function captureAndUpload(
-	ctx: ExplorerContext,
-	sandbox: Sandbox,
-	pageUrl: string,
-	filename: string,
-): Promise<ScreenshotResult> {
-	const screenshotExec = await exec(sandbox, ['agent-browser', 'screenshot', filename]);
-	ctx.logger.debug('Screenshot execution result', {
-		filename,
-		exitCode: screenshotExec.exitCode,
-		status: screenshotExec.status,
-		executionId: screenshotExec.executionId,
-	});
-	if (screenshotExec.exitCode != null && screenshotExec.exitCode !== 0) {
-		const stderr = await getStderr(screenshotExec);
-		ctx.logger.error('Screenshot command failed', { filename, exitCode: screenshotExec.exitCode, stderr });
-		throw new Error(`Screenshot failed (exit ${screenshotExec.exitCode}): ${stderr}`);
-	}
-
-	// Read the screenshot via base64-encoded stdout instead of sandbox.readFile (avoids /fs/ endpoint)
-	const b64Exec = await exec(sandbox, ['base64', filename]);
-	ctx.logger.debug('Base64 read result', {
-		filename,
-		exitCode: b64Exec.exitCode,
-		status: b64Exec.status,
-	});
-	if (b64Exec.exitCode != null && b64Exec.exitCode !== 0) {
-		const stderr = await getStderr(b64Exec);
-		ctx.logger.error('Failed to read screenshot', { filename, exitCode: b64Exec.exitCode, stderr });
-		throw new Error(`Failed to read screenshot (exit ${b64Exec.exitCode}): ${stderr}`);
-	}
-
-	const base64 = (await getStdout(b64Exec)).trim();
-	const buffer = Buffer.from(base64, 'base64');
-	const key = screenshotKey(pageUrl);
-
-	const s3 = getS3();
-	if (s3) {
-		try {
-			await s3.file(key).write(buffer);
-			return { screenshotUrl: s3ScreenshotUrl(key), key };
-		} catch (err) {
-			ctx.logger.warn('S3 upload failed, falling back to data URI', { error: String(err) });
-		}
-	}
-	return { screenshotUrl: `data:image/png;base64,${base64}`, key: '' };
+async function getCurrentPageInfo(sandbox: Sandbox, fallbackUrl: string): Promise<{ url: string; title: string }> {
+	const urlExec = await exec(sandbox, ['agent-browser', 'get', 'url']);
+	const currentUrl = (await getStdout(urlExec)).trim() || fallbackUrl;
+	const titleExec = await exec(sandbox, ['agent-browser', 'get', 'title']);
+	const title = (titleExec.exitCode === 0 ? (await getStdout(titleExec)).trim() : '') || currentUrl;
+	return { url: currentUrl, title };
 }
 
-/** Execute an agent-browser command from the LLM's structured output. */
-async function executeCommand(sandbox: Sandbox, command: string[], reason: string): Promise<string> {
-	const [verb, ...args] = command;
-	const label = command.join(' ');
+// --- KV Memory (no vector storage) ---
 
-	switch (verb) {
-		case 'click':
-		case 'hover':
-			await exec(sandbox, ['agent-browser', verb, args[0]!]);
-			return `${verb === 'click' ? 'Clicked' : 'Hovered'} ${args[0]} (${reason})`;
-
-		case 'scroll':
-			await exec(sandbox, ['agent-browser', 'scroll', args[0] ?? 'down']);
-			return `Scrolled ${args[0] ?? 'down'} (${reason})`;
-
-		case 'type':
-			await exec(sandbox, ['agent-browser', 'type', args[0]!, args.slice(1).join(' ')]);
-			return `Typed "${args.slice(1).join(' ')}" into ${args[0]} (${reason})`;
-
-		case 'open':
-			await exec(sandbox, ['agent-browser', 'open', args[0]!]);
-			return `Navigated to ${args[0]} (${reason})`;
-
-		case 'back':
-			await exec(sandbox, ['agent-browser', 'back']);
-			return `Went back (${reason})`;
-
-		case 'forward':
-			await exec(sandbox, ['agent-browser', 'forward']);
-			return `Went forward (${reason})`;
-
-		case 'wait':
-			await exec(sandbox, ['sleep', String(Math.min(Number(args[0]) / 1000, 5))]);
-			return `Waited ${args[0]}ms (${reason})`;
-
-		default:
-			await exec(sandbox, ['agent-browser', ...command]);
-			return `Executed ${label} (${reason})`;
-	}
-}
-
-/** Load past visit summaries from vector store for exploration diversity. */
-async function loadPastVisits(ctx: ExplorerContext, url: string): Promise<string | null> {
+async function loadPastVisits(ctx: ExplorerContext, url: string): Promise<MemoryVisit[]> {
 	try {
 		const domain = new URL(url).hostname;
-		const results = await ctx.vector.search(VECTOR_COLLECTION, { query: domain, limit: 5, similarity: 0.3 });
-		if (!results?.length) return null;
-		return results.map((r: any) => `- ${r.metadata?.url ?? 'unknown'}: ${r.document?.slice(0, 120)}`).join('\n');
+		const indexResult = await ctx.kv.get<string[]>(KV_NAMESPACE, `domain:${domain}`);
+		if (!indexResult.exists || !indexResult.data?.length) return [];
+
+		const visits: MemoryVisit[] = [];
+		for (const normalizedUrl of indexResult.data) {
+			const kvResult = await ctx.kv.get<VisitRecord>(KV_NAMESPACE, `visit:${normalizedUrl}`);
+			if (!kvResult.exists || !kvResult.data) continue;
+			const record = kvResult.data;
+			if (!record.observation) continue;
+
+			// Check freshness (24h)
+			const timestamp = Date.parse(record.visitedAt);
+			if (!Number.isFinite(timestamp) || Date.now() - timestamp > VISIT_TTL * 1000) continue;
+
+			// Generate presigned URL for stored screenshot
+			const ssUrl = record.screenshotKey ? screenshotPresignedUrl(record.screenshotKey) : '';
+
+			visits.push({
+				url: record.url,
+				title: record.title,
+				observation: record.observation,
+				screenshotUrl: ssUrl || undefined,
+				actionsTaken: record.actionsTaken ?? [],
+			});
+		}
+
+		return visits.slice(0, 5);
 	} catch (err) {
-		ctx.logger.warn('Vector search failed', { error: String(err) });
-		return null;
+		ctx.logger.warn('Failed to load past visits', { error: String(err) });
+		return [];
 	}
 }
 
-/** Check KV cache for a recently visited page (within 24h). */
-async function checkKvCache(
-	ctx: ExplorerContext,
-	normalizedUrl: string,
-): Promise<{ screenshotUrl: string; key: string } | null> {
-	try {
-		const result = await ctx.kv.get(KV_NAMESPACE, `visit:${normalizedUrl}`);
-		if (!result.exists) return null;
-		const record = result.data as VisitRecord;
-		return { screenshotUrl: s3ScreenshotUrl(record.screenshotKey), key: record.screenshotKey };
-	} catch {
-		return null;
-	}
-}
-
-/** Persist visit data to KV (24h TTL) and vector store. */
 async function storeVisit(
 	ctx: ExplorerContext,
-	url: string,
-	title: string,
-	screenshotKey: string,
-	observation: string,
-): Promise<void> {
-	const normalizedUrl = normalizeUrl(url);
-	const kvKey = `visit:${normalizedUrl}`;
-	const record: VisitRecord = { url, title, visitedAt: new Date().toISOString(), screenshotKey, observation };
-
-	if (screenshotKey) {
-		try {
-			await ctx.kv.set(KV_NAMESPACE, kvKey, record, { ttl: 86400 });
-		} catch (err) {
-			ctx.logger.warn('KV write failed', { error: String(err) });
-		}
-	}
-
-	try {
-		await ctx.vector.upsert(VECTOR_COLLECTION, {
-			key: kvKey,
-			document: observation,
-			metadata: { url, title, visitedAt: record.visitedAt, ...(screenshotKey ? { screenshotKey } : {}) },
-		});
-	} catch (err) {
-		ctx.logger.warn('Vector upsert failed', { error: String(err) });
-	}
-}
-
-/** Emit a preview event (screenshot ready, observation pending). */
-async function emitPreview(
-	options: ExploreOptions,
-	preview: {
-		stepNumber: number;
-		screenshotUrl: string;
-		action: string;
-		pageUrl?: string;
-		cached?: boolean;
-		elementRef?: string;
+	params: {
+		url: string;
+		title: string;
+		screenshotKey: string;
+		observation: string;
+		action?: string;
 	},
 ): Promise<void> {
-	if (options.onStep) {
-		await options.onStep({ type: 'preview', ...preview });
-	}
-}
+	// Guard: don't persist without a real screenshot
+	if (!params.screenshotKey) return;
 
-/** Emit a step event to the streaming callback. */
-async function emitStep(options: ExploreOptions, step: ExplorationStep): Promise<void> {
-	if (options.onStep) {
-		await options.onStep({ type: 'step', step });
+	let normalizedUrlStr: string;
+	try {
+		normalizedUrlStr = normalizeUrl(params.url);
+	} catch {
+		return;
+	}
+	const kvKey = `visit:${normalizedUrlStr}`;
+
+	// Merge with existing record
+	let existingActions: string[] = [];
+	try {
+		const existing = await ctx.kv.get<VisitRecord>(KV_NAMESPACE, kvKey);
+		if (existing.exists && existing.data) {
+			existingActions = existing.data.actionsTaken ?? [];
+		}
+	} catch {
+		// KV read failure is non-critical
+	}
+
+	const allActions = [...existingActions];
+	if (params.action) allActions.push(params.action);
+	// Dedupe and cap
+	const uniqueActions = [...new Set(allActions)].slice(-MAX_ACTIONS_STORED);
+
+	const record: VisitRecord = {
+		url: params.url,
+		title: params.title,
+		visitedAt: new Date().toISOString(),
+		screenshotKey: params.screenshotKey,
+		observation: params.observation,
+		actionsTaken: uniqueActions,
+	};
+
+	try {
+		await ctx.kv.set(KV_NAMESPACE, kvKey, record, { ttl: VISIT_TTL });
+	} catch (err) {
+		ctx.logger.warn('KV write failed', { error: String(err) });
+	}
+
+	// Update domain index
+	try {
+		const domain = new URL(params.url).hostname;
+		const indexKey = `domain:${domain}`;
+		const existing = await ctx.kv.get<string[]>(KV_NAMESPACE, indexKey);
+		const urls = existing.exists && existing.data ? existing.data : [];
+		if (!urls.includes(normalizedUrlStr)) {
+			urls.push(normalizedUrlStr);
+		}
+		await ctx.kv.set(KV_NAMESPACE, indexKey, urls.slice(-20), { ttl: DOMAIN_INDEX_TTL });
+	} catch (err) {
+		ctx.logger.warn('Domain index update failed', { error: String(err) });
 	}
 }

@@ -1,14 +1,141 @@
 import { useAPI } from '@agentuity/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import type { StreamEvent } from '../lib/types';
+import { Streamdown } from 'streamdown';
+import { createCodePlugin } from '@streamdown/code';
+import type { PartData, StreamEvent } from '../api/types';
 import './App.css';
 
 type AppState = 'idle' | 'booting' | 'ready' | 'stopping';
-type Message = { role: 'user' | 'assistant'; content: string };
+type Message = { role: 'user'; content: string } | { role: 'assistant'; parts: Map<string, PartData> };
 
 const DEFAULT_REPO = 'https://github.com/agentuity/sdk';
+
+// Streamdown plugins (initialized once, outside component tree)
+const codePlugin = createCodePlugin({ themes: ['github-dark', 'github-dark'] });
+
+// Custom Streamdown components for dark theme
+const streamdownComponents = {
+	h1: ({ children, ...props }: React.ComponentPropsWithoutRef<'h1'>) => (
+		<h1 className="text-lg font-bold mt-4 mb-2 text-white" {...props}>{children}</h1>
+	),
+	h2: ({ children, ...props }: React.ComponentPropsWithoutRef<'h2'>) => (
+		<h2 className="text-base font-bold mt-3 mb-1.5 text-white" {...props}>{children}</h2>
+	),
+	h3: ({ children, ...props }: React.ComponentPropsWithoutRef<'h3'>) => (
+		<h3 className="text-sm font-semibold mt-2 mb-1 text-white" {...props}>{children}</h3>
+	),
+	p: ({ children, ...props }: React.ComponentPropsWithoutRef<'p'>) => (
+		<p className="text-sm leading-relaxed text-gray-300 my-1.5" {...props}>{children}</p>
+	),
+	a: ({ href, children, ...props }: React.ComponentPropsWithoutRef<'a'>) => (
+		<a href={href} target="_blank" rel="noopener noreferrer"
+			className="text-cyan-400 underline underline-offset-2 hover:opacity-80 text-sm" {...props}>
+			{children}
+		</a>
+	),
+	code: ({ children, className, ...props }: React.ComponentPropsWithoutRef<'code'>) => {
+		// Fenced code blocks have a language-* className from Streamdown
+		if (className && className.includes('language-')) {
+			return <code className={className} {...props}>{children}</code>;
+		}
+		// Inline code
+		return (
+			<code className="rounded bg-gray-900 border border-gray-800 px-1.5 py-0.5 text-[0.85em] font-mono text-cyan-400" {...props}>
+				{children}
+			</code>
+		);
+	},
+	pre: ({ children, ...props }: React.ComponentPropsWithoutRef<'pre'>) => (
+		<pre className="overflow-x-auto rounded-lg bg-gray-900 border border-gray-800 p-3 text-xs leading-relaxed font-mono my-2" {...props}>
+			{children}
+		</pre>
+	),
+	ul: ({ children, ...props }: React.ComponentPropsWithoutRef<'ul'>) => (
+		<ul className="text-sm list-disc ml-6 my-1.5 space-y-0.5 text-gray-300" {...props}>{children}</ul>
+	),
+	ol: ({ children, ...props }: React.ComponentPropsWithoutRef<'ol'>) => (
+		<ol className="text-sm list-decimal ml-6 my-1.5 space-y-0.5 text-gray-300" {...props}>{children}</ol>
+	),
+	li: ({ children, ...props }: React.ComponentPropsWithoutRef<'li'>) => (
+		<li className="text-sm text-gray-300" {...props}>{children}</li>
+	),
+	blockquote: ({ children, ...props }: React.ComponentPropsWithoutRef<'blockquote'>) => (
+		<blockquote className="border-l-2 border-cyan-800 pl-3 my-2 text-sm text-gray-400 italic" {...props}>
+			{children}
+		</blockquote>
+	),
+	hr: (props: React.ComponentPropsWithoutRef<'hr'>) => (
+		<hr className="my-3 border-gray-800" {...props} />
+	),
+	strong: ({ children, ...props }: React.ComponentPropsWithoutRef<'strong'>) => (
+		<strong className="font-semibold text-white" {...props}>{children}</strong>
+	),
+	em: ({ children, ...props }: React.ComponentPropsWithoutRef<'em'>) => (
+		<em className="text-gray-300" {...props}>{children}</em>
+	),
+	table: ({ children, ...props }: React.ComponentPropsWithoutRef<'table'>) => (
+		<div className="overflow-x-auto my-2">
+			<table className="text-xs border-collapse border border-gray-800" {...props}>{children}</table>
+		</div>
+	),
+	th: ({ children, ...props }: React.ComponentPropsWithoutRef<'th'>) => (
+		<th className="border border-gray-800 px-2 py-1 text-left text-xs font-semibold bg-gray-900 text-white" {...props}>{children}</th>
+	),
+	td: ({ children, ...props }: React.ComponentPropsWithoutRef<'td'>) => (
+		<td className="border border-gray-800 px-2 py-1 text-xs text-gray-300" {...props}>{children}</td>
+	),
+};
+
+// Smaller, muted components for reasoning blocks
+const reasoningComponents = {
+	h1: ({ children, ...props }: React.ComponentPropsWithoutRef<'h1'>) => (
+		<h1 className="text-xs font-bold mt-2 mb-1 text-gray-500" {...props}>{children}</h1>
+	),
+	h2: ({ children, ...props }: React.ComponentPropsWithoutRef<'h2'>) => (
+		<h2 className="text-xs font-bold mt-1.5 mb-0.5 text-gray-500" {...props}>{children}</h2>
+	),
+	h3: ({ children, ...props }: React.ComponentPropsWithoutRef<'h3'>) => (
+		<h3 className="text-[11px] font-semibold mt-1 mb-0.5 text-gray-500" {...props}>{children}</h3>
+	),
+	p: ({ children, ...props }: React.ComponentPropsWithoutRef<'p'>) => (
+		<p className="text-[11px] leading-relaxed text-gray-500 my-1" {...props}>{children}</p>
+	),
+	code: ({ children, className, ...props }: React.ComponentPropsWithoutRef<'code'>) => {
+		if (className && className.includes('language-')) {
+			return <code className={className} {...props}>{children}</code>;
+		}
+		return (
+			<code className="rounded bg-gray-900 px-1 py-0.5 text-[10px] font-mono text-gray-400" {...props}>
+				{children}
+			</code>
+		);
+	},
+	pre: ({ children, ...props }: React.ComponentPropsWithoutRef<'pre'>) => (
+		<pre className="overflow-x-auto rounded-md bg-gray-900 p-2 text-[10px] leading-relaxed font-mono my-1" {...props}>
+			{children}
+		</pre>
+	),
+	ul: ({ children, ...props }: React.ComponentPropsWithoutRef<'ul'>) => (
+		<ul className="text-[11px] list-disc ml-4 my-1 space-y-0.5 text-gray-500" {...props}>{children}</ul>
+	),
+	ol: ({ children, ...props }: React.ComponentPropsWithoutRef<'ol'>) => (
+		<ol className="text-[11px] list-decimal ml-4 my-1 space-y-0.5 text-gray-500" {...props}>{children}</ol>
+	),
+	li: ({ children, ...props }: React.ComponentPropsWithoutRef<'li'>) => (
+		<li className="text-[11px] text-gray-500" {...props}>{children}</li>
+	),
+	strong: ({ children, ...props }: React.ComponentPropsWithoutRef<'strong'>) => (
+		<strong className="font-semibold text-gray-400" {...props}>{children}</strong>
+	),
+	em: ({ children, ...props }: React.ComponentPropsWithoutRef<'em'>) => (
+		<em className="text-gray-500" {...props}>{children}</em>
+	),
+	blockquote: ({ children, ...props }: React.ComponentPropsWithoutRef<'blockquote'>) => (
+		<blockquote className="border-l-2 border-gray-800 pl-2 my-1 text-[11px] text-gray-500 italic" {...props}>
+			{children}
+		</blockquote>
+	),
+};
 
 export function App() {
 	const [state, setState] = useState<AppState>('idle');
@@ -127,7 +254,7 @@ export function App() {
 				)}
 
 				{/* Ready State — Chat */}
-				{state === 'ready' && <ChatPanel repoUrl={repoUrl} onStop={handleStop} />}
+				{state === 'ready' && <ChatPanel repoUrl={repoUrl} onStop={handleStop} isReconnected={rehydrated.current} />}
 
 				{/* Stopping State */}
 				{state === 'stopping' && (
@@ -144,20 +271,48 @@ export function App() {
 	);
 }
 
-// Chat panel — rendered only when workspace is ready so useEventStream connects
-function ChatPanel({ repoUrl, onStop }: { repoUrl: string; onStop: () => void }) {
+// Reasoning block: collapsible thinking indicator
+function ReasoningBlock({ part, isStreaming }: { part: PartData; isStreaming: boolean }) {
+	const isThinking = isStreaming && !part.time?.end;
+	const duration = part.time?.end != null && part.time?.start != null
+		? Math.ceil((part.time.end - part.time.start) / 1000)
+		: null;
+
+	return (
+		<details className="reasoning-block mb-2" open={isThinking || undefined}>
+			<summary className="text-xs text-gray-500 select-none py-1">
+				{isThinking ? (
+					<span className="thinking-pulse text-cyan-600">Thinking...</span>
+				) : (
+					<span className="text-gray-500">
+						Thought{duration !== null ? ` (${duration}s)` : ''}
+					</span>
+				)}
+			</summary>
+			<div className="max-h-48 overflow-y-auto rounded-md border border-gray-800/50 bg-gray-900/30 p-2.5 text-[11px] mt-1 mb-2 break-words [&_pre]:whitespace-pre-wrap [&_pre]:overflow-hidden [&_code]:break-all">
+				<Streamdown
+					plugins={{ code: codePlugin }}
+					components={reasoningComponents}
+					isAnimating={isStreaming}
+					caret={isStreaming ? 'block' : undefined}
+					mode={isStreaming ? 'streaming' : undefined}
+				>
+					{part.text}
+				</Streamdown>
+			</div>
+		</details>
+	);
+}
+
+// Chat panel — rendered only when workspace is ready so EventSource connects
+function ChatPanel({ repoUrl, onStop, isReconnected }: { repoUrl: string; onStop: () => void; isReconnected?: boolean }) {
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [question, setQuestion] = useState('');
-	const [isResponding, setIsResponding] = useState(false);
+	const [isStreaming, setIsStreaming] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
 	const askApi = useAPI('POST /api/ask');
 	const [isConnected, setIsConnected] = useState(false);
-
-	// Raw EventSource to avoid React batching/dedup dropping rapid SSE deltas.
-	// Accumulates text in a ref and flushes to state on requestAnimationFrame.
-	const bufferRef = useRef('');
-	const rafRef = useRef(0);
 
 	useEffect(() => {
 		const es = new EventSource('/api/events');
@@ -173,34 +328,30 @@ function ChatPanel({ repoUrl, onStop }: { repoUrl: string; onStop: () => void })
 				return;
 			}
 
-			if (event.type === 'text' && event.content) {
-				bufferRef.current += event.content;
-				// Flush on next animation frame to batch rapid deltas into one render
-				if (!rafRef.current) {
-					rafRef.current = requestAnimationFrame(() => {
-						const chunk = bufferRef.current;
-						bufferRef.current = '';
-						rafRef.current = 0;
-						setMessages((prev) => {
-							const last = prev[prev.length - 1];
-							if (last?.role === 'assistant') {
-								return [...prev.slice(0, -1), { ...last, content: last.content + chunk }];
-							}
-							return [...prev, { role: 'assistant', content: chunk }];
-						});
-					});
-				}
-			} else if (event.type === 'error' && event.message) {
-				setMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${event.message}` }]);
-				setIsResponding(false);
-			} else if (event.type === 'status' && event.status === 'idle') {
-				setIsResponding(false);
+			if (event.type === 'part') {
+				// Upsert the part into the last assistant message (or create one)
+				setMessages((prev) => {
+					const last = prev[prev.length - 1];
+					if (last?.role === 'assistant') {
+						const parts = new Map(last.parts);
+						parts.set(event.part.id, event.part);
+						return [...prev.slice(0, -1), { ...last, parts }];
+					}
+					const parts = new Map([[event.part.id, event.part]]);
+					return [...prev, { role: 'assistant', parts }];
+				});
+			} else if (event.type === 'error') {
+				// Show error as a text part in a new assistant message
+				const errorPart: PartData = { id: 'error', type: 'text', text: `Error: ${event.message}` };
+				setMessages((prev) => [...prev, { role: 'assistant', parts: new Map([['error', errorPart]]) }]);
+				setIsStreaming(false);
+			} else if (event.type === 'status') {
+				setIsStreaming(event.status === 'busy');
 			}
 		};
 
 		return () => {
 			es.close();
-			if (rafRef.current) cancelAnimationFrame(rafRef.current);
 		};
 	}, []);
 
@@ -211,19 +362,20 @@ function ChatPanel({ repoUrl, onStop }: { repoUrl: string; onStop: () => void })
 
 	const handleAsk = useCallback(async () => {
 		const q = question.trim();
-		if (!q || isResponding) return;
+		if (!q || isStreaming) return;
 
 		setMessages((prev) => [...prev, { role: 'user', content: q }]);
 		setQuestion('');
-		setIsResponding(true);
+		setIsStreaming(true);
 
 		try {
 			await askApi.invoke({ question: q });
 		} catch (err) {
-			setIsResponding(false);
-			setMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${String(err)}` }]);
+			setIsStreaming(false);
+			const errorPart: PartData = { id: 'error', type: 'text', text: `Error: ${String(err)}` };
+			setMessages((prev) => [...prev, { role: 'assistant', parts: new Map([['error', errorPart]]) }]);
 		}
-	}, [question, isResponding, askApi]);
+	}, [question, isStreaming, askApi]);
 
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
@@ -247,8 +399,13 @@ function ChatPanel({ repoUrl, onStop }: { repoUrl: string; onStop: () => void })
 			{/* Messages */}
 			<div className="bg-black border border-gray-900 rounded-lg min-h-[300px] max-h-[500px] overflow-y-auto">
 				{messages.length === 0 ? (
-					<div className="flex items-center justify-center h-[300px] text-gray-600 text-sm">
-						Ask a question about the codebase
+					<div className="flex flex-col items-center justify-center h-[300px] gap-2">
+						<span className="text-gray-600 text-sm">Ask a question about the codebase</span>
+						{isReconnected && (
+							<span className="text-gray-700 text-xs">
+								Reconnected to existing session — the AI remembers your prior questions
+							</span>
+						)}
 					</div>
 				) : (
 					<div className="p-4 flex flex-col gap-4">
@@ -265,11 +422,31 @@ function ChatPanel({ repoUrl, onStop }: { repoUrl: string; onStop: () => void })
 									}
 								>
 									{msg.role === 'assistant' ? (
-										<div className="prose prose-invert prose-sm max-w-none">
-											<ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-											{i === messages.length - 1 && isResponding && (
-												<span className="streaming-cursor" />
-											)}
+										<div className="max-w-none text-sm">
+											{Array.from(msg.parts.values()).map((part) => {
+												if (part.type === 'reasoning') {
+													return (
+														<ReasoningBlock
+															key={part.id}
+															part={part}
+															isStreaming={isStreaming && i === messages.length - 1}
+														/>
+													);
+												}
+												// text part
+												return (
+													<Streamdown
+														key={part.id}
+														plugins={{ code: codePlugin }}
+														components={streamdownComponents}
+														isAnimating={isStreaming && i === messages.length - 1}
+														caret={isStreaming && i === messages.length - 1 ? 'block' : undefined}
+														mode={isStreaming && i === messages.length - 1 ? 'streaming' : undefined}
+													>
+														{part.text}
+													</Streamdown>
+												);
+											})}
 										</div>
 									) : (
 										msg.content
@@ -290,16 +467,16 @@ function ChatPanel({ repoUrl, onStop }: { repoUrl: string; onStop: () => void })
 					onChange={(e) => setQuestion(e.target.value)}
 					onKeyDown={handleKeyDown}
 					placeholder="Ask about the codebase..."
-					disabled={isResponding}
+					disabled={isStreaming}
 					className="flex-1 bg-black border border-gray-900 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-cyan-800 transition-colors disabled:opacity-50"
 				/>
 				<button
 					onClick={handleAsk}
-					disabled={isResponding || !question.trim()}
+					disabled={isStreaming || !question.trim()}
 					type="button"
 					className="bg-cyan-950/50 border border-cyan-900/50 rounded-lg px-5 py-2.5 text-cyan-500 text-sm font-medium cursor-pointer hover:bg-cyan-950 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 				>
-					{isResponding ? 'Thinking...' : 'Ask'}
+					{isStreaming ? 'Thinking...' : 'Ask'}
 				</button>
 				<button
 					onClick={onStop}

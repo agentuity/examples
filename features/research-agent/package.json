@@ -1,0 +1,31 @@
+{
+	"name": "research-agent",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "agentuity build",
+		"dev": "agentuity dev",
+		"start": "bun .agentuity/app.js",
+		"deploy": "agentuity deploy",
+		"typecheck": "bunx tsc --noEmit"
+	},
+	"dependencies": {
+		"@agentuity/frontend": "latest",
+		"@agentuity/react": "latest",
+		"@agentuity/runtime": "latest",
+		"@agentuity/schema": "latest",
+		"@agentuity/workbench": "latest",
+		"@anthropic-ai/sdk": "latest",
+		"react": "^19.1.0",
+		"react-dom": "^19.1.0"
+	},
+	"devDependencies": {
+		"@agentuity/cli": "latest",
+		"@tailwindcss/vite": "^4.1.18",
+		"@types/bun": "latest",
+		"@types/react": "^19.1.8",
+		"@types/react-dom": "^19.1.6",
+		"tailwindcss": "^4.1.18",
+		"typescript": "^5.8.3"
+	}
+}

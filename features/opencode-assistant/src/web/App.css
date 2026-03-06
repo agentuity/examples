@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
 
 @theme {
 	/* Cyan (Agentuity Brand) */
@@ -52,58 +51,34 @@
 	@apply inline-block w-4 animate-ellipsis text-left;
 }
 
-/* Streaming cursor */
-.streaming-cursor::after {
-	content: '\2588';
-	@apply animate-pulse text-cyan-500;
+/* Reasoning thinking pulse */
+@keyframes thinking-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.5; }
 }
 
-/* Markdown prose overrides for dark theme */
-.prose pre {
-	@apply bg-gray-900 border border-gray-800 rounded-lg overflow-x-auto;
+.thinking-pulse {
+	animation: thinking-pulse 1.5s ease-in-out infinite;
 }
 
-.prose code:not(pre code) {
-	@apply bg-gray-900 border border-gray-800 rounded px-1.5 py-0.5 text-cyan-400 text-xs;
+/* Reasoning toggle styling */
+details.reasoning-block > summary {
+	cursor: pointer;
+	list-style: none;
 }
 
-.prose code::before,
-.prose code::after {
-	content: none;
+details.reasoning-block > summary::-webkit-details-marker {
+	display: none;
 }
 
-.prose a {
-	@apply text-cyan-400 no-underline hover:underline;
+details.reasoning-block > summary::before {
+	content: '\25B6';
+	display: inline-block;
+	margin-right: 0.375rem;
+	font-size: 0.625rem;
+	transition: transform 0.15s ease;
 }
 
-.prose h1, .prose h2, .prose h3, .prose h4 {
-	@apply text-white;
-}
-
-.prose strong {
-	@apply text-white;
-}
-
-.prose ul, .prose ol {
-	@apply text-gray-300;
-}
-
-.prose blockquote {
-	@apply border-cyan-800 text-gray-400;
-}
-
-.prose hr {
-	@apply border-gray-800;
-}
-
-.prose table {
-	@apply text-gray-300;
-}
-
-.prose th {
-	@apply text-white border-gray-800;
-}
-
-.prose td {
-	@apply border-gray-800;
+details.reasoning-block[open] > summary::before {
+	transform: rotate(90deg);
 }

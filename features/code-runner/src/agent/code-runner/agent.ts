@@ -2,9 +2,30 @@ import { createAgent } from '@agentuity/runtime';
 import { generateText, Output } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
-import { AgentInput, AgentOutput } from '@lib/types';
+import { s } from '@agentuity/schema';
 
-export default createAgent('code-runner', {
+const RuntimeResult = s.object({
+	code: s.string(),
+	exitCode: s.number(),
+	durationMs: s.number(),
+	stdout: s.string(),
+	stderr: s.string(),
+});
+
+export const AgentInput = s.object({
+	prompt: s.string(),
+});
+
+export const AgentOutput = s.object({
+	prompt: s.string(),
+	typescript: RuntimeResult,
+	python: RuntimeResult,
+});
+
+export type AgentInput = s.infer<typeof AgentInput>;
+export type AgentOutput = s.infer<typeof AgentOutput>;
+
+const agent = createAgent('code-runner', {
 	description:
 		'Takes a coding prompt, generates TypeScript and Python implementations, and executes both in parallel sandboxes',
 
@@ -87,3 +108,5 @@ Prompt: ${input.prompt}`,
 		};
 	},
 });
+
+export default agent;

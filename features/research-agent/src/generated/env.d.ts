@@ -6,13 +6,11 @@ declare global {
 	namespace NodeJS {
 		interface ProcessEnv {
 		readonly AGENTUITY_SDK_KEY: string;
-		readonly OPENAI_API_KEY: string;
 		}
 	}
 }
 
 // Vite-compatible environment types
-// Only includes variables with VITE_, AGENTUITY_PUBLIC_, or PUBLIC_ prefix
 interface ImportMetaEnv {
 	// No VITE_*, AGENTUITY_PUBLIC_*, or PUBLIC_* prefixed variables found
 }
@@ -22,7 +20,3 @@ interface ImportMeta {
 }
 
 export {};
-
-// FOUND AN ERROR IN THIS FILE?
-// Please file an issue at https://github.com/agentuity/sdk/issues
-// or if you know the fix please submit a PR!

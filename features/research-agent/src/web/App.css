@@ -50,22 +50,3 @@
 	content: '.';
 	@apply inline-block w-4 animate-ellipsis text-left;
 }
-
-@keyframes step-enter {
-	from {
-		opacity: 0;
-		transform: translateY(12px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
-.step-enter {
-	animation: step-enter 0.3s ease-out both;
-}
-
-.tool-call-label {
-	font-family: var(--font-mono, ui-monospace, monospace);
-}

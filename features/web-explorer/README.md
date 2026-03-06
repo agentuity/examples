@@ -1,6 +1,6 @@
 # Web Explorer
 
-AI-guided autonomous web exploration using the Agentuity sandbox with browser automation.
+An agent that explores websites using tool-calling: it browses, captures screenshots, stores findings in KV and vector storage, and recalls past visits across sessions.
 
 ## Getting Started
 
@@ -9,57 +9,52 @@ bun install
 bun run dev
 ```
 
-> **Note:** If you see `ReadableStream has already been used` errors, run with
-> `OTEL_SDK_DISABLED=true bun run dev` — this is a known SDK issue (#701).
-
 Open [localhost:3500](http://localhost:3500) for the frontend, or [localhost:3500/workbench](http://localhost:3500/workbench) to test the agent directly.
 
 ## What's Inside
 
-An agent that uses the interactive sandbox lifecycle (`create` -> `execute` x N -> `readFile` -> `destroy`) instead of one-shot `ctx.sandbox.run()`. This gives full control over multi-step browser interactions:
+The agent runs a `generateText` loop with three tools: `browser` (screenshot, click, fill, scroll, and other actions via a single action-dispatch tool), `store_finding` (saves discoveries to KV and vector storage), and `finish_exploration` (signals the loop to stop):
 
 ```typescript
-const sandbox = await ctx.sandbox.create({
-  runtime: 'agent-browser:latest',
-  network: { enabled: true },
-  resources: { memory: '1Gi', cpu: '1000m' },
-  timeout: { idle: '10m', execution: '30s' },
+const result = await generateText({
+  model: openai('gpt-5-nano'),
+  system: buildSystemPrompt(options.url, hints),
+  prompt: pastVisits
+    ? `Begin exploring ${options.url}. Past visits:\n${pastVisits}\nExplore different areas.`
+    : `Begin exploring ${options.url}. Start with browser({ action: "screenshot" }).`,
+  tools,
+  stopWhen: [stepCountIs(steps), hasToolCall('finish_exploration')],
+  abortSignal: options.abortSignal,
 });
-
-try {
-  await exec(sandbox, ['agent-browser', 'open', input.url]);
-  await exec(sandbox, ['agent-browser', 'screenshot', 'step-1.png']);
-  const screenshot = await readFileAsBase64(sandbox, 'step-1.png');
-
-  const snapshotExec = await exec(sandbox, ['agent-browser', 'snapshot', '-i']);
-  const accessibilityTree = await getStdout(snapshotExec);
-  // LLM analyzes the tree and picks elements to interact with...
-} finally {
-  await sandbox.destroy();
-}
 ```
 
-The agent opens a URL, reads the page's accessibility tree, and uses an LLM to decide what to click next. It repeats this for N steps (default: 4), taking screenshots at each step and returning a timeline with AI commentary.
+The sandbox uses `agent-browser:latest` and stays open across steps (create once, execute N times, destroy). Past visits are loaded from vector storage before the loop starts and injected as prompt context, so the model explores different areas on repeat visits.
 
-The frontend lets users pick from preselected targets or enter a custom URL, then displays the exploration as a step-by-step timeline with screenshots.
+The frontend lets users pick from preselected targets or enter a custom URL, then displays the run as a real-time tool-call timeline with screenshots inline. Sessions persist: **Explore More** reuses the same sandbox for additional steps, and **End Session** destroys it.
 
 ## Project Structure
 
 ```
 src/
 ├── agent/web-explorer/
-│   ├── agent.ts      # LLM-driven browser exploration with interactive sandbox
+│   ├── agent.ts      # Agent handler (calls explore, returns AgentOutput)
 │   └── index.ts
-├── api/index.ts      # POST /api/explore
+├── api/index.ts      # SSE streaming + session management + POST endpoint
 ├── lib/
-│   ├── types.ts      # Shared I/O schemas (ExplorationStep, AgentInput/Output)
-│   └── targets.ts    # Preselected target URLs
+│   ├── explorer.ts   # 3 tools + generateText loop + system prompt
+│   ├── types.ts      # Stream events + I/O schemas (@agentuity/schema)
+│   ├── storage.ts    # S3 screenshot upload via Bun native s3
+│   ├── targets.ts    # Preselected target URLs with hints
+│   └── url.ts        # URL normalization + screenshot key generation
 └── web/
-    ├── App.tsx        # React UI with timeline view
-    └── ...
+    ├── App.tsx        # React UI with tool-call timeline + session controls
+    └── App.css        # Agentuity brand theme
 ```
 
 ## Related
 
 - [Sandbox docs](https://agentuity.dev/services/sandbox)
+- [KV Storage docs](https://agentuity.dev/services/storage/key-value)
+- [Vector Storage docs](https://agentuity.dev/services/storage/vector)
+- [Object Storage docs](https://agentuity.dev/services/storage/object)
 - [Agentuity SDK](https://github.com/agentuity/sdk)
