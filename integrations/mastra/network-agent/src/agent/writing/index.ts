@@ -4,9 +4,23 @@
  */
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
-import OpenAI from 'openai';
+import { Agent } from '@mastra/core/agent';
 
-const client = new OpenAI();
+// Bridge Agentuity AI Gateway → Mastra's model resolution
+if (!process.env.OPENAI_API_KEY && process.env.AGENTUITY_SDK_KEY) {
+	const gw = process.env.AGENTUITY_AIGATEWAY_URL || process.env.AGENTUITY_TRANSPORT_URL || 'https://agentuity.ai';
+	process.env.OPENAI_API_KEY = process.env.AGENTUITY_SDK_KEY;
+	process.env.OPENAI_BASE_URL = `${gw}/gateway/openai`;
+}
+
+// Mastra sub-agent for writing (exported for use by the network routing agent)
+export const writingMastraAgent = new Agent({
+	id: 'writing-agent',
+	name: 'Writing Agent',
+	instructions:
+		'You are a professional writer. Transform research insights into well-structured content. Write in full paragraphs, no bullet points. Create a cohesive narrative that flows naturally. Include all the key insights in your writing. Write in an engaging, informative style. Target 200-400 words.',
+	model: 'openai/gpt-4o-mini',
+});
 
 const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
 
@@ -32,34 +46,25 @@ const agent = createAgent('writing', {
 		input: WritingInput,
 		output: WritingOutput,
 	},
-	handler: async (ctx, { topic, insights, style = 'blog', model = 'gpt-5-mini' }) => {
+	handler: async (ctx, { topic, insights, style = 'blog' }) => {
 		ctx.logger.info('──── Writing Agent ────');
-		ctx.logger.info({ topic, style, model, insightCount: insights.length });
+		ctx.logger.info({ topic, style, insightCount: insights.length });
 
 		const insightsList = insights.map((i) => `- ${i}`).join('\n');
 
-		const prompt = `You are a professional writer. Transform the following research insights into a well-structured ${style}.
+		const prompt = `Transform the following research insights into a well-structured ${style}.
 
 Topic: ${topic}
 
 Research Insights:
 ${insightsList}
 
-Instructions:
-- Write in full paragraphs, no bullet points
-- Create a cohesive narrative that flows naturally
-- Include all the key insights in your writing
-- Write in an engaging, informative style
-- Target 200-400 words
+Write in full paragraphs, no bullet points. Create a cohesive narrative that flows naturally. Target 200-400 words.
 
 Write the ${style}:`;
 
-		const completion = await client.chat.completions.create({
-			model,
-			messages: [{ role: 'user', content: prompt }],
-		});
-
-		const content = completion.choices[0]?.message?.content ?? '';
+		const result = await writingMastraAgent.generate(prompt);
+		const content = result.text ?? '';
 		const wordCount = content.split(/\s+/).length;
 
 		ctx.logger.info('Writing complete', { wordCount });

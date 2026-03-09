@@ -2,33 +2,57 @@
  * Approval Agent: Demonstrates Mastra's agent approval patterns in Agentuity.
  *
  * Mastra's agent approval enables human-in-the-loop oversight for tool calls:
- * - Agent-level approval: All tool calls require approval (requireToolApproval)
- * - Tool-level approval: Specific tools require approval (requireApproval on tool)
+ * - Agent-level approval: All tool calls require approval (requireToolApproval in generate options)
+ * - Tool-level approval: Specific tools require approval (requireApproval on createTool)
  * - Suspend with context: Tools provide reasons for why approval is needed
  *
  * Flow:
- * 1. User sends a request → agent determines which tool to call via LLM
- * 2. If tool requires approval → suspend execution, store pending state
+ * 1. User sends a request → Mastra Agent determines which tool to call via LLM
+ * 2. If tool requires approval → finishReason === 'suspended', store runId in thread state
  * 3. User approves or declines via API
- * 4. If approved → execute tool, return LLM response with result
- * 5. If declined → return LLM response acknowledging the decline
+ * 4. If approved → agent.approveToolCallGenerate({ runId }), return LLM response
+ * 5. If declined → agent.declineToolCallGenerate({ runId }), return LLM response
  *
  * @see https://mastra.ai/docs/agents/agent-tool-approval
  */
 
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
-import OpenAI from 'openai';
+import { Agent } from '@mastra/core/agent';
 
-import { TOOLS_REQUIRING_APPROVAL, TOOL_SUSPEND_REASONS, executeTool, toolDefinitions } from './tools';
+// Bridge Agentuity AI Gateway → Mastra's model resolution
+if (!process.env.OPENAI_API_KEY && process.env.AGENTUITY_SDK_KEY) {
+	const gw = process.env.AGENTUITY_AIGATEWAY_URL || process.env.AGENTUITY_TRANSPORT_URL || 'https://agentuity.ai';
+	process.env.OPENAI_API_KEY = process.env.AGENTUITY_SDK_KEY;
+	process.env.OPENAI_BASE_URL = `${gw}/gateway/openai`;
+}
 
-/**
- * AI Gateway: Routes requests to OpenAI, Anthropic, and other LLM providers.
- * One SDK key, unified observability and billing; no separate API keys needed.
- */
-const client = new OpenAI();
+import {
+	getWeatherTool,
+	searchRecordsTool,
+	deleteUserDataTool,
+	sendNotificationTool,
+	TOOLS_REQUIRING_APPROVAL,
+	TOOL_SUSPEND_REASONS,
+} from './tools';
 
-const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
+// ============================================================================
+// Mastra Agent
+// ============================================================================
+
+const approvalMastraAgent = new Agent({
+	id: 'approval-agent',
+	name: 'Approval Agent',
+	instructions:
+		'You are a helpful assistant with access to tools. Use the appropriate tool when the user asks you to perform an action. Available tools: get-weather (weather lookups), search-records (database search), delete-user-data (permanently delete user data), send-notification (send email/SMS).',
+	model: 'openai/gpt-4o-mini',
+	tools: {
+		'get-weather': getWeatherTool,
+		'search-records': searchRecordsTool,
+		'delete-user-data': deleteUserDataTool,
+		'send-notification': sendNotificationTool,
+	},
+});
 
 // ============================================================================
 // Schemas
@@ -38,12 +62,12 @@ const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
 export const PendingApprovalSchema = s.object({
 	id: s.string().describe('Unique approval request ID'),
 	toolName: s.string().describe('Name of the tool requiring approval'),
-	toolCallId: s.string().describe('OpenAI tool call ID for resuming the conversation'),
+	toolCallId: s.string().describe('Mastra tool call ID for resuming the run'),
 	toolArgs: s.string().describe('JSON-encoded tool arguments'),
 	reason: s.string().describe('Why this tool call needs approval'),
 	status: s.string().describe('Current status: pending, approved, or declined'),
 	requestedAt: s.string().describe('ISO timestamp when approval was requested'),
-	conversationState: s.string().describe('JSON-encoded conversation messages for resumption'),
+	runId: s.string().describe('Mastra run ID for resuming the suspended agent'),
 	model: s.string().describe('Model used for the original request'),
 });
 
@@ -61,6 +85,8 @@ export const ApprovalHistoryEntrySchema = s.object({
 });
 
 export type ApprovalHistoryEntry = s.infer<typeof ApprovalHistoryEntrySchema>;
+
+const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
 
 export const AgentInput = s.object({
 	text: s.string().describe('The user request to process'),
@@ -92,101 +118,67 @@ const agent = createAgent('approval', {
 		input: AgentInput,
 		output: AgentOutput,
 	},
-	handler: async (ctx, { text, model = 'gpt-5-nano', requireToolApproval = false }) => {
+	handler: async (ctx, { text, model: _model = 'gpt-5-nano', requireToolApproval = false }) => {
 		ctx.logger.info('──── Approval Agent ────');
-		ctx.logger.info({ textLength: text.length, model, requireToolApproval });
+		ctx.logger.info({ textLength: text.length, requireToolApproval });
 		ctx.logger.info('Request IDs', {
 			threadId: ctx.thread.id,
 			sessionId: ctx.sessionId,
 		});
 
-		// Build initial messages
-		const messages: OpenAI.ChatCompletionMessageParam[] = [
-			{
-				role: 'system',
-				content:
-					'You are a helpful assistant with access to tools. Use the appropriate tool when the user asks you to perform an action. Available tools: get_weather (weather lookups), search_records (database search), delete_user_data (permanently delete user data), send_notification (send email/SMS).',
-			},
-			{ role: 'user', content: text },
-		];
-
-		// Call LLM with tool definitions
-		const completion = await client.chat.completions.create({
-			model,
-			messages,
-			tools: toolDefinitions,
+		// Call the Mastra Agent with requireToolApproval flag
+		// When requireToolApproval is true, ALL tool calls are suspended for approval.
+		// Tools with requireApproval: true are always suspended regardless of this flag.
+		const result = await approvalMastraAgent.generate(text, {
+			requireToolApproval,
 		});
 
-		const choice = completion.choices[0];
-		const tokens = completion.usage?.total_tokens ?? 0;
-
-		// If the LLM didn't request a tool call, return the text response
-		if (choice?.finish_reason !== 'tool_calls' || !choice.message.tool_calls?.length) {
-			ctx.logger.info('No tool call requested, returning text response');
-
-			return {
-				response: choice?.message?.content ?? 'I could not process that request.',
-				suspended: false,
-				threadId: ctx.thread.id,
-				sessionId: ctx.sessionId,
-				tokens,
-			};
-		}
-
-		// Extract the tool call (narrow to function type since we only define function tools)
-		const toolCall = choice.message.tool_calls[0]!;
-		if (toolCall.type !== 'function') {
-			return {
-				response: 'Unexpected tool call type.',
-				suspended: false,
-				threadId: ctx.thread.id,
-				sessionId: ctx.sessionId,
-				tokens,
-			};
-		}
-		const toolName = toolCall.function.name;
-		const toolArgs = JSON.parse(toolCall.function.arguments) as Record<string, string>;
-
-		ctx.logger.info('Tool call requested', { toolName, toolArgs });
+		const tokens = (result.usage?.inputTokens ?? 0) + (result.usage?.outputTokens ?? 0);
 
 		// ====================================================================
-		// Approval Check
-		// Mirrors Mastra's dual approval model:
-		// - requireToolApproval (agent-level): all tools need approval
-		// - TOOLS_REQUIRING_APPROVAL (tool-level): specific tools need approval
+		// Check if the agent was suspended for tool approval
+		// finishReason === 'suspended' means a tool call needs human approval
 		// ====================================================================
+		if (result.finishReason === 'suspended' && result.suspendPayload && result.runId) {
+			const suspendPayload = result.suspendPayload as {
+				toolCallId?: string;
+				toolName?: string;
+				args?: Record<string, unknown>;
+			};
 
-		const needsApproval = requireToolApproval || TOOLS_REQUIRING_APPROVAL.has(toolName);
+			const toolName = suspendPayload.toolName ?? 'unknown';
+			const toolCallId = suspendPayload.toolCallId ?? '';
+			const toolArgs = suspendPayload.args ?? {};
 
-		if (needsApproval) {
-			// Suspend: store pending approval in thread state
-			// This mirrors Mastra's suspend() pattern where the tool call is paused
-			const approvalId = `approval_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+			ctx.logger.info('Tool call suspended for approval', {
+				toolName,
+				toolCallId,
+				runId: result.runId,
+			});
 
-			// Determine suspend reason (tool-level context or generic agent-level message)
+			// Determine suspend reason: tool-level context or agent-level message
 			const reason =
-				TOOL_SUSPEND_REASONS[toolName] ??
-				`Tool "${toolName}" requires approval before execution (agent-level approval enabled).`;
+				TOOLS_REQUIRING_APPROVAL.has(toolName) && TOOL_SUSPEND_REASONS[toolName]
+					? TOOL_SUSPEND_REASONS[toolName]
+					: `Tool "${toolName}" requires approval before execution (agent-level approval enabled).`;
+
+			const approvalId = `approval_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 			const pendingApproval: PendingApproval = {
 				id: approvalId,
 				toolName,
-				toolCallId: toolCall.id,
+				toolCallId,
 				toolArgs: JSON.stringify(toolArgs),
 				reason,
 				status: 'pending',
 				requestedAt: new Date().toISOString(),
-				// Store conversation state for resumption (approve/decline)
-				conversationState: JSON.stringify({
-					messages,
-					assistantMessage: choice.message,
-				}),
-				model,
+				runId: result.runId,
+				model: 'gpt-4o-mini',
 			};
 
 			await ctx.thread.state.set('pendingApproval', pendingApproval);
 
-			ctx.logger.info('Tool call suspended for approval', { approvalId, toolName, reason });
+			ctx.logger.info('Approval state stored', { approvalId, toolName, runId: result.runId });
 
 			return {
 				response: `Tool "${toolName}" requires approval. ${reason}`,
@@ -199,56 +191,48 @@ const agent = createAgent('approval', {
 		}
 
 		// ====================================================================
-		// Immediate Execution (no approval required)
+		// No suspension — tool executed immediately or no tool needed
 		// ====================================================================
+		const response = result.text ?? 'I could not process that request.';
 
-		ctx.logger.info('Executing tool immediately (no approval required)', { toolName });
+		// Determine if a tool was executed by checking toolResults
+		// ToolResultChunk has shape: { type: 'tool-result', payload: { toolName, args, result, ... } }
+		const firstToolResult = result.toolResults?.[0];
+		const firstToolPayload = firstToolResult?.payload as
+			| { toolName?: string; args?: Record<string, unknown> }
+			| undefined;
+		const toolExecuted = firstToolPayload?.toolName ?? undefined;
 
-		const toolResult = await executeTool(toolName, toolArgs);
+		if (toolExecuted) {
+			ctx.logger.info('Tool executed immediately (no approval required)', { toolExecuted });
 
-		// Continue conversation with tool result
-		const followUpMessages: OpenAI.ChatCompletionMessageParam[] = [
-			...messages,
-			choice.message,
-			{
-				role: 'tool',
-				tool_call_id: toolCall.id,
-				content: JSON.stringify(toolResult.data),
-			},
-		];
+			// Store in approval history (auto-approved)
+			await ctx.thread.state.push(
+				'approvalHistory',
+				{
+					id: `auto_${Date.now()}`,
+					toolName: toolExecuted,
+					toolArgs: JSON.stringify(firstToolPayload?.args ?? {}),
+					status: 'approved',
+					requestedAt: new Date().toISOString(),
+					resolvedAt: new Date().toISOString(),
+					tokens,
+				} satisfies ApprovalHistoryEntry,
+				10
+			);
+		} else {
+			ctx.logger.info('No tool call requested, returning text response');
+		}
 
-		const followUp = await client.chat.completions.create({
-			model,
-			messages: followUpMessages,
-		});
-
-		const totalTokens = tokens + (followUp.usage?.total_tokens ?? 0);
-		const response = followUp.choices[0]?.message?.content ?? '';
-
-		// Store in approval history (auto-approved)
-		await ctx.thread.state.push(
-			'approvalHistory',
-			{
-				id: `auto_${Date.now()}`,
-				toolName,
-				toolArgs: JSON.stringify(toolArgs),
-				status: 'approved',
-				requestedAt: new Date().toISOString(),
-				resolvedAt: new Date().toISOString(),
-				tokens: totalTokens,
-			} satisfies ApprovalHistoryEntry,
-			10
-		);
-
-		ctx.logger.info('Tool executed successfully', { toolName, tokens: totalTokens });
+		ctx.logger.info('Agent response complete', { tokens });
 
 		return {
 			response,
 			suspended: false,
-			toolExecuted: toolName,
+			toolExecuted,
 			threadId: ctx.thread.id,
 			sessionId: ctx.sessionId,
-			tokens: totalTokens,
+			tokens,
 		};
 	},
 });
@@ -258,41 +242,28 @@ const agent = createAgent('approval', {
 // ============================================================================
 
 /**
- * Approves a pending tool call and continues the LLM conversation.
- * Mirrors Mastra's agent.approveToolCall({ runId }) / agent.approveToolCallGenerate().
+ * Approves a pending tool call and continues the Mastra agent's execution.
+ * Uses agent.approveToolCallGenerate() — mirrors Mastra's approveToolCall pattern.
  */
 export async function approveToolCall(
 	pending: PendingApproval,
-	thread: { id: string; state: { set: (key: string, value: unknown) => Promise<void>; push: (key: string, value: unknown, limit: number) => Promise<void>; delete: (key: string) => Promise<void> } }
+	thread: {
+		id: string;
+		state: {
+			set: (key: string, value: unknown) => Promise<void>;
+			push: (key: string, value: unknown, limit: number) => Promise<void>;
+			delete: (key: string) => Promise<void>;
+		};
+	}
 ): Promise<AgentOutputType> {
-	const { messages, assistantMessage } = JSON.parse(pending.conversationState) as {
-		messages: OpenAI.ChatCompletionMessageParam[];
-		assistantMessage: OpenAI.ChatCompletionMessage;
-	};
-
-	const toolArgs = JSON.parse(pending.toolArgs) as Record<string, string>;
-
-	// Execute the tool
-	const toolResult = await executeTool(pending.toolName, toolArgs);
-
-	// Continue conversation with tool result
-	const followUpMessages: OpenAI.ChatCompletionMessageParam[] = [
-		...messages,
-		assistantMessage,
-		{
-			role: 'tool',
-			tool_call_id: pending.toolCallId,
-			content: JSON.stringify(toolResult.data),
-		},
-	];
-
-	const followUp = await client.chat.completions.create({
-		model: pending.model,
-		messages: followUpMessages,
+	// Resume the Mastra agent using the stored runId
+	const result = await approvalMastraAgent.approveToolCallGenerate({
+		runId: pending.runId,
+		toolCallId: pending.toolCallId || undefined,
 	});
 
-	const tokens = followUp.usage?.total_tokens ?? 0;
-	const response = followUp.choices[0]?.message?.content ?? '';
+	const tokens = (result.usage?.inputTokens ?? 0) + (result.usage?.outputTokens ?? 0);
+	const response = result.text ?? '';
 
 	// Move to history
 	await thread.state.push(
@@ -323,39 +294,28 @@ export async function approveToolCall(
 }
 
 /**
- * Declines a pending tool call and lets the LLM respond accordingly.
- * Mirrors Mastra's agent.declineToolCall({ runId }) / agent.declineToolCallGenerate().
+ * Declines a pending tool call and lets the Mastra agent respond accordingly.
+ * Uses agent.declineToolCallGenerate() — mirrors Mastra's declineToolCall pattern.
  */
 export async function declineToolCall(
 	pending: PendingApproval,
-	thread: { id: string; state: { set: (key: string, value: unknown) => Promise<void>; push: (key: string, value: unknown, limit: number) => Promise<void>; delete: (key: string) => Promise<void> } }
+	thread: {
+		id: string;
+		state: {
+			set: (key: string, value: unknown) => Promise<void>;
+			push: (key: string, value: unknown, limit: number) => Promise<void>;
+			delete: (key: string) => Promise<void>;
+		};
+	}
 ): Promise<AgentOutputType> {
-	const { messages, assistantMessage } = JSON.parse(pending.conversationState) as {
-		messages: OpenAI.ChatCompletionMessageParam[];
-		assistantMessage: OpenAI.ChatCompletionMessage;
-	};
-
-	// Provide a tool result indicating the call was declined
-	const followUpMessages: OpenAI.ChatCompletionMessageParam[] = [
-		...messages,
-		assistantMessage,
-		{
-			role: 'tool',
-			tool_call_id: pending.toolCallId,
-			content: JSON.stringify({
-				error: 'Tool call was declined by user.',
-				declined: true,
-			}),
-		},
-	];
-
-	const followUp = await client.chat.completions.create({
-		model: pending.model,
-		messages: followUpMessages,
+	// Resume the Mastra agent with a decline — it responds acknowledging the tool was not executed
+	const result = await approvalMastraAgent.declineToolCallGenerate({
+		runId: pending.runId,
+		toolCallId: pending.toolCallId || undefined,
 	});
 
-	const tokens = followUp.usage?.total_tokens ?? 0;
-	const response = followUp.choices[0]?.message?.content ?? '';
+	const tokens = (result.usage?.inputTokens ?? 0) + (result.usage?.outputTokens ?? 0);
+	const response = result.text ?? '';
 
 	// Move to history
 	await thread.state.push(

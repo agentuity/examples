@@ -1,20 +1,48 @@
 /**
  * Day Planner Agent: Uses AI to generate structured daily plans.
  * Demonstrates structured output with well-defined schemas.
- * Uses @agentuity/schema - a lightweight, built-in schema library.
+ * Uses @agentuity/schema for the Agentuity I/O layer and Mastra Agent
+ * with Zod for type-safe structured output from the LLM.
  */
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
-import OpenAI from 'openai';
+import { Agent } from '@mastra/core/agent';
+import { z } from 'zod';
 
-/**
- * AI Gateway: Routes requests to OpenAI, Anthropic, and other LLM providers.
- * One SDK key, unified observability and billing; no separate API keys needed.
- */
-const client = new OpenAI();
+// Bridge Agentuity AI Gateway → Mastra's model resolution
+if (!process.env.OPENAI_API_KEY && process.env.AGENTUITY_SDK_KEY) {
+	const gw = process.env.AGENTUITY_AIGATEWAY_URL || process.env.AGENTUITY_TRANSPORT_URL || 'https://agentuity.ai';
+	process.env.OPENAI_API_KEY = process.env.AGENTUITY_SDK_KEY;
+	process.env.OPENAI_BASE_URL = `${gw}/gateway/openai`;
+}
 
 const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
 const PLAN_TYPES = ['work', 'personal', 'mixed'] as const;
+
+// ---------------------------------------------------------------------------
+// Zod schema — used by Mastra's structuredOutput for type-safe LLM responses
+// ---------------------------------------------------------------------------
+const DayPlanSchema = z.object({
+	plan: z.array(
+		z.object({
+			name: z.string().describe('Name of the time block (e.g., Morning, Afternoon, Evening)'),
+			activities: z.array(
+				z.object({
+					name: z.string().describe('Name of the activity'),
+					startTime: z.string().describe('Start time in HH:MM format'),
+					endTime: z.string().describe('End time in HH:MM format'),
+					description: z.string().describe('Brief description of the activity'),
+					priority: z.enum(['high', 'medium', 'low']).describe('Priority level'),
+				})
+			).describe('Activities in this time block'),
+		})
+	).describe('Time blocks making up the day plan'),
+	summary: z.string().describe('Brief summary of the planned day'),
+});
+
+// ---------------------------------------------------------------------------
+// @agentuity/schema types — used for Agentuity I/O validation and history
+// ---------------------------------------------------------------------------
 
 // Activity schema - structured output for each planned activity
 export const ActivitySchema = s.object({
@@ -64,7 +92,25 @@ export const AgentOutput = s.object({
 	tokens: s.number().describe('Tokens used for this plan'),
 });
 
-// Agent definition with automatic schema validation
+// ---------------------------------------------------------------------------
+// Mastra Agent — handles the LLM call with structured output via Zod schema
+// ---------------------------------------------------------------------------
+const plannerMastraAgent = new Agent({
+	id: 'day-planner',
+	name: 'Day Planner',
+	instructions: `You are a day planning assistant. Create a structured daily plan based on the user's description.
+
+Guidelines:
+- Create 2-4 time blocks (Morning, Afternoon, Evening, Night)
+- Each block should have 2-5 activities
+- Be realistic with time estimates
+- Adjust the focus based on the plan type provided in the request`,
+	model: 'openai/gpt-4o-mini',
+});
+
+// ---------------------------------------------------------------------------
+// Agentuity agent wrapper — keeps schema validation and ctx integrations
+// ---------------------------------------------------------------------------
 const agent = createAgent('day-planner', {
 	description: 'Creates structured daily plans from natural language descriptions',
 	schema: {
@@ -79,68 +125,39 @@ const agent = createAgent('day-planner', {
 			sessionId: ctx.sessionId,
 		});
 
-		const systemPrompt = `You are a day planning assistant. Create a structured daily plan based on the user's description.
+		const planTypeDescription =
+			planType === 'work'
+				? 'professional tasks'
+				: planType === 'personal'
+					? 'personal activities'
+					: 'a mix of work and personal activities';
 
-Return a JSON object with this exact structure:
-{
-  "plan": [
-    {
-      "name": "Morning",
-      "activities": [
-        {
-          "name": "Activity name",
-          "startTime": "HH:MM",
-          "endTime": "HH:MM",
-          "description": "Brief description",
-          "priority": "high" | "medium" | "low"
-        }
-      ]
-    }
-  ],
-  "summary": "Brief summary of the day"
-}
+		// Use Mastra's structuredOutput to get a type-safe, parsed response
+		const result = await plannerMastraAgent.generate(
+			`Plan type: ${planType} (focus on ${planTypeDescription}).\n\n${prompt}`,
+			{ structuredOutput: { schema: DayPlanSchema } }
+		);
 
-Guidelines:
-- Create 2-4 time blocks (Morning, Afternoon, Evening, Night)
-- Each block should have 2-5 activities
-- Plan type is: ${planType} (focus on ${planType === 'work' ? 'professional tasks' : planType === 'personal' ? 'personal activities' : 'a mix of both'})
-- Be realistic with time estimates
-- Return ONLY valid JSON, no additional text`;
-
-		const completion = await client.chat.completions.create({
-			model,
-			messages: [
-				{ role: 'system', content: systemPrompt },
-				{ role: 'user', content: prompt },
+		const parsedPlan = result.object ?? {
+			plan: [
+				{
+					name: 'Morning',
+					activities: [
+						{
+							name: 'Plan your day',
+							startTime: '09:00',
+							endTime: '09:30',
+							description: 'Take time to organize your schedule',
+							priority: 'high' as const,
+						},
+					],
+				},
 			],
-			response_format: { type: 'json_object' },
-		});
+			summary: 'A simple day plan to get started.',
+		};
 
-		const content = completion.choices[0]?.message?.content ?? '{}';
-		const tokens = completion.usage?.total_tokens ?? 0;
-
-		let parsedPlan: { plan: TimeBlock[]; summary: string };
-		try {
-			parsedPlan = JSON.parse(content);
-		} catch {
-			parsedPlan = {
-				plan: [
-					{
-						name: 'Morning',
-						activities: [
-							{
-								name: 'Plan your day',
-								startTime: '09:00',
-								endTime: '09:30',
-								description: 'Take time to organize your schedule',
-								priority: 'high' as const,
-							},
-						],
-					},
-				],
-				summary: 'A simple day plan to get started.',
-			};
-		}
+		// Token usage — Mastra surfaces this via result.usage when available
+		const tokens = (result.usage?.totalTokens ?? 0);
 
 		const totalActivities = parsedPlan.plan.reduce(
 			(sum, block) => sum + block.activities.length,

@@ -11,31 +11,31 @@ import type { InferInput, InferOutput } from '@agentuity/core';
 
 /**
  * Input type for activities agent
- * An assistant that suggests activities based on weather conditions
+ * An assistant that suggests activities based on weather conditions using Mastra tools
  */
 export type ActivitiesInput = InferInput<typeof activities['inputSchema']>;
 
 /**
  * Output type for activities agent
- * An assistant that suggests activities based on weather conditions
+ * An assistant that suggests activities based on weather conditions using Mastra tools
  */
 export type ActivitiesOutput = InferOutput<typeof activities['outputSchema']>;
 
 /**
  * Input schema type for activities agent
- * An assistant that suggests activities based on weather conditions
+ * An assistant that suggests activities based on weather conditions using Mastra tools
  */
 export type ActivitiesInputSchema = typeof activities['inputSchema'];
 
 /**
  * Output schema type for activities agent
- * An assistant that suggests activities based on weather conditions
+ * An assistant that suggests activities based on weather conditions using Mastra tools
  */
 export type ActivitiesOutputSchema = typeof activities['outputSchema'];
 
 /**
  * Agent type for activities
- * An assistant that suggests activities based on weather conditions
+ * An assistant that suggests activities based on weather conditions using Mastra tools
  */
 export type ActivitiesAgent = AgentRunner<
 	ActivitiesInputSchema,
@@ -45,31 +45,31 @@ export type ActivitiesAgent = AgentRunner<
 
 /**
  * Input type for weather agent
- * A weather assistant that uses tools to fetch real weather data
+ * A weather assistant that uses Mastra tools to fetch real weather data
  */
 export type WeatherInput = InferInput<typeof weather['inputSchema']>;
 
 /**
  * Output type for weather agent
- * A weather assistant that uses tools to fetch real weather data
+ * A weather assistant that uses Mastra tools to fetch real weather data
  */
 export type WeatherOutput = InferOutput<typeof weather['outputSchema']>;
 
 /**
  * Input schema type for weather agent
- * A weather assistant that uses tools to fetch real weather data
+ * A weather assistant that uses Mastra tools to fetch real weather data
  */
 export type WeatherInputSchema = typeof weather['inputSchema'];
 
 /**
  * Output schema type for weather agent
- * A weather assistant that uses tools to fetch real weather data
+ * A weather assistant that uses Mastra tools to fetch real weather data
  */
 export type WeatherOutputSchema = typeof weather['outputSchema'];
 
 /**
  * Agent type for weather
- * A weather assistant that uses tools to fetch real weather data
+ * A weather assistant that uses Mastra tools to fetch real weather data
  */
 export type WeatherAgent = AgentRunner<
 	WeatherInputSchema,
@@ -106,13 +106,13 @@ export type WeatherAgent = AgentRunner<
 export const AgentDefinitions = {
 	/**
 	 * activities
-	 * An assistant that suggests activities based on weather conditions
+	 * An assistant that suggests activities based on weather conditions using Mastra tools
 	 * @type {ActivitiesAgent}
 	 */
 	activities,
 	/**
 	 * weather
-	 * A weather assistant that uses tools to fetch real weather data
+	 * A weather assistant that uses Mastra tools to fetch real weather data
 	 * @type {WeatherAgent}
 	 */
 	weather,

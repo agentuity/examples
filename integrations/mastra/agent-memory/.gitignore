@@ -41,3 +41,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]\*.json
 # Agentuity build files
 
 .agentuity
+
+# Mastra local database
+
+mastra.db
+mastra.db-shm
+mastra.db-wal
