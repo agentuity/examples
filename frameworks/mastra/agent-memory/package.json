@@ -22,9 +22,7 @@
     "@mastra/core": "latest",
     "@mastra/libsql": "latest",
     "@mastra/memory": "latest",
-    "groq-sdk": "latest",
-    "openai": "latest",
-    "react": "^19.2.0",
+"react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^3.23.0"
   },

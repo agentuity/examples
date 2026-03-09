@@ -1,145 +1,89 @@
-# Structured Output
+# Mastra Structured Output
 
-This example demonstrates how to use structured output with Agentuity agents. Structured output lets an agent return an object that matches a defined schema instead of returning plain text.
+Type-safe structured LLM responses using Mastra's `structuredOutput` with Zod schemas, deployed on Agentuity with `@agentuity/schema` for I/O validation.
 
-## Overview
+## How It Works
 
-The Day Planner agent takes a natural language description of your day and returns a structured plan with:
-- Time blocks (Morning, Afternoon, Evening)
-- Activities with start/end times, descriptions, and priorities
-- A summary of the planned day
+**Mastra handles**: structured output generation via `structuredOutput: { schema: DayPlanSchema }` in `agent.generate()`, Zod schema validation, and returning a parsed `result.object`.
 
-## When to Use Structured Output
+**Agentuity handles**: I/O validation with `@agentuity/schema`, plan history in thread state, API routing, and deployment.
 
-Use structured output when you need an agent to return data objects rather than text. Having well-defined fields makes it simpler to:
-- Render data in UI components
-- Process results in application logic
-- Make API calls with the extracted values
-- Store and query the data
-
-## Defining Schemas
-
-Agents define their output structure using `@agentuity/schema`:
-
-```typescript
-import { s } from '@agentuity/schema';
-
-// Define nested schemas for complex structures
-const ActivitySchema = s.object({
-  name: s.string().describe('Name of the activity'),
-  startTime: s.string().describe('Start time in HH:MM format'),
-  endTime: s.string().describe('End time in HH:MM format'),
-  description: s.string().describe('Brief description'),
-  priority: s.enum(['high', 'medium', 'low']).describe('Priority level'),
-});
-
-const TimeBlockSchema = s.object({
-  name: s.string().describe('Time block name'),
-  activities: s.array(ActivitySchema).describe('Activities in this block'),
-});
-
-// Use in agent output schema
-const AgentOutput = s.object({
-  plan: s.array(TimeBlockSchema).describe('Structured daily plan'),
-  summary: s.string().describe('Brief summary'),
-  totalActivities: s.number().describe('Total activities planned'),
-});
-```
-
-## Project Structure
+## Architecture
 
 ```
 structured-output/
 ├── src/
 │   ├── agent/
 │   │   └── day-planner/
-│   │       ├── index.ts    # Agent with structured output
-│   │       └── eval.ts     # Evaluations for structure validation
+│   │       └── index.ts      # Mastra Agent + Zod schema + structuredOutput
 │   ├── api/
-│   │   └── index.ts        # API routes
+│   │   └── index.ts          # Plan + history routes
+│   ├── lib/
+│   │   └── gateway.ts        # AI Gateway bridge
 │   └── web/
-│       ├── App.tsx         # React UI for the planner
-│       ├── App.css         # Styling
-│       └── index.html      # HTML template
-├── package.json
-├── tsconfig.json
-└── agentuity.json
+│       └── App.tsx           # Planner UI
+├── app.ts
+└── package.json
 ```
 
-## Key Features
+## Key Code Patterns
 
-### Schema-Driven Development
-
-The agent uses `@agentuity/schema` to define both input and output shapes:
+### Zod schema for structured output
 
 ```typescript
-const agent = createAgent('day-planner', {
-  description: 'Creates structured daily plans',
-  schema: {
-    input: AgentInput,   // Validates incoming requests
-    output: AgentOutput, // Shapes the response
-  },
-  handler: async (ctx, input) => {
-    // Return data matching AgentOutput schema
-    return {
-      plan: [...],
-      summary: '...',
-      totalActivities: 10,
-    };
-  },
+import { z } from 'zod';
+
+const DayPlanSchema = z.object({
+  plan: z.array(
+    z.object({
+      name: z.string().describe('Time block name'),
+      activities: z.array(
+        z.object({
+          name: z.string(),
+          startTime: z.string().describe('HH:MM format'),
+          endTime: z.string().describe('HH:MM format'),
+          description: z.string(),
+          priority: z.enum(['high', 'medium', 'low']),
+        })
+      ),
+    })
+  ),
+  summary: z.string(),
 });
 ```
 
-### JSON Mode with LLMs
-
-The agent uses OpenAI's JSON mode to ensure structured responses:
+### Using structuredOutput in generate
 
 ```typescript
-const completion = await client.chat.completions.create({
-  model,
-  messages: [...],
-  response_format: { type: 'json_object' },
-});
+const result = await plannerMastraAgent.generate(
+  `Plan type: ${planType}.\n\n${prompt}`,
+  { structuredOutput: { schema: DayPlanSchema } }
+);
+
+// result.object is typed and validated against DayPlanSchema
+const plan = result.object;
+console.log(plan.summary);
+console.log(plan.plan[0].activities);
 ```
 
-### Type-Safe API Routes
-
-Routes automatically validate input/output against schemas:
+### Dual schema approach
 
 ```typescript
-api.post('/plan', dayPlanner.validator(), async (c) => {
-  const data = c.req.valid('json'); // Type-safe, validated input
-  return c.json(await dayPlanner.run(data));
+// Zod schema: used by Mastra for LLM structured output
+const DayPlanSchema = z.object({ /* ... */ });
+
+// @agentuity/schema: used for Agentuity API I/O validation
+const AgentOutput = s.object({
+  plan: s.array(TimeBlockSchema),
+  summary: s.string(),
+  totalActivities: s.number(),
+  history: s.array(HistoryEntrySchema),
 });
-```
-
-## Running the Example
-
-### Development
-
-```bash
-bun dev
-```
-
-Starts the development server at `http://localhost:3500`
-
-### Build
-
-```bash
-bun build
-```
-
-### Deploy
-
-```bash
-bun run deploy
 ```
 
 ## Example Output
 
-Given the prompt: "I need to plan a productive day. I have a team meeting in the morning, need to finish a project report, go to the gym, and have dinner with a friend."
-
-The agent returns structured data like:
+Given: "I have a team meeting, need to finish a report, go to the gym, and have dinner with a friend."
 
 ```json
 {
@@ -147,60 +91,36 @@ The agent returns structured data like:
     {
       "name": "Morning",
       "activities": [
-        {
-          "name": "Team Meeting",
-          "startTime": "09:00",
-          "endTime": "10:00",
-          "description": "Weekly sync with the team",
-          "priority": "high"
-        },
-        {
-          "name": "Project Report",
-          "startTime": "10:30",
-          "endTime": "12:30",
-          "description": "Complete and submit the project report",
-          "priority": "high"
-        }
+        { "name": "Team Meeting", "startTime": "09:00", "endTime": "10:00", "priority": "high" },
+        { "name": "Project Report", "startTime": "10:30", "endTime": "12:30", "priority": "high" }
       ]
     },
     {
       "name": "Afternoon",
       "activities": [
-        {
-          "name": "Gym Session",
-          "startTime": "14:00",
-          "endTime": "15:30",
-          "description": "Workout and exercise",
-          "priority": "medium"
-        }
+        { "name": "Gym Session", "startTime": "14:00", "endTime": "15:30", "priority": "medium" }
       ]
     },
     {
       "name": "Evening",
       "activities": [
-        {
-          "name": "Dinner with Friend",
-          "startTime": "19:00",
-          "endTime": "21:00",
-          "description": "Social dinner at a restaurant",
-          "priority": "medium"
-        }
+        { "name": "Dinner with Friend", "startTime": "19:00", "endTime": "21:00", "priority": "medium" }
       ]
     }
   ],
-  "summary": "A balanced day with work tasks in the morning, exercise in the afternoon, and social time in the evening.",
-  "totalActivities": 4
+  "summary": "A balanced day with work in the morning, exercise in the afternoon, and social time in the evening."
 }
 ```
 
-## Evaluations
+## Commands
 
-The example includes evaluations to verify structured output quality:
+```bash
+bun dev        # Start dev server at http://localhost:3500
+bun run build  # Build for deployment
+bun run deploy # Deploy to Agentuity
+```
 
-- **adversarial**: Tests resistance to manipulation attempts
-- **structure-valid**: Verifies the output has valid time blocks and activities
+## Related
 
-## Learn More
-
+- [Mastra: Structured Output](https://mastra.ai/docs/agents/structured-output)
 - [Agentuity Documentation](https://agentuity.dev)
-- [Schema Reference](https://agentuity.dev/docs/schema)

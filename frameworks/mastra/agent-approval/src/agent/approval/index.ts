@@ -18,21 +18,17 @@
 
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
+import { Mastra } from '@mastra/core';
 import { Agent } from '@mastra/core/agent';
+import { LibSQLStore } from '@mastra/libsql';
 
-// Bridge Agentuity AI Gateway → Mastra's model resolution
-if (!process.env.OPENAI_API_KEY && process.env.AGENTUITY_SDK_KEY) {
-	const gw = process.env.AGENTUITY_AIGATEWAY_URL || process.env.AGENTUITY_TRANSPORT_URL || 'https://agentuity.ai';
-	process.env.OPENAI_API_KEY = process.env.AGENTUITY_SDK_KEY;
-	process.env.OPENAI_BASE_URL = `${gw}/gateway/openai`;
-}
+import '../../lib/gateway';
 
 import {
 	getWeatherTool,
 	searchRecordsTool,
 	deleteUserDataTool,
 	sendNotificationTool,
-	TOOLS_REQUIRING_APPROVAL,
 	TOOL_SUSPEND_REASONS,
 } from './tools';
 
@@ -53,6 +49,15 @@ const approvalMastraAgent = new Agent({
 		'send-notification': sendNotificationTool,
 	},
 });
+
+// Mastra instance with storage is required for approve/decline to persist workflow snapshots.
+// Without this, approveToolCallGenerate() / declineToolCallGenerate() fail with "No snapshot found".
+const mastra = new Mastra({
+	agents: { 'approval-agent': approvalMastraAgent },
+	storage: new LibSQLStore({ id: 'approval-agent-store', url: 'file:mastra.db' }),
+});
+
+const approvalAgent = mastra.getAgent('approval-agent');
 
 // ============================================================================
 // Schemas
@@ -129,7 +134,7 @@ const agent = createAgent('approval', {
 		// Call the Mastra Agent with requireToolApproval flag
 		// When requireToolApproval is true, ALL tool calls are suspended for approval.
 		// Tools with requireApproval: true are always suspended regardless of this flag.
-		const result = await approvalMastraAgent.generate(text, {
+		const result = await approvalAgent.generate(text, {
 			requireToolApproval,
 		});
 
@@ -156,11 +161,10 @@ const agent = createAgent('approval', {
 				runId: result.runId,
 			});
 
-			// Determine suspend reason: tool-level context or agent-level message
+			// Tool-level reason from our map, or generic message for agent-level approval
 			const reason =
-				TOOLS_REQUIRING_APPROVAL.has(toolName) && TOOL_SUSPEND_REASONS[toolName]
-					? TOOL_SUSPEND_REASONS[toolName]
-					: `Tool "${toolName}" requires approval before execution (agent-level approval enabled).`;
+				TOOL_SUSPEND_REASONS[toolName] ??
+				`Tool "${toolName}" requires approval before execution (agent-level approval enabled).`;
 
 			const approvalId = `approval_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -257,7 +261,7 @@ export async function approveToolCall(
 	}
 ): Promise<AgentOutputType> {
 	// Resume the Mastra agent using the stored runId
-	const result = await approvalMastraAgent.approveToolCallGenerate({
+	const result = await approvalAgent.approveToolCallGenerate({
 		runId: pending.runId,
 		toolCallId: pending.toolCallId || undefined,
 	});
@@ -309,7 +313,7 @@ export async function declineToolCall(
 	}
 ): Promise<AgentOutputType> {
 	// Resume the Mastra agent with a decline — it responds acknowledging the tool was not executed
-	const result = await approvalMastraAgent.declineToolCallGenerate({
+	const result = await approvalAgent.declineToolCallGenerate({
 		runId: pending.runId,
 		toolCallId: pending.toolCallId || undefined,
 	});

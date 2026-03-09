@@ -1,119 +1,109 @@
-# network-approval
+# Mastra Network Approval
 
-Demonstrates [Mastra's network approval](https://mastra.ai/docs/agents/networks) patterns ported to the Agentuity platform. Agent networks can require human-in-the-loop oversight when tools, sub-agents, or workflows within the network require approval or suspend execution.
+Network-level tool approval and suspend/resume patterns using Mastra agents, with Agentuity thread state for persisting pending approvals and suspended executions.
+
+## How It Works
+
+**Mastra handles**: agent creation with `maxSteps: 1` for tool call interception, tool definitions with `requireApproval: true`, and conversation continuation via message history.
+
+**Agentuity handles**: persisting pending approvals and suspended executions in thread state, exposing approve/decline/resume API endpoints, tracking operation history, and deployment.
+
+## Three Approval Patterns
+
+| Pattern | When | Example |
+|---------|------|---------|
+| **Immediate** | Safe tools (research) | `search-web`, `lookup-info` execute immediately |
+| **Approval** | Dangerous tools (operations) | `delete-records`, `send-notification` require human approval |
+| **Suspend/Resume** | User input needed | `request-confirmation` suspends with options, resumes with user choice |
 
 ## Architecture
 
-A **routing agent** coordinates a network of conceptual sub-agents, each with different approval requirements:
-
-| Sub-Agent      | Tools                                  | Behavior                                           |
-| -------------- | -------------------------------------- | -------------------------------------------------- |
-| Research       | `search_web`, `lookup_info`            | Execute immediately (no approval)                  |
-| Operations     | `delete_records`, `send_notification`  | Require approval before execution                  |
-| Confirmation   | `request_confirmation`                 | Suspend with context, resume with user-provided data |
-
-## Approval Patterns
-
-### 1. Approving Network Tool Calls
-
-When a tool requires approval (`requireApproval`), the network suspends and returns a `pendingApproval` payload. Approve via `POST /api/network/approve`.
-
-```bash
-# Send request (triggers approval-required tool)
-curl -X POST localhost:3500/api/network \
-  -H 'Content-Type: application/json' \
-  -d '{"text": "Delete all expired records"}'
-
-# Approve the pending tool call
-curl -X POST localhost:3500/api/network/approve
+```
+network-approval/
+├── src/
+│   ├── agent/
+│   │   └── network/
+│   │       ├── index.ts      # Routing agent + approve/decline/resume helpers
+│   │       ├── tools.ts      # 5 tools across 3 sub-agent groups
+│   │       └── eval.ts       # Network approval evals
+│   ├── api/
+│   │   └── index.ts          # Network + approval + suspend routes
+│   ├── lib/
+│   │   └── gateway.ts        # AI Gateway bridge
+│   └── web/
+├── app.ts
+└── package.json
 ```
 
-### 2. Declining Network Tool Calls
+## Key Code Patterns
 
-Decline a pending tool call via `POST /api/network/decline`. The network continues without executing the tool.
+### Intercepting tool calls with maxSteps: 1
 
-```bash
-curl -X POST localhost:3500/api/network/decline
+```typescript
+// Call with maxSteps: 1 so the LLM picks a tool but doesn't auto-execute
+const result = await networkMastraAgent.generate(userMessages, { maxSteps: 1 });
+
+if (result.toolCalls?.length > 0) {
+  const toolCall = result.toolCalls[0]!;
+  const toolName = toolCall.payload.toolName;
+
+  if (TOOLS_REQUIRING_APPROVAL.has(toolName)) {
+    // Store pending approval in thread state
+    await ctx.thread.state.set('pendingApproval', { toolName, toolCallId, ... });
+    return { suspended: true, suspendType: 'approval' };
+  }
+
+  // Safe tool: execute immediately, then feed result back to LLM
+  const toolResult = await executeTool(toolName, toolCall.payload.args);
+  const response = await networkMastraAgent.generate([...history, toolResultMessage]);
+}
 ```
 
-### 3. Resuming Suspended Networks
+### Resuming after approval
 
-When a tool calls `suspend()` with a payload (e.g. confirmation options), the network pauses. Resume with user-provided data via `POST /api/network/resume`.
+```typescript
+export async function approveNetworkToolCall(pending, thread) {
+  const history = JSON.parse(pending.conversationState);
+  const toolResult = await executeTool(pending.toolName, JSON.parse(pending.toolArgs));
 
-```bash
-# Send request (triggers suspend with confirmation)
-curl -X POST localhost:3500/api/network \
-  -H 'Content-Type: application/json' \
-  -d '{"text": "I need to confirm deleting the old records"}'
+  // Feed the tool result back into the conversation
+  const response = await networkMastraAgent.generate([
+    ...history,
+    {
+      role: 'tool',
+      content: [{ type: 'tool-result', toolCallId: pending.toolCallId, toolName: pending.toolName, result: toolResult.data }],
+    },
+  ]);
 
-# Resume with user confirmation
-curl -X POST localhost:3500/api/network/resume \
-  -H 'Content-Type: application/json' \
-  -d '{"confirmed": true}'
+  await thread.state.delete('pendingApproval');
+  return { response: response.text, suspended: false };
+}
 ```
 
-### 4. Agent-Level Approval
+## API Endpoints
 
-Set `requireToolApproval: true` to require approval for ALL tool calls, not just specific ones:
+| Method   | Path                     | Description                              |
+| -------- | ------------------------ | ---------------------------------------- |
+| `POST`   | `/api/network`           | Send request (may suspend)               |
+| `GET`    | `/api/network/pending`   | Check for pending approval               |
+| `GET`    | `/api/network/suspended` | Check for suspended execution            |
+| `POST`   | `/api/network/approve`   | Approve pending tool call                |
+| `POST`   | `/api/network/decline`   | Decline pending tool call                |
+| `POST`   | `/api/network/resume`    | Resume with user data                    |
+| `GET`    | `/api/network/history`   | Get operation history                    |
+| `DELETE` | `/api/network/history`   | Clear history and pending state          |
+| `GET`    | `/api/network/stats`     | Operation stats by type                  |
 
-```bash
-curl -X POST localhost:3500/api/network \
-  -H 'Content-Type: application/json' \
-  -d '{"text": "Search for AI news", "requireToolApproval": true}'
-```
-
-## API Routes
-
-| Method   | Path                      | Description                                       |
-| -------- | ------------------------- | ------------------------------------------------- |
-| `POST`   | `/api/network`            | Send a request to the network                     |
-| `GET`    | `/api/network/pending`    | Check for pending approval                        |
-| `GET`    | `/api/network/suspended`  | Check for suspended execution                     |
-| `POST`   | `/api/network/approve`    | Approve a pending tool call                       |
-| `POST`   | `/api/network/decline`    | Decline a pending tool call                       |
-| `POST`   | `/api/network/resume`     | Resume suspended network with user data           |
-| `GET`    | `/api/network/history`    | Get network operation history                     |
-| `DELETE` | `/api/network/history`    | Clear history and pending state                   |
-| `GET`    | `/api/network/stats`      | Get operation stats (counts by type, total tokens) |
-
-## Mastra Concept Mapping
-
-| Mastra Concept                          | Agentuity Implementation                              |
-| --------------------------------------- | ----------------------------------------------------- |
-| `routingAgent.network()`                | `POST /api/network` (agent handler)                   |
-| `agent-execution-approval` event        | `suspended: true, suspendType: "approval"` response   |
-| `tool-execution-suspended` event        | `suspended: true, suspendType: "suspend"` response    |
-| `approveNetworkToolCall({ runId })`     | `POST /api/network/approve`                           |
-| `declineNetworkToolCall({ runId })`     | `POST /api/network/decline`                           |
-| `resumeNetwork(data, { runId })`        | `POST /api/network/resume`                            |
-| `suspend({ message, action })`          | `getSuspendPayload()` in tools.ts                     |
-| `resumeData` in tool execute            | `executeConfirmationTool(args, resumeData)`            |
-| `requireToolApproval` agent option      | `requireToolApproval` input field                     |
-| `requireApproval` tool option           | `TOOLS_REQUIRING_APPROVAL` set in tools.ts            |
-| Sub-agents in network                   | `TOOL_SUB_AGENTS` mapping + `subAgent` field          |
-| Network memory/thread                   | Agentuity thread state (`ctx.thread.state`)           |
-
-## Evals
-
-| Eval                          | Type   | Description                                              |
-| ----------------------------- | ------ | -------------------------------------------------------- |
-| `network-approval-suspension` | binary | Sensitive tools are suspended for approval               |
-| `network-suspend-resume`      | binary | Confirmation tools suspend with proper payload           |
-| `safe-network-tool-execution` | binary | Safe tools execute without suspension                    |
-| `sub-agent-routing`           | binary | Requests route to the correct sub-agent                  |
-
-## Available Commands
+## Commands
 
 ```bash
-bun dev        # Start development server at http://localhost:3500
-bun run build  # Compile application
-bun run typecheck  # Run TypeScript type checking
-bun run deploy # Deploy to Agentuity cloud
+bun dev        # Start dev server at http://localhost:3500
+bun run build  # Build for deployment
+bun run deploy # Deploy to Agentuity
 ```
 
 ## Related
 
 - [Mastra: Agent Networks](https://mastra.ai/docs/agents/networks)
-- [Mastra: Network Approval](https://mastra.ai/docs/agents/network-approval)
 - [Mastra: Human-in-the-Loop](https://mastra.ai/docs/workflows/human-in-the-loop)
 - [Agentuity Documentation](https://agentuity.dev)

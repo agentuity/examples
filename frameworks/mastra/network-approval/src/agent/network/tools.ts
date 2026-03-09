@@ -60,8 +60,7 @@ export const searchWebTool = createTool({
 	inputSchema: z.object({
 		query: z.string().describe('Search query'),
 	}),
-	execute: async (inputData) => {
-		const { query } = inputData as { query: string };
+	execute: async ({ query }: { query: string }) => {
 		return {
 			query,
 			summary: `Search results for: ${query}. [Simulated web search content would appear here with relevant information about the query.]`,
@@ -75,8 +74,7 @@ export const lookupInfoTool = createTool({
 	inputSchema: z.object({
 		entity: z.string().describe('Name or ID of the entity to look up'),
 	}),
-	execute: async (inputData) => {
-		const { entity } = inputData as { entity: string };
+	execute: async ({ entity }: { entity: string }) => {
 		return {
 			entity,
 			summary: `Information about ${entity}. [Simulated lookup with key details about the entity.]`,
@@ -94,8 +92,7 @@ export const deleteRecordsTool = createTool({
 		scope: z.enum(['all', 'matching', 'expired']).describe('Scope of deletion'),
 	}),
 	requireApproval: true,
-	execute: async (inputData) => {
-		const { criteria, scope } = inputData as { criteria: string; scope: 'all' | 'matching' | 'expired' };
+	execute: async ({ criteria, scope }: { criteria: string; scope: 'all' | 'matching' | 'expired' }) => {
 		return {
 			deleted: true,
 			criteria,
@@ -115,8 +112,7 @@ export const sendNotificationTool = createTool({
 		channel: z.enum(['email', 'sms']).describe('Delivery channel'),
 	}),
 	requireApproval: true,
-	execute: async (inputData) => {
-		const { recipient, message, channel } = inputData as { recipient: string; message: string; channel: 'email' | 'sms' };
+	execute: async ({ recipient, message, channel }: { recipient: string; message: string; channel: 'email' | 'sms' }) => {
 		return {
 			sent: true,
 			recipient,
@@ -137,8 +133,7 @@ export const requestConfirmationTool = createTool({
 		action: z.string().describe('Description of the action requiring confirmation'),
 		options: z.string().optional().describe('Comma-separated options the user can choose from'),
 	}),
-	execute: async (inputData) => {
-		const { action } = inputData as { action: string; options?: string };
+	execute: async ({ action }: { action: string }) => {
 		// Simulated confirmation result (actual suspend/resume is handled by the Agentuity handler)
 		return {
 			confirmed: true,
