@@ -1,31 +1,23 @@
 /**
- * Network Agent: coordinates multiple agents, workflows, and tools to handle complex tasks.
+ * Network Agent: coordinates multiple agents and tools to handle complex tasks.
  *
  * Uses Mastra's Agent with sub-agents and tools configured for network routing.
- * The routing agent uses LLM reasoning to interpret requests and decide which primitives
- * (sub-agents, workflows, or tools) to call, in what order, and with what data.
+ * Conversation history is persisted via Agentuity ctx.thread.state.
  *
  * Available primitives:
  * - Research Agent: gathers concise research insights in bullet-point form
  * - Writing Agent: turns research into well-structured written content
  * - Weather Tool: retrieves current weather for a location
- * - City Workflow: coordinates research + writing for city-specific tasks
  */
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 import { Agent } from '@mastra/core/agent';
-import { Memory } from '@mastra/memory';
-import { LibSQLStore } from '@mastra/libsql';
 
 import '../../lib/gateway';
 
 import { researchMastraAgent } from '../research';
 import { writingMastraAgent } from '../writing';
 import { weatherTool } from './tools';
-
-const memory = new Memory({
-	storage: new LibSQLStore({ id: 'network-agent-store', url: 'file:mastra.db' }),
-});
 
 const routingMastraAgent = new Agent({
 	id: 'routing-agent',
@@ -48,7 +40,6 @@ For complex tasks:
 	tools: {
 		weatherTool,
 	},
-	memory,
 });
 
 const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
@@ -79,14 +70,23 @@ const agent = createAgent('network', {
 		ctx.logger.info('──── Network Agent ────');
 		ctx.logger.info({ message });
 
-		const result = await routingMastraAgent.generate(message, {
-			memory: {
-				resource: ctx.sessionId,
-				thread: ctx.thread.id,
-			},
-		});
+		// Load conversation history from Agentuity thread state and pass to agent
+		const conversation =
+			(await ctx.thread.state.get<Array<{ role: string; content: string }>>('conversation')) ?? [];
+		const messages = [
+			...conversation.map((m) => {
+				if (m.role === 'user') return { role: 'user' as const, content: m.content };
+				return { role: 'assistant' as const, content: m.content };
+			}),
+			{ role: 'user' as const, content: message },
+		];
 
+		const result = await routingMastraAgent.generate(messages);
 		const response = result.text ?? '';
+
+		// Persist user + assistant messages with a 20-message sliding window
+		await ctx.thread.state.push('conversation', { role: 'user', content: message }, 20);
+		await ctx.thread.state.push('conversation', { role: 'assistant', content: response }, 20);
 
 		ctx.logger.info('──── Network Complete ────');
 		ctx.logger.info({ response: response.slice(0, 200) });

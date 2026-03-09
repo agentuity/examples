@@ -20,7 +20,7 @@ import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 import { Mastra } from '@mastra/core';
 import { Agent } from '@mastra/core/agent';
-import { LibSQLStore } from '@mastra/libsql';
+import { InMemoryStore } from '@mastra/core/storage';
 
 import '../../lib/gateway';
 
@@ -52,9 +52,10 @@ const approvalMastraAgent = new Agent({
 
 // Mastra instance with storage is required for approve/decline to persist workflow snapshots.
 // Without this, approveToolCallGenerate() / declineToolCallGenerate() fail with "No snapshot found".
+// InMemoryStore avoids local DB files; snapshots only need to survive until the user approves/declines.
 const mastra = new Mastra({
 	agents: { 'approval-agent': approvalMastraAgent },
-	storage: new LibSQLStore({ id: 'approval-agent-store', url: 'file:mastra.db' }),
+	storage: new InMemoryStore(),
 });
 
 const approvalAgent = mastra.getAgent('approval-agent');

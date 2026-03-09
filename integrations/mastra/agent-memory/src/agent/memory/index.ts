@@ -1,25 +1,21 @@
 /**
- * Memory Agent: Demonstrates conversational memory using Mastra's Agent and Memory classes
- * inside the Agentuity agent wrapper.
+ * Memory Agent: Demonstrates conversational memory using Mastra's Agent with
+ * Agentuity thread state for persistent history.
  *
  * Key features demonstrated:
- * 1. Persistent message history via Mastra Memory (lastMessages: 20 sliding window)
- * 2. Thread isolation via ctx.thread.id passed as the memory resource/thread key
+ * 1. Persistent message history via ctx.thread.state.push() (20-message sliding window)
+ * 2. Thread isolation via ctx.thread.id (automatic per-thread storage)
  * 3. Multi-turn conversations that recall previous exchanges
- * 4. LibSQL-backed storage for durable conversation state
+ * 4. Agentuity-native storage — no local DB files needed
  */
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 import { Agent } from '@mastra/core/agent';
-import { Memory } from '@mastra/memory';
-import { LibSQLStore } from '@mastra/libsql';
 
 import '../../lib/gateway';
 
 // ---------------------------------------------------------------------------
-// Legacy schemas re-exported so that src/api/index.ts continues to compile.
-// The history/clear API routes still use ctx.thread.state for their own
-// lightweight reads; these types describe the shape of those stored values.
+// Schemas used by both the agent handler and API routes (src/api/index.ts).
 // ---------------------------------------------------------------------------
 export const ChatMessageSchema = s.object({
 	role: s.enum(['user', 'assistant']).describe('Who sent the message'),
@@ -46,14 +42,15 @@ export const AgentInput = s.object({
 
 export const AgentOutput = s.object({
 	response: s.string().describe('Agent response'),
-	messageCount: s.number().describe('Total messages in conversation history (managed by Mastra)'),
+	messageCount: s.number().describe('Total messages in conversation history'),
 	threadId: s.string().describe('Thread ID for conversation continuity'),
 	sessionId: s.string().describe('Current session identifier'),
 });
 
 // ---------------------------------------------------------------------------
-// Mastra agent with Memory — replaces manual OpenAI calls and
-// ctx.thread.state message management.
+// Mastra agent — conversation history is managed via ctx.thread.state,
+// not Mastra Memory. Messages are loaded from thread state and passed
+// directly to agent.generate().
 // ---------------------------------------------------------------------------
 const memoryMastraAgent = new Agent({
 	id: 'memory-agent',
@@ -66,10 +63,6 @@ When users ask about previous conversations or their stored information, recall 
 
 Be conversational, friendly, and demonstrate that you remember context from earlier in the conversation.`,
 	model: 'openai/gpt-4o-mini',
-	memory: new Memory({
-		storage: new LibSQLStore({ id: 'memory-agent-store', url: 'file:mastra.db' }),
-		options: { lastMessages: 20 },
-	}),
 });
 
 const agent = createAgent('memory', {
@@ -85,22 +78,26 @@ const agent = createAgent('memory', {
 			sessionId: ctx.sessionId,
 		});
 
-		// Mastra Memory uses resource + thread IDs to scope and recall conversation history
-		const result = await memoryMastraAgent.generate(message, {
-			memory: {
-				resource: ctx.thread.id,
-				thread: ctx.thread.id,
-			},
-		});
+		// Load conversation history from Agentuity thread state and pass to agent
+		const history = (await ctx.thread.state.get<ChatMessage[]>('messages')) ?? [];
+		const messages = [
+			...history.map((m) => {
+				if (m.role === 'user') return { role: 'user' as const, content: m.content };
+				return { role: 'assistant' as const, content: m.content };
+			}),
+			{ role: 'user' as const, content: message },
+		];
+
+		const result = await memoryMastraAgent.generate(messages);
 
 		ctx.logger.info('Memory Agent Response', {
 			responseLength: result.text.length,
 		});
 
-		// Mirror messages to Agentuity thread state so the frontend can display them
+		// Persist user + assistant messages with a 20-message sliding window
 		const now = new Date().toISOString();
-		await ctx.thread.state.push('messages', { role: 'user', content: message, timestamp: now } satisfies ChatMessage, 40);
-		await ctx.thread.state.push('messages', { role: 'assistant', content: result.text, timestamp: now } satisfies ChatMessage, 40);
+		await ctx.thread.state.push('messages', { role: 'user', content: message, timestamp: now } satisfies ChatMessage, 20);
+		await ctx.thread.state.push('messages', { role: 'assistant', content: result.text, timestamp: now } satisfies ChatMessage, 20);
 
 		// Extract preferences from the response for the frontend sidebar
 		const prefs = (await ctx.thread.state.get<UserPreferences>('preferences')) ?? {};

@@ -4,9 +4,9 @@ Multi-agent coordination using Mastra's `agents` property on the Agent construct
 
 ## How It Works
 
-**Mastra handles**: agent-to-agent delegation via the `agents` config, tool calling (weather), conversation memory (`Memory` + `LibSQLStore`), and LLM routing decisions.
+**Mastra handles**: agent-to-agent delegation via the `agents` config, tool calling (weather), and LLM routing decisions.
 
-**Agentuity handles**: wrapping each agent for schema validation and deployment, thread state for conversation persistence, and the AI Gateway bridge.
+**Agentuity handles**: wrapping each agent for schema validation and deployment, conversation history via `ctx.thread.state` (20-message sliding window), and the AI Gateway bridge.
 
 ## Architecture
 
@@ -48,8 +48,25 @@ const routingMastraAgent = new Agent({
     writingAgent: writingMastraAgent,
   },
   tools: { weatherTool },
-  memory,
 });
+```
+
+### Conversation history via thread state
+
+```typescript
+const conversation = (await ctx.thread.state.get<Array<{ role: string; content: string }>>('conversation')) ?? [];
+const messages = [
+  ...conversation.map((m) => {
+    if (m.role === 'user') return { role: 'user' as const, content: m.content };
+    return { role: 'assistant' as const, content: m.content };
+  }),
+  { role: 'user' as const, content: message },
+];
+const result = await routingMastraAgent.generate(messages);
+
+// Persist with 20-message sliding window
+await ctx.thread.state.push('conversation', { role: 'user', content: message }, 20);
+await ctx.thread.state.push('conversation', { role: 'assistant', content: response }, 20);
 ```
 
 ### Sub-agent definitions
@@ -70,30 +87,6 @@ export const writingMastraAgent = new Agent({
   instructions: 'Transform research insights into well-structured content...',
   model: 'openai/gpt-4o-mini',
 });
-```
-
-### City workflow (research -> writing pipeline)
-
-```typescript
-export async function cityWorkflow(logger, { city }) {
-  // Step 1: Research
-  const researchResult = await researchMastraAgent.generate(
-    `Research topic: ${city} - history, culture, landmarks, and interesting facts`
-  );
-  const insights = (researchResult.text ?? '')
-    .split('\n')
-    .map((line) => line.replace(/^[-•*]\s*/, '').trim())
-    .filter((line) => line.length > 0);
-
-  // Step 2: Write report from research
-  const insightsList = insights.map((i) => `- ${i}`).join('\n');
-  const writingPrompt = `Transform the following research insights into a well-structured report.\n\nTopic: ${city}\n\nResearch Insights:\n${insightsList}\n\nWrite in full paragraphs...`;
-  const writingResult = await writingMastraAgent.generate(writingPrompt);
-  const content = writingResult.text ?? '';
-  const wordCount = content.split(/\s+/).length;
-
-  return { city, research: { insights }, report: { content, wordCount } };
-}
 ```
 
 ## API Endpoints
