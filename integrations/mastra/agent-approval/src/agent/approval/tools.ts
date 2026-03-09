@@ -21,8 +21,7 @@ export const getWeatherTool = createTool({
 	inputSchema: z.object({
 		location: z.string().describe('City or location name'),
 	}),
-	execute: async (inputData) => {
-		const { location } = inputData as { location: string };
+	execute: async ({ location }: { location: string }) => {
 		const conditions = ['Sunny', 'Cloudy', 'Rainy', 'Partly cloudy', 'Windy'];
 		return {
 			location,
@@ -39,8 +38,7 @@ export const searchRecordsTool = createTool({
 	inputSchema: z.object({
 		query: z.string().describe('Search query'),
 	}),
-	execute: async (inputData) => {
-		const { query } = inputData as { query: string };
+	execute: async ({ query }: { query: string }) => {
 		return {
 			query,
 			results: [
@@ -65,8 +63,7 @@ export const deleteUserDataTool = createTool({
 		reason: z.string().describe('Reason for deletion'),
 	}),
 	requireApproval: true,
-	execute: async (inputData) => {
-		const { userId, reason } = inputData as { userId: string; reason: string };
+	execute: async ({ userId, reason }: { userId: string; reason: string }) => {
 		return {
 			deleted: true,
 			userId,
@@ -86,8 +83,7 @@ export const sendNotificationTool = createTool({
 		channel: z.enum(['email', 'sms']).describe('Delivery channel'),
 	}),
 	requireApproval: true,
-	execute: async (inputData) => {
-		const { recipient, message, channel } = inputData as { recipient: string; message: string; channel: string };
+	execute: async ({ recipient, message, channel }: { recipient: string; message: string; channel: 'email' | 'sms' }) => {
 		return {
 			sent: true,
 			recipient,
@@ -103,16 +99,9 @@ export const sendNotificationTool = createTool({
 // ============================================================================
 
 /**
- * Tools that require approval before execution (tool-level approval).
- * Mirrors Mastra's `requireApproval: true` on individual tool definitions.
- * Used by the Agentuity handler to determine suspension behavior.
- */
-export const TOOLS_REQUIRING_APPROVAL = new Set(['delete-user-data', 'send-notification']);
-
-/**
- * Suspend reasons for tools that require approval.
- * Mirrors Mastra's suspend payload pattern where tools provide
- * context about why approval is needed.
+ * Human-readable reasons for tools that require approval.
+ * Mastra's suspendPayload includes toolName and args but not a reason string,
+ * so we provide context for the approval UI here.
  */
 export const TOOL_SUSPEND_REASONS: Record<string, string> = {
 	'delete-user-data': 'This will permanently delete all user data. This action cannot be undone.',

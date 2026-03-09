@@ -1,147 +1,119 @@
-# network-agent
+# Mastra Network Agent
 
-A new Agentuity project created with `agentuity create`.
+Multi-agent coordination using Mastra's `agents` property on the Agent constructor, with sub-agents for research and writing, deployed on Agentuity.
 
-## What You Get
+## How It Works
 
-A fully configured Agentuity project with:
+**Mastra handles**: agent-to-agent delegation via the `agents` config, tool calling (weather), conversation memory (`Memory` + `LibSQLStore`), and LLM routing decisions.
 
-- ✅ **TypeScript** - Full type safety out of the box
-- ✅ **Bun runtime** - Fast JavaScript runtime and package manager
-- ✅ **Hot reload** - Development server with auto-rebuild
-- ✅ **Example agent** - Sample "hello" agent to get started
-- ✅ **React frontend** - Pre-configured web interface
-- ✅ **API routes** - Example API endpoints
-- ✅ **Type checking** - TypeScript configuration ready to go
+**Agentuity handles**: wrapping each agent for schema validation and deployment, thread state for conversation persistence, and the AI Gateway bridge.
 
-## Project Structure
+## Architecture
 
 ```
-my-app/
+network-agent/
 ├── src/
-│   ├── agent/            # Agent definitions
-│   │   └── hello/
-│   │       ├── agent.ts  # Example agent
-│   │       └── index.ts  # Default exports
-│   ├── api/              # API definitions
-│   │   └── index.ts      # Example routes
-│   └── web/              # React web application
-│       ├── public/       # Static assets
-│       ├── App.tsx       # Main React component
-│       ├── frontend.tsx  # Entry point
-│       └── index.html    # HTML template
-├── AGENTS.md             # Agent guidelines
-├── app.ts                # Application entry point
-├── tsconfig.json         # TypeScript configuration
-├── package.json          # Dependencies and scripts
-└── README.md             # Project documentation
+│   ├── agent/
+│   │   ├── network/
+│   │   │   ├── index.ts      # Routing agent with sub-agents + tools
+│   │   │   ├── tools.ts      # Weather tool (wttr.in API)
+│   │   │   └── workflows.ts  # City workflow (research -> writing)
+│   │   ├── research/
+│   │   │   └── index.ts      # Research sub-agent (bullet points)
+│   │   └── writing/
+│   │       └── index.ts      # Writing sub-agent (full paragraphs)
+│   ├── api/
+│   │   └── index.ts          # Network, research, writing routes
+│   ├── lib/
+│   │   └── gateway.ts        # AI Gateway bridge
+│   └── web/
+├── app.ts
+└── package.json
 ```
 
-## Available Commands
+## Key Code Patterns
 
-After creating your project, you can run:
-
-### Development
-
-```bash
-bun dev
-```
-
-Starts the development server at `http://localhost:3500`
-
-### Build
-
-```bash
-bun build
-```
-
-Compiles your application into the `.agentuity/` directory
-
-### Type Check
-
-```bash
-bun typecheck
-```
-
-Runs TypeScript type checking
-
-### Deploy to Agentuity
-
-```bash
-bun run deploy
-```
-
-Deploys your application to the Agentuity cloud
-
-## Next Steps
-
-After creating your project:
-
-1. **Customize the example agent** - Edit `src/agent/hello/agent.ts`
-2. **Add new agents** - Create new folders in `src/agent/`
-3. **Add new APIs** - Create new folders in `src/api/`
-4. **Add Web files** - Create new routes in `src/web/`
-5. **Customize the UI** - Edit `src/web/app.tsx`
-6. **Configure your app** - Modify `app.ts` to add middleware, configure services, etc.
-
-## Creating Custom Agents
-
-Create a new agent by adding a folder in `src/agent/`:
+### Routing agent with sub-agents
 
 ```typescript
-// src/agent/my-agent/agent.ts
-import { createAgent } from '@agentuity/runtime';
-import { s } from '@agentuity/schema';
+import { Agent } from '@mastra/core/agent';
 
-const agent = createAgent({
-	description: 'My amazing agent',
-	schema: {
-		input: s.object({
-			name: s.string(),
-		}),
-		output: s.string(),
-	},
-	handler: async (_ctx, { name }) => {
-		return `Hello, ${name}! This is my custom agent.`;
-	},
+const routingMastraAgent = new Agent({
+  id: 'routing-agent',
+  name: 'Network Routing Agent',
+  instructions: 'You are a network of writers and researchers...',
+  model: 'openai/gpt-4o-mini',
+  agents: {
+    researchAgent: researchMastraAgent,
+    writingAgent: writingMastraAgent,
+  },
+  tools: { weatherTool },
+  memory,
 });
-
-export default agent;
 ```
 
-## Adding API Routes
-
-Create custom routes in `src/api/`:
+### Sub-agent definitions
 
 ```typescript
-// src/api/my-agent/route.ts
-import { createRouter } from '@agentuity/runtime';
-import myAgent from './agent';
-
-const router = createRouter();
-
-router.get('/', async (c) => {
-	const result = await myAgent.run({ message: 'Hello!' });
-	return c.json(result);
+// Research agent: concise bullet-point insights
+export const researchMastraAgent = new Agent({
+  id: 'research-agent',
+  name: 'Research Agent',
+  instructions: 'Research the topic and provide key insights as bullet points...',
+  model: 'openai/gpt-4o-mini',
 });
 
-router.post('/', myAgent.validator(), async (c) => {
-	const data = c.req.valid('json');
-	const result = await myAgent.run(data);
-	return c.json(result);
+// Writing agent: full-paragraph reports
+export const writingMastraAgent = new Agent({
+  id: 'writing-agent',
+  name: 'Writing Agent',
+  instructions: 'Transform research insights into well-structured content...',
+  model: 'openai/gpt-4o-mini',
 });
-
-export default router;
 ```
 
-## Learn More
+### City workflow (research -> writing pipeline)
 
+```typescript
+export async function cityWorkflow(logger, { city }) {
+  // Step 1: Research
+  const researchResult = await researchMastraAgent.generate(
+    `Research topic: ${city} - history, culture, landmarks, and interesting facts`
+  );
+  const insights = (researchResult.text ?? '')
+    .split('\n')
+    .map((line) => line.replace(/^[-•*]\s*/, '').trim())
+    .filter((line) => line.length > 0);
+
+  // Step 2: Write report from research
+  const insightsList = insights.map((i) => `- ${i}`).join('\n');
+  const writingPrompt = `Transform the following research insights into a well-structured report.\n\nTopic: ${city}\n\nResearch Insights:\n${insightsList}\n\nWrite in full paragraphs...`;
+  const writingResult = await writingMastraAgent.generate(writingPrompt);
+  const content = writingResult.text ?? '';
+  const wordCount = content.split(/\s+/).length;
+
+  return { city, research: { insights }, report: { content, wordCount } };
+}
+```
+
+## API Endpoints
+
+| Method | Endpoint             | Description                        |
+| ------ | -------------------- | ---------------------------------- |
+| `POST` | `/api/network`       | Route request through the network  |
+| `POST` | `/api/research`      | Direct access to research agent    |
+| `POST` | `/api/writing`       | Direct access to writing agent     |
+| `GET`  | `/api/network/history` | Get conversation history         |
+
+## Commands
+
+```bash
+bun dev        # Start dev server at http://localhost:3500
+bun run build  # Build for deployment
+bun run deploy # Deploy to Agentuity
+```
+
+## Related
+
+- [Mastra: Agent Networks](https://mastra.ai/docs/agents/networks)
 - [Agentuity Documentation](https://agentuity.dev)
-- [Bun Documentation](https://bun.sh/docs)
-- [Hono Documentation](https://hono.dev/)
-- [Zod Documentation](https://zod.dev/)
-
-## Requirements
-
-- [Bun](https://bun.sh/) v1.0 or higher
-- TypeScript 5+

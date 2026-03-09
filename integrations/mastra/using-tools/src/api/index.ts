@@ -1,6 +1,6 @@
 /**
  * API routes for agents with tools.
- * Demonstrates how to expose agents that use OpenAI function calling as APIs.
+ * Demonstrates how to expose agents that use Mastra tool calling as APIs.
  */
 
 import { createRouter } from '@agentuity/runtime';

@@ -17,12 +17,7 @@ import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { LibSQLStore } from '@mastra/libsql';
 
-// Bridge Agentuity AI Gateway → Mastra's model resolution
-if (!process.env.OPENAI_API_KEY && process.env.AGENTUITY_SDK_KEY) {
-	const gw = process.env.AGENTUITY_AIGATEWAY_URL || process.env.AGENTUITY_TRANSPORT_URL || 'https://agentuity.ai';
-	process.env.OPENAI_API_KEY = process.env.AGENTUITY_SDK_KEY;
-	process.env.OPENAI_BASE_URL = `${gw}/gateway/openai`;
-}
+import '../../lib/gateway';
 
 import { researchMastraAgent } from '../research';
 import { writingMastraAgent } from '../writing';

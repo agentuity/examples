@@ -1,156 +1,91 @@
-# Using Tools with Agentuity
+# Mastra Using Tools
 
-This example demonstrates how to use tools with agents in the Agentuity platform, inspired by the [Mastra "Using Tools" pattern](https://mastra.ai/docs/agents/using-tools).
+Mastra agents calling tools to fetch live data, deployed on Agentuity.
 
-## Overview
+## How It Works
 
-Agents use tools to call APIs, query databases, or run custom functions. Tools give agents capabilities beyond language generation by providing structured access to data and performing clearly defined operations.
+**Mastra handles**: tool definitions (`createTool` with Zod schemas), agent orchestration (`Agent` with model + tools), and automatic tool calling via the LLM.
 
-This example shows how to implement the Mastra tool pattern using OpenAI's function calling feature within Agentuity agents.
+**Agentuity handles**: deployment, schema validation (`@agentuity/schema`), API routing, and the AI Gateway bridge so Mastra's `openai/gpt-4o-mini` model string resolves through Agentuity's gateway.
 
-## Agents in This Example
-
-### Weather Agent (`src/agent/weather/`)
-
-A simple agent that uses a single tool to fetch weather data:
-
-- **Tool**: `get_weather` - Fetches current weather from open-meteo API
-- **Usage**: Ask about weather in any location
-
-```bash
-curl -X POST http://localhost:3500/api/weather \
-  -H "Content-Type: application/json" \
-  -d '{"message": "What is the weather in London?"}'
-```
-
-### Activities Agent (`src/agent/activities/`)
-
-An agent that uses multiple tools together:
-
-- **Tool 1**: `get_weather` - Fetches current weather conditions
-- **Tool 2**: `get_activities` - Suggests activities based on weather
-- **Usage**: Ask for activity suggestions for any location
-
-```bash
-curl -X POST http://localhost:3500/api/activities \
-  -H "Content-Type: application/json" \
-  -d '{"message": "What should I do in Paris today?"}'
-```
-
-## How Tools Work
-
-### Defining Tools
-
-Tools are defined as OpenAI function calling specifications:
-
-```typescript
-const tools: ChatCompletionTool[] = [
-  {
-    type: 'function',
-    function: {
-      name: 'get_weather',
-      description: 'Fetches current weather for a location',
-      parameters: {
-        type: 'object',
-        properties: {
-          location: {
-            type: 'string',
-            description: 'The city or location to get weather for',
-          },
-        },
-        required: ['location'],
-      },
-    },
-  },
-];
-```
-
-### Implementing Tool Functions
-
-Each tool has a corresponding implementation function:
-
-```typescript
-async function getWeather(location: string): Promise<string> {
-  const response = await fetch(`https://wttr.in/${encodeURIComponent(location)}?format=3`);
-  return response.text();
-}
-```
-
-### Using Tools in Agents
-
-The agent handler orchestrates tool calls:
-
-1. Send user message to LLM with available tools
-2. LLM decides which tools to call (if any)
-3. Execute tool calls and return results to LLM
-4. LLM generates final response
-
-## Project Structure
+## Architecture
 
 ```
 using-tools/
 ├── src/
 │   ├── agent/
-│   │   ├── weather/        # Single tool example
+│   │   ├── weather/         # Single-tool agent (get-weather)
 │   │   │   └── index.ts
-│   │   └── activities/     # Multiple tools example
+│   │   └── activities/      # Multi-tool agent (get-weather + get-activities)
 │   │       └── index.ts
 │   ├── api/
-│   │   └── index.ts        # API routes
-│   └── web/                # React frontend
-├── app.ts                  # Application entry point
+│   │   └── index.ts         # POST /weather, POST /activities
+│   ├── lib/
+│   │   └── gateway.ts       # AI Gateway bridge
+│   └── web/                 # React frontend
+├── app.ts
 └── package.json
 ```
 
-## Getting Started
+## Key Code Patterns
 
-### Prerequisites
+### Defining a Mastra tool
 
-- [Bun](https://bun.sh/) v1.0 or higher
+```typescript
+import { createTool } from '@mastra/core/tools';
+import { z } from 'zod';
 
-### Installation
-
-```bash
-bun install
+const weatherTool = createTool({
+  id: 'get-weather',
+  description: 'Fetches current weather for a location',
+  inputSchema: z.object({
+    location: z.string().describe('City or location name'),
+  }),
+  execute: async ({ location }: { location: string }) => {
+    const coords = await getCoordinates(location);
+    const data = await fetch(`https://api.open-meteo.com/v1/forecast?...`);
+    return `${coords.name}: Clear sky, 22°C`;
+  },
+});
 ```
 
-### Development
+### Creating a Mastra agent with tools
 
-```bash
-bun dev
+```typescript
+import { Agent } from '@mastra/core/agent';
+
+const weatherMastraAgent = new Agent({
+  id: 'weather-agent',
+  name: 'Weather Agent',
+  instructions: 'You are a helpful weather assistant...',
+  model: 'openai/gpt-4o-mini',
+  tools: { weatherTool },
+});
 ```
 
-The server starts at `http://localhost:3500`
+### Wrapping in Agentuity for deployment
 
-### Testing the Agents
+```typescript
+import { createAgent } from '@agentuity/runtime';
 
-**Weather Agent:**
-```bash
-curl -X POST http://localhost:3500/api/weather \
-  -H "Content-Type: application/json" \
-  -d '{"message": "What is the weather in Tokyo?"}'
+const agent = createAgent('weather', {
+  schema: { input: AgentInput, output: AgentOutput },
+  handler: async (ctx, { message }) => {
+    const result = await weatherMastraAgent.generate(message);
+    return { response: result.text, tokens: (result.usage?.inputTokens ?? 0) + (result.usage?.outputTokens ?? 0) };
+  },
+});
 ```
 
-**Activities Agent:**
+## Commands
+
 ```bash
-curl -X POST http://localhost:3500/api/activities \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Suggest activities for me in New York"}'
+bun dev        # Start dev server at http://localhost:3500
+bun run build  # Build for deployment
+bun run deploy # Deploy to Agentuity
 ```
 
-## Comparison with Mastra
+## Related
 
-| Mastra | Agentuity |
-|--------|-----------|
-| `createTool()` | OpenAI function calling tools |
-| `inputSchema` (Zod) | `parameters` (JSON Schema) |
-| `execute()` | Tool implementation function |
-| `tools: { weatherTool }` | `tools` array passed to OpenAI |
-
-While Mastra provides a dedicated `createTool` helper, Agentuity uses OpenAI's native function calling, giving you direct access to all OpenAI tool features including parallel tool calls and tool choice control.
-
-## Learn More
-
+- [Mastra: Using Tools](https://mastra.ai/docs/agents/using-tools)
 - [Agentuity Documentation](https://agentuity.dev)
-- [OpenAI Function Calling](https://platform.openai.com/docs/guides/function-calling)
-- [Mastra Using Tools](https://mastra.ai/docs/agents/using-tools)
