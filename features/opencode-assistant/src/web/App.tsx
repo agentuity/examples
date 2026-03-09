@@ -164,6 +164,7 @@ export function App() {
 		try {
 			const data = await startApi.invoke({ repoUrl });
 			if (data?.ready) {
+				setRepoUrl(data.repoUrl);
 				setState('ready');
 			} else {
 				setError(data?.message || 'Workspace failed to start. Try again.');

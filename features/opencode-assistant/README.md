@@ -58,9 +58,9 @@ sbx.execute({
 
 ## Session Persistence
 
-Workspace state (sandbox ID, server URL, session ID) persists in KV with a 30-minute TTL. Refreshing the page or restarting the dev server reconnects to the running sandbox automatically, no re-cloning or rebooting needed.
+This example keeps one active workspace at a time. KV stores the current sandbox ID, server URL, repo URL, and OpenCode session ID with a 30-minute TTL. Refreshing the page reconnects to that same running workspace, and starting the same repo again reuses it instead of re-cloning.
 
-The OpenCode session also persists server-side, so the AI retains full conversation context across page refreshes. Only the visual chat history resets (it lives in React state). You can keep asking follow-up questions and the model remembers what you discussed earlier.
+If you start a different repo, the existing workspace is torn down and a fresh sandbox is created for the new repo. The OpenCode session persists only for the currently attached workspace, so the AI retains prior context across page refreshes but not across repo switches. The visual chat history still resets because it lives in React state.
 
 ## Project Structure
 

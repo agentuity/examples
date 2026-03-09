@@ -50,12 +50,13 @@ api.get('/status', validator({ output: StatusResponse }), async (c) => {
 api.post('/start', validator({ input: StartInput, output: StartResponse }), async (c) => {
 	const { logger, kv, sandbox } = c.var;
 	const { repoUrl } = c.req.valid('json');
-
 	// Basic URL validation
+	let requestedRepoUrl: string;
 	try {
 		const parsed = new URL(repoUrl);
+		requestedRepoUrl = parsed.toString();
 		if (parsed.protocol !== 'https:') {
-			return c.json({ ready: false, repoUrl, sessionId: '' }, 400);
+			return c.json({ ready: false, repoUrl: requestedRepoUrl, sessionId: '' }, 400);
 		}
 	} catch {
 		return c.json({ ready: false, repoUrl, sessionId: '' }, 400);
@@ -64,30 +65,44 @@ api.post('/start', validator({ input: StartInput, output: StartResponse }), asyn
 	// --- Agentuity KV: Check for existing healthy workspace (rehydration) ---
 	const existing = await kv.get<AssistantState>(KV_NAMESPACE, KV_KEY);
 	if (existing.exists) {
-		// --- OpenCode: Verify existing workspace is still alive ---
-		const alive = await checkHealth(existing.data.serverUrl, existing.data.password);
-
-		if (alive) {
-			logger.info('Workspace already running', { sandboxId: existing.data.sandboxId });
-			return c.json({
-				ready: true,
-				repoUrl: existing.data.repoUrl,
-				sessionId: existing.data.sessionId,
+		if (existing.data.repoUrl !== requestedRepoUrl) {
+			logger.info('Requested repo differs from active workspace, replacing workspace', {
+				sandboxId: existing.data.sandboxId,
+				activeRepoUrl: existing.data.repoUrl,
+				requestedRepoUrl,
 			});
-		}
+			try {
+				await sandbox.destroy(existing.data.sandboxId);
+			} catch (err) {
+				logger.warn('Failed to destroy stale sandbox', { error: String(err) });
+			}
+			await kv.delete(KV_NAMESPACE, KV_KEY);
+		} else {
+			// --- OpenCode: Verify existing workspace is still alive ---
+			const alive = await checkHealth(existing.data.serverUrl, existing.data.password);
 
-		// Stale: clean up
-		logger.warn('Stale workspace detected, cleaning up');
-		try {
-			await sandbox.destroy(existing.data.sandboxId);
-		} catch (err) {
-			logger.warn('Failed to destroy stale sandbox', { error: String(err) });
+			if (alive) {
+				logger.info('Workspace already running', { sandboxId: existing.data.sandboxId });
+				return c.json({
+					ready: true,
+					repoUrl: existing.data.repoUrl,
+					sessionId: existing.data.sessionId,
+				});
+			}
+
+			// Stale: clean up
+			logger.warn('Stale workspace detected, cleaning up');
+			try {
+				await sandbox.destroy(existing.data.sandboxId);
+			} catch (err) {
+				logger.warn('Failed to destroy stale sandbox', { error: String(err) });
+			}
+			await kv.delete(KV_NAMESPACE, KV_KEY);
 		}
-		await kv.delete(KV_NAMESPACE, KV_KEY);
 	}
 
 	const password = crypto.randomUUID();
-	logger.info('Creating OpenCode sandbox', { repoUrl });
+	logger.info('Creating OpenCode sandbox', { repoUrl: requestedRepoUrl });
 
 	// --- Agentuity Secret Injection ---
 	// In dev, process.env resolves from .env directly.
@@ -95,7 +110,7 @@ api.post('/start', validator({ input: StartInput, output: StartResponse }), asyn
 	const env: Record<string, string> = {
 		OPENCODE_SERVER_PASSWORD: password,
 		OPENAI_API_KEY: process.env.OPENAI_API_KEY || '${secret:OPENAI_API_KEY}',
-		REPO_URL: repoUrl,
+		REPO_URL: requestedRepoUrl,
 	};
 
 	// --- Agentuity Sandbox: Create isolated runtime environment ---
@@ -113,7 +128,7 @@ api.post('/start', validator({ input: StartInput, output: StartResponse }), asyn
 		});
 	} catch (err) {
 		logger.error('Failed to create sandbox', { error: String(err) });
-		return c.json({ ready: false, repoUrl, sessionId: '' }, 500);
+		return c.json({ ready: false, repoUrl: requestedRepoUrl, sessionId: '' }, 500);
 	}
 
 	logger.info('Sandbox created', { sandboxId: sbx.id });
@@ -148,7 +163,7 @@ api.post('/start', validator({ input: StartInput, output: StartResponse }), asyn
 	if (!serverUrl) {
 		logger.error('Sandbox has no public URL');
 		await sbx.destroy();
-		return c.json({ ready: false, repoUrl, sessionId: '' }, 500);
+		return c.json({ ready: false, repoUrl: requestedRepoUrl, sessionId: '' }, 500);
 	}
 
 	// --- OpenCode: Poll for server readiness ---
@@ -168,7 +183,7 @@ api.post('/start', validator({ input: StartInput, output: StartResponse }), asyn
 	if (!ready) {
 		logger.warn('Server did not become ready within timeout');
 		await sbx.destroy();
-		return c.json({ ready: false, repoUrl, sessionId: '' }, 500);
+		return c.json({ ready: false, repoUrl: requestedRepoUrl, sessionId: '' }, 500);
 	}
 
 	// --- OpenCode: Verify repo was cloned via the file API ---
@@ -177,9 +192,9 @@ api.post('/start', validator({ input: StartInput, output: StartResponse }), asyn
 	const hasFiles = await checkWorkspaceFiles(serverUrl, password);
 	if (!hasFiles) {
 		const message = 'Failed to clone repository — check that the URL is correct and the repo is public';
-		logger.warn('Repo clone failed, tearing down sandbox', { repoUrl });
+		logger.warn('Repo clone failed, tearing down sandbox', { repoUrl: requestedRepoUrl });
 		await sbx.destroy();
-		return c.json({ ready: false, repoUrl, sessionId: '', message });
+		return c.json({ ready: false, repoUrl: requestedRepoUrl, sessionId: '', message });
 	}
 
 	// --- OpenCode: Create a chat session ---
@@ -195,7 +210,7 @@ api.post('/start', validator({ input: StartInput, output: StartResponse }), asyn
 				: '';
 		logger.error(`Failed to create OpenCode session${hint}`, { error: errStr });
 		await sbx.destroy();
-		return c.json({ ready: false, repoUrl, sessionId: '' }, 500);
+		return c.json({ ready: false, repoUrl: requestedRepoUrl, sessionId: '' }, 500);
 	}
 	logger.info('OpenCode session created', { sessionId });
 
@@ -205,7 +220,7 @@ api.post('/start', validator({ input: StartInput, output: StartResponse }), asyn
 		serverUrl,
 		password,
 		sessionId,
-		repoUrl,
+		repoUrl: requestedRepoUrl,
 		startedAt: new Date().toISOString(),
 	};
 	// TTL matches sandbox idle timeout (30 min) so stale state auto-expires.
@@ -214,7 +229,7 @@ api.post('/start', validator({ input: StartInput, output: StartResponse }), asyn
 	// every /ask, /events, /status request) won't lose state unexpectedly.
 	await kv.set(KV_NAMESPACE, KV_KEY, state, { ttl: 1800 });
 
-	return c.json({ ready: true, repoUrl, sessionId });
+	return c.json({ ready: true, repoUrl: requestedRepoUrl, sessionId });
 });
 
 // POST /api/ask — Send question to OpenCode session

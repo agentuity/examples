@@ -48,11 +48,10 @@ The `finish_research` tool is the structured output mechanism: when the model ha
 src/
 ├── agent/researcher/
 │   ├── agent.ts      # Agent loop with Anthropic tool calling
-│   └── index.ts      # Re-export
+│   ├── index.ts      # Re-export
+│   └── types.ts      # ResearchInput and ResearchOutput schemas
 ├── api/
 │   └── index.ts      # POST /api/research route
-├── lib/
-│   └── types.ts      # ResearchInput, ResearchOutput schemas
 └── web/
     ├── App.tsx        # Topic input + results display
     ├── App.css        # Agentuity brand theme

@@ -207,7 +207,7 @@ export function App() {
 							{
 								key: 'cron',
 								title: 'Cron Schedule',
-								text: 'Runs every hour in deployed environments. Locally, trigger with "Run Now" or curl -X POST http://localhost:3500/api/digest.',
+								text: 'Runs every hour in deployed environments. Locally, trigger with "Run Now" or curl -X POST http://localhost:3500/api/digest/now.',
 							},
 							{
 								key: 'kv',

@@ -87,7 +87,7 @@ After storing a finding for each section you explored, call finish_exploration t
 - Once you have seen what a feature does, move on. Do not repeat the same interaction.
 - Prefer clicking element refs (@e5) over scrolling or navigating.
 - Use fill for search boxes and form inputs. Press Enter after filling to submit.
-- Do not fill read-only code displays or editor panels that show reference code.
+- Never fill "Editor content" or "Reference Code" panels — they are read-only code displays.
 - NEVER guess or construct URLs. Only navigate to URLs visible in the accessibility tree.
 - Do not exhaust your action budget. Wrap up when you have enough understanding to summarize the site.
 - Element refs (@e1) are only valid until the page changes. Take a new screenshot after navigation.`;
@@ -178,7 +178,8 @@ function createExplorationTools(sandbox: Sandbox, ctx: ExplorerContext, state: E
 					observation,
 					action: `Stored finding: ${title}`,
 				});
-				return `Stored: ${title}`;
+				// Nudge the model toward the next cycle step via tool output
+			return `Stored: ${title}. Navigate to a new section or call finish_exploration if you have covered enough.`;
 			},
 		}),
 
@@ -209,7 +210,15 @@ const BROWSER_DISPATCH: Record<string, BrowserAction> = {
 	},
 	fill: {
 		validate: (ref, value) => (!ref || !value) ? 'Error: ref and value are required for fill' : null,
-		run: async (sandbox, ref, value) => await runBrowserCmd(sandbox, ['fill', ref!, value!]) ?? `Filled ${ref} with "${value}"`,
+		run: async (sandbox, ref, value) => {
+			const err = await runBrowserCmd(sandbox, ['fill', ref!, value!]);
+			if (err) return err;
+			// Read back the value to detect read-only fields
+			const readBack = await exec(sandbox, ['agent-browser', 'get', 'value', ref!]);
+			const actual = (await getStdout(readBack)).trim();
+			if (actual !== value) return `Fill had no effect on ${ref} — this field may be read-only. Do not retry.`;
+			return `Filled ${ref} with "${value}"`;
+		},
 		describe: (ref, value, _d, reason) => `Filled ${ref} with "${value}" (${reason})`,
 	},
 	scroll: {
@@ -303,7 +312,8 @@ async function handleScreenshot(
 		? '(snapshot unavailable)'
 		: await getStdout(snapshotExec);
 
-	// Generate observation with context from recent actions and previous observation
+	// Generate observation — this becomes the KV record's observation field,
+	// so it should describe what the page does, not just what it looks like
 	try {
 		let normalizedCurrent: string | null = null;
 		try { normalizedCurrent = normalizeUrl(currentUrl); } catch {}
@@ -311,7 +321,7 @@ async function handleScreenshot(
 		const recentActions = normalizedCurrent ? (state.actionsByUrl.get(normalizedCurrent) ?? []).slice(-3) : [];
 		const prevObservation = normalizedCurrent ? state.lastObservationByUrl.get(normalizedCurrent) : undefined;
 
-		let observationPrompt = `Write a brief factual caption for this web page screenshot in 1-2 sentences. Do not address the reader.\n\nPage URL: ${currentUrl}`;
+		let observationPrompt = `Describe what this page does and what interactive features are available in 1-2 sentences. Do not address the reader.\n\nPage URL: ${currentUrl}`;
 		if (recentActions.length > 0) {
 			observationPrompt += `\n\nRecent actions:\n${recentActions.map((a) => `- ${a}`).join('\n')}`;
 		}

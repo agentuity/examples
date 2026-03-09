@@ -21,14 +21,14 @@ const [tsResult, pyResult] = await Promise.all([
     runtime: 'bun:1',
     command: {
       exec: ['bun', 'run', 'solution.ts'],
-      files: [{ path: 'solution.ts', content: Buffer.from(object.typescript) }],
+      files: [{ path: 'solution.ts', content: Buffer.from(output.typescript) }],
     },
   }),
   ctx.sandbox.run({
     runtime: 'python:3.14',
     command: {
       exec: ['python', 'solution.py'],
-      files: [{ path: 'solution.py', content: Buffer.from(object.python) }],
+      files: [{ path: 'solution.py', content: Buffer.from(output.python) }],
     },
   }),
 ]);
@@ -36,10 +36,9 @@ const [tsResult, pyResult] = await Promise.all([
 
 The frontend picks from three curated prompts (Fibonacci, FizzBuzz, Merge Sort) and displays results in a side-by-side grid with code, output, exit codes, and execution time.
 
-Two evals run in the background after each response:
+An eval runs in the background after each response:
 
-- **`code-correctness`** (custom): LLM-as-judge eval that scores whether both implementations correctly solve the prompt
-- **`conciseness`** (preset): Uses `@agentuity/evals` to check if the generated code is appropriately concise
+- **`code-correctness`** (custom, score type): LLM-as-judge eval where Claude Haiku scores whether both implementations correctly solve the prompt (0-1 scale)
 
 Eval results appear in the [Agentuity App](https://app.agentuity.com), not in the agent response.
 
@@ -48,12 +47,11 @@ Eval results appear in the [Agentuity App](https://app.agentuity.com), not in th
 ```
 src/
 ├── agent/code-runner/
-│   ├── agent.ts      # LLM code generation + parallel sandbox execution
-│   ├── eval.ts       # Custom + preset evals
-│   └── index.ts
+│   ├── agent.ts      # Schemas + LLM code generation + parallel sandbox execution
+│   ├── eval.ts       # LLM-as-judge eval (score type)
+│   └── index.ts      # Re-exports
 ├── api/index.ts      # POST /api/run
 ├── lib/
-│   ├── types.ts      # Shared I/O schemas (@agentuity/schema)
 │   └── prompts.ts    # Curated prompt definitions
 └── web/
     ├── App.tsx        # React UI with prompt selector + results grid
