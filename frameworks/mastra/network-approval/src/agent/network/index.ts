@@ -8,9 +8,9 @@
  * - Automatic resumption: Network auto-resumes suspended tools on next user message
  *
  * This agent acts as a routing agent coordinating multiple conceptual sub-agents:
- * - Research sub-agent: search_web, lookup_info (no approval)
- * - Operations sub-agent: delete_records, send_notification (approval required)
- * - Confirmation sub-agent: request_confirmation (suspend/resume pattern)
+ * - Research sub-agent: search-web, lookup-info (no approval)
+ * - Operations sub-agent: delete-records, send-notification (approval required)
+ * - Confirmation sub-agent: request-confirmation (suspend/resume pattern)
  *
  * Flow variations:
  * 1. Safe tools -> immediate execution -> return result
@@ -22,24 +22,58 @@
 
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
-import OpenAI from 'openai';
+import { Agent } from '@mastra/core/agent';
+
+// Bridge Agentuity AI Gateway → Mastra's model resolution
+if (!process.env.OPENAI_API_KEY && process.env.AGENTUITY_SDK_KEY) {
+	const gw = process.env.AGENTUITY_AIGATEWAY_URL || process.env.AGENTUITY_TRANSPORT_URL || 'https://agentuity.ai';
+	process.env.OPENAI_API_KEY = process.env.AGENTUITY_SDK_KEY;
+	process.env.OPENAI_BASE_URL = `${gw}/gateway/openai`;
+}
+import type { CoreMessageV4 } from '@mastra/core/agent/message-list';
 
 import {
 	TOOLS_REQUIRING_APPROVAL,
 	TOOLS_WITH_SUSPEND,
 	TOOL_SUB_AGENTS,
 	TOOL_SUSPEND_REASONS,
-	executeConfirmationTool,
 	executeTool,
+	executeConfirmationWithResumeData,
 	getSuspendPayload,
-	toolDefinitions,
+	searchWebTool,
+	lookupInfoTool,
+	deleteRecordsTool,
+	sendNotificationTool,
+	requestConfirmationTool,
 } from './tools';
 
-/**
- * AI Gateway: Routes requests to OpenAI, Anthropic, and other LLM providers.
- * One SDK key, unified observability and billing; no separate API keys needed.
- */
-const client = new OpenAI();
+// System instruction string stored separately so it can be used when building
+// conversation history messages without needing to call getInstructions() async.
+const NETWORK_INSTRUCTIONS = `You are a routing agent coordinating a network of specialized sub-agents. Route requests to the appropriate tool:
+
+Research sub-agent tools: search-web (web search), lookup-info (entity lookup)
+Operations sub-agent tools: delete-records (data deletion), send-notification (email/SMS)
+Confirmation sub-agent tools: request-confirmation (when user needs to confirm or choose)
+
+Use the appropriate tool based on the user's request. For dangerous or irreversible actions, prefer using request-confirmation first to verify intent.`;
+
+// ============================================================================
+// Mastra Network Routing Agent
+// ============================================================================
+
+const networkMastraAgent = new Agent({
+	id: 'network-routing-agent',
+	name: 'Network Routing Agent',
+	instructions: NETWORK_INSTRUCTIONS,
+	model: 'openai/gpt-4o-mini',
+	tools: {
+		'search-web': searchWebTool,
+		'lookup-info': lookupInfoTool,
+		'delete-records': deleteRecordsTool,
+		'send-notification': sendNotificationTool,
+		'request-confirmation': requestConfirmationTool,
+	},
+});
 
 const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
 
@@ -51,7 +85,7 @@ const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
 export const PendingApprovalSchema = s.object({
 	id: s.string().describe('Unique approval request ID'),
 	toolName: s.string().describe('Name of the tool requiring approval'),
-	toolCallId: s.string().describe('OpenAI tool call ID for resuming the conversation'),
+	toolCallId: s.string().describe('Tool call ID for resuming the conversation'),
 	toolArgs: s.string().describe('JSON-encoded tool arguments'),
 	subAgent: s.string().describe('Conceptual sub-agent this tool belongs to'),
 	reason: s.string().describe('Why this tool call needs approval'),
@@ -67,7 +101,7 @@ export type PendingApproval = s.infer<typeof PendingApprovalSchema>;
 export const SuspendedExecutionSchema = s.object({
 	id: s.string().describe('Unique suspension ID'),
 	toolName: s.string().describe('Name of the suspended tool'),
-	toolCallId: s.string().describe('OpenAI tool call ID for resuming the conversation'),
+	toolCallId: s.string().describe('Tool call ID for resuming the conversation'),
 	toolArgs: s.string().describe('JSON-encoded tool arguments'),
 	subAgent: s.string().describe('Conceptual sub-agent this tool belongs to'),
 	suspendPayload: s.string().describe('JSON-encoded context from the suspended tool (message, action, options)'),
@@ -129,42 +163,29 @@ const agent = createAgent('network', {
 		input: AgentInput,
 		output: AgentOutput,
 	},
-	handler: async (ctx, { text, model = 'gpt-5-nano', requireToolApproval = false }) => {
+	handler: async (ctx, { text, requireToolApproval = false }) => {
 		ctx.logger.info('──── Network Agent ────');
-		ctx.logger.info({ textLength: text.length, model, requireToolApproval });
+		ctx.logger.info({ textLength: text.length, requireToolApproval });
 		ctx.logger.info('Request IDs', { threadId: ctx.thread.id, sessionId: ctx.sessionId });
 
-		// Build initial messages with network routing instructions
-		const messages: OpenAI.ChatCompletionMessageParam[] = [
-			{
-				role: 'system',
-				content: `You are a routing agent coordinating a network of specialized sub-agents. Route requests to the appropriate tool:
-
-Research sub-agent tools: search_web (web search), lookup_info (entity lookup)
-Operations sub-agent tools: delete_records (data deletion), send_notification (email/SMS)
-Confirmation sub-agent tools: request_confirmation (when user needs to confirm or choose)
-
-Use the appropriate tool based on the user's request. For dangerous or irreversible actions, prefer using request_confirmation first to verify intent.`,
-			},
+		// Build the user message for the Mastra agent
+		const userMessages: CoreMessageV4[] = [
 			{ role: 'user', content: text },
 		];
 
-		// Call LLM with all network tool definitions
-		const completion = await client.chat.completions.create({
-			model,
-			messages,
-			tools: toolDefinitions,
-		});
+		// Call the Mastra routing agent with maxSteps: 1 so we receive the LLM's
+		// tool call decision without auto-executing tools. This lets us intercept
+		// the call for approval or suspend/resume handling before execution.
+		const result = await networkMastraAgent.generate(userMessages, { maxSteps: 1 });
 
-		const choice = completion.choices[0];
-		const tokens = completion.usage?.total_tokens ?? 0;
+		const tokens = result.usage?.totalTokens ?? 0;
 
-		// If the LLM didn't request a tool call, return the text response
-		if (choice?.finish_reason !== 'tool_calls' || !choice.message.tool_calls?.length) {
+		// If no tool was called, return the text response
+		if (!result.toolCalls || result.toolCalls.length === 0) {
 			ctx.logger.info('No tool call requested, returning text response');
 
 			return {
-				response: choice?.message?.content ?? 'I could not process that request.',
+				response: result.text || 'I could not process that request.',
 				suspended: false,
 				threadId: ctx.thread.id,
 				sessionId: ctx.sessionId,
@@ -172,23 +193,32 @@ Use the appropriate tool based on the user's request. For dangerous or irreversi
 			};
 		}
 
-		// Extract the tool call
-		const toolCall = choice.message.tool_calls[0]!;
-		if (toolCall.type !== 'function') {
-			return {
-				response: 'Unexpected tool call type.',
-				suspended: false,
-				threadId: ctx.thread.id,
-				sessionId: ctx.sessionId,
-				tokens,
-			};
-		}
-
-		const toolName = toolCall.function.name;
-		const toolArgs = JSON.parse(toolCall.function.arguments) as Record<string, string>;
+		// Extract the first tool call from the Mastra result
+		const toolCallChunk = result.toolCalls[0]!;
+		const toolName = toolCallChunk.payload.toolName;
+		const toolArgs = (toolCallChunk.payload.args ?? {}) as Record<string, unknown>;
+		const toolCallId = toolCallChunk.payload.toolCallId;
 		const subAgent = TOOL_SUB_AGENTS[toolName] ?? 'unknown';
 
 		ctx.logger.info('Tool call requested', { toolName, toolArgs, subAgent });
+
+		// Build the conversation state that captures what the LLM decided.
+		// This is stored for approval/suspend resumption and includes system context.
+		const conversationMessages: CoreMessageV4[] = [
+			{ role: 'system', content: NETWORK_INSTRUCTIONS },
+			...userMessages,
+			{
+				role: 'assistant',
+				content: [
+					{
+						type: 'tool-call',
+						toolCallId,
+						toolName,
+						args: toolArgs,
+					},
+				],
+			},
+		];
 
 		// ================================================================
 		// Check 1: Suspend/Resume Pattern
@@ -204,17 +234,14 @@ Use the appropriate tool based on the user's request. For dangerous or irreversi
 			const suspended: SuspendedExecution = {
 				id: suspendId,
 				toolName,
-				toolCallId: toolCall.id,
+				toolCallId,
 				toolArgs: JSON.stringify(toolArgs),
 				subAgent,
 				suspendPayload: JSON.stringify(suspendPayload),
 				status: 'suspended',
 				suspendedAt: new Date().toISOString(),
-				conversationState: JSON.stringify({
-					messages,
-					assistantMessage: choice.message,
-				}),
-				model,
+				conversationState: JSON.stringify(conversationMessages),
+				model: 'openai/gpt-4o-mini',
 			};
 
 			await ctx.thread.state.set('suspendedExecution', suspended);
@@ -222,7 +249,7 @@ Use the appropriate tool based on the user's request. For dangerous or irreversi
 			ctx.logger.info('Network suspended for user input', { suspendId, toolName, subAgent, suspendPayload });
 
 			return {
-				response: suspendPayload.message ?? `Tool "${toolName}" is waiting for input.`,
+				response: suspendPayload['message'] ?? `Tool "${toolName}" is waiting for input.`,
 				suspended: true,
 				suspendType: 'suspend',
 				suspendedExecution: suspended,
@@ -251,17 +278,14 @@ Use the appropriate tool based on the user's request. For dangerous or irreversi
 			const pendingApproval: PendingApproval = {
 				id: approvalId,
 				toolName,
-				toolCallId: toolCall.id,
+				toolCallId,
 				toolArgs: JSON.stringify(toolArgs),
 				subAgent,
 				reason,
 				status: 'pending',
 				requestedAt: new Date().toISOString(),
-				conversationState: JSON.stringify({
-					messages,
-					assistantMessage: choice.message,
-				}),
-				model,
+				conversationState: JSON.stringify(conversationMessages),
+				model: 'openai/gpt-4o-mini',
 			};
 
 			await ctx.thread.state.set('pendingApproval', pendingApproval);
@@ -286,26 +310,28 @@ Use the appropriate tool based on the user's request. For dangerous or irreversi
 
 		ctx.logger.info('Executing tool immediately', { toolName, subAgent });
 
-		const toolResult = await executeTool(toolName, toolArgs, model);
+		const toolResult = await executeTool(toolName, toolArgs);
 
-		// Continue conversation with tool result
-		const followUpMessages: OpenAI.ChatCompletionMessageParam[] = [
-			...messages,
-			choice.message,
+		// Build follow-up messages: conversation history + tool result
+		const followUpMessages: CoreMessageV4[] = [
+			...conversationMessages,
 			{
 				role: 'tool',
-				tool_call_id: toolCall.id,
-				content: JSON.stringify(toolResult.data),
+				content: [
+					{
+						type: 'tool-result',
+						toolCallId,
+						toolName,
+						result: toolResult.data,
+					},
+				],
 			},
 		];
 
-		const followUp = await client.chat.completions.create({
-			model,
-			messages: followUpMessages,
-		});
+		const followUpResult = await networkMastraAgent.generate(followUpMessages);
 
-		const totalTokens = tokens + (followUp.usage?.total_tokens ?? 0);
-		const response = followUp.choices[0]?.message?.content ?? '';
+		const totalTokens = tokens + (followUpResult.usage?.totalTokens ?? 0);
+		const response = followUpResult.text ?? '';
 
 		// Store in history
 		await ctx.thread.state.push(
@@ -356,34 +382,32 @@ export async function approveNetworkToolCall(
 		};
 	}
 ): Promise<AgentOutputType> {
-	const { messages, assistantMessage } = JSON.parse(pending.conversationState) as {
-		messages: OpenAI.ChatCompletionMessageParam[];
-		assistantMessage: OpenAI.ChatCompletionMessage;
-	};
-
-	const toolArgs = JSON.parse(pending.toolArgs) as Record<string, string>;
+	const conversationMessages = JSON.parse(pending.conversationState) as CoreMessageV4[];
+	const toolArgs = JSON.parse(pending.toolArgs) as Record<string, unknown>;
 
 	// Execute the tool
-	const toolResult = await executeTool(pending.toolName, toolArgs, pending.model);
+	const toolResult = await executeTool(pending.toolName, toolArgs);
 
-	// Continue conversation with tool result
-	const followUpMessages: OpenAI.ChatCompletionMessageParam[] = [
-		...messages,
-		assistantMessage,
+	// Build follow-up messages: stored conversation + tool result
+	const followUpMessages: CoreMessageV4[] = [
+		...conversationMessages,
 		{
 			role: 'tool',
-			tool_call_id: pending.toolCallId,
-			content: JSON.stringify(toolResult.data),
+			content: [
+				{
+					type: 'tool-result',
+					toolCallId: pending.toolCallId,
+					toolName: pending.toolName,
+					result: toolResult.data,
+				},
+			],
 		},
 	];
 
-	const followUp = await client.chat.completions.create({
-		model: pending.model,
-		messages: followUpMessages,
-	});
+	const followUpResult = await networkMastraAgent.generate(followUpMessages);
 
-	const tokens = followUp.usage?.total_tokens ?? 0;
-	const response = followUp.choices[0]?.message?.content ?? '';
+	const tokens = followUpResult.usage?.totalTokens ?? 0;
+	const response = followUpResult.text ?? '';
 
 	// Move to history
 	await thread.state.push(
@@ -431,32 +455,31 @@ export async function declineNetworkToolCall(
 		};
 	}
 ): Promise<AgentOutputType> {
-	const { messages, assistantMessage } = JSON.parse(pending.conversationState) as {
-		messages: OpenAI.ChatCompletionMessageParam[];
-		assistantMessage: OpenAI.ChatCompletionMessage;
-	};
+	const conversationMessages = JSON.parse(pending.conversationState) as CoreMessageV4[];
 
 	// Provide a tool result indicating the call was declined
-	const followUpMessages: OpenAI.ChatCompletionMessageParam[] = [
-		...messages,
-		assistantMessage,
+	const followUpMessages: CoreMessageV4[] = [
+		...conversationMessages,
 		{
 			role: 'tool',
-			tool_call_id: pending.toolCallId,
-			content: JSON.stringify({
-				error: 'Tool call was declined by user.',
-				declined: true,
-			}),
+			content: [
+				{
+					type: 'tool-result',
+					toolCallId: pending.toolCallId,
+					toolName: pending.toolName,
+					result: {
+						error: 'Tool call was declined by user.',
+						declined: true,
+					},
+				},
+			],
 		},
 	];
 
-	const followUp = await client.chat.completions.create({
-		model: pending.model,
-		messages: followUpMessages,
-	});
+	const followUpResult = await networkMastraAgent.generate(followUpMessages);
 
-	const tokens = followUp.usage?.total_tokens ?? 0;
-	const response = followUp.choices[0]?.message?.content ?? '';
+	const tokens = followUpResult.usage?.totalTokens ?? 0;
+	const response = followUpResult.text ?? '';
 
 	// Move to history
 	await thread.state.push(
@@ -505,36 +528,34 @@ export async function resumeNetwork(
 		};
 	}
 ): Promise<AgentOutputType> {
-	const { messages, assistantMessage } = JSON.parse(suspended.conversationState) as {
-		messages: OpenAI.ChatCompletionMessageParam[];
-		assistantMessage: OpenAI.ChatCompletionMessage;
-	};
-
-	const toolArgs = JSON.parse(suspended.toolArgs) as Record<string, string>;
+	const conversationMessages = JSON.parse(suspended.conversationState) as CoreMessageV4[];
+	const toolArgs = JSON.parse(suspended.toolArgs) as Record<string, unknown>;
 
 	// Execute the tool with resume data
 	const toolResult = TOOLS_WITH_SUSPEND.has(suspended.toolName)
-		? executeConfirmationTool(toolArgs, resumeData)
-		: await executeTool(suspended.toolName, toolArgs, suspended.model);
+		? executeConfirmationWithResumeData(toolArgs, resumeData)
+		: await executeTool(suspended.toolName, toolArgs);
 
-	// Continue conversation with tool result
-	const followUpMessages: OpenAI.ChatCompletionMessageParam[] = [
-		...messages,
-		assistantMessage,
+	// Build follow-up messages: stored conversation + tool result
+	const followUpMessages: CoreMessageV4[] = [
+		...conversationMessages,
 		{
 			role: 'tool',
-			tool_call_id: suspended.toolCallId,
-			content: JSON.stringify(toolResult.data),
+			content: [
+				{
+					type: 'tool-result',
+					toolCallId: suspended.toolCallId,
+					toolName: suspended.toolName,
+					result: toolResult.data,
+				},
+			],
 		},
 	];
 
-	const followUp = await client.chat.completions.create({
-		model: suspended.model,
-		messages: followUpMessages,
-	});
+	const followUpResult = await networkMastraAgent.generate(followUpMessages);
 
-	const tokens = followUp.usage?.total_tokens ?? 0;
-	const response = followUp.choices[0]?.message?.content ?? '';
+	const tokens = followUpResult.usage?.totalTokens ?? 0;
+	const response = followUpResult.text ?? '';
 
 	// Move to history
 	await thread.state.push(

@@ -1,81 +1,102 @@
 /**
- * Tool definitions for the approval agent.
+ * Tool definitions for the approval agent using Mastra's createTool.
  *
  * Demonstrates tool call approval patterns from Mastra:
- * - Tools without approval: execute immediately (get_weather, search_records)
- * - Tools with requireApproval: suspend for human approval (delete_user_data, send_notification)
+ * - Tools without requireApproval: execute immediately (getWeatherTool, searchRecordsTool)
+ * - Tools with requireApproval: suspend for human approval (deleteUserDataTool, sendNotificationTool)
  *
- * Each tool has an OpenAI function definition for the LLM, and an executor
- * that simulates the actual operation.
+ * Each tool is defined with Mastra's createTool() and a Zod inputSchema.
  */
 
-import type OpenAI from 'openai';
+import { createTool } from '@mastra/core/tools';
+import { z } from 'zod';
 
 // ============================================================================
-// OpenAI Function Definitions
+// Safe Tools — no approval required
 // ============================================================================
 
-export const toolDefinitions: OpenAI.ChatCompletionTool[] = [
-	{
-		type: 'function',
-		function: {
-			name: 'get_weather',
-			description: 'Fetches current weather for a location',
-			parameters: {
-				type: 'object',
-				properties: {
-					location: { type: 'string', description: 'City or location name' },
-				},
-				required: ['location'],
-			},
-		},
+export const getWeatherTool = createTool({
+	id: 'get-weather',
+	description: 'Fetches current weather for a location',
+	inputSchema: z.object({
+		location: z.string().describe('City or location name'),
+	}),
+	execute: async (inputData) => {
+		const { location } = inputData as { location: string };
+		const conditions = ['Sunny', 'Cloudy', 'Rainy', 'Partly cloudy', 'Windy'];
+		return {
+			location,
+			temperature: `${Math.floor(Math.random() * 30) + 40}°F`,
+			condition: conditions[Math.floor(Math.random() * conditions.length)] ?? 'Unknown',
+			humidity: `${Math.floor(Math.random() * 60) + 30}%`,
+		};
 	},
-	{
-		type: 'function',
-		function: {
-			name: 'search_records',
-			description: 'Searches records in the database by keyword',
-			parameters: {
-				type: 'object',
-				properties: {
-					query: { type: 'string', description: 'Search query' },
-				},
-				required: ['query'],
-			},
-		},
+});
+
+export const searchRecordsTool = createTool({
+	id: 'search-records',
+	description: 'Searches records in the database by keyword',
+	inputSchema: z.object({
+		query: z.string().describe('Search query'),
+	}),
+	execute: async (inputData) => {
+		const { query } = inputData as { query: string };
+		return {
+			query,
+			results: [
+				{ id: '1', name: `Result for "${query}" #1`, relevance: 0.95 },
+				{ id: '2', name: `Result for "${query}" #2`, relevance: 0.82 },
+			],
+			total: 2,
+		};
 	},
-	{
-		type: 'function',
-		function: {
-			name: 'delete_user_data',
-			description: 'Permanently deletes all data for a user. This is destructive and irreversible.',
-			parameters: {
-				type: 'object',
-				properties: {
-					userId: { type: 'string', description: 'The user ID whose data to delete' },
-					reason: { type: 'string', description: 'Reason for deletion' },
-				},
-				required: ['userId', 'reason'],
-			},
-		},
+});
+
+// ============================================================================
+// Dangerous Tools — require approval
+// Mirrors Mastra's requireApproval: true pattern
+// ============================================================================
+
+export const deleteUserDataTool = createTool({
+	id: 'delete-user-data',
+	description: 'Permanently deletes all data for a user. This is destructive and irreversible.',
+	inputSchema: z.object({
+		userId: z.string().describe('The user ID whose data to delete'),
+		reason: z.string().describe('Reason for deletion'),
+	}),
+	requireApproval: true,
+	execute: async (inputData) => {
+		const { userId, reason } = inputData as { userId: string; reason: string };
+		return {
+			deleted: true,
+			userId,
+			reason,
+			recordsRemoved: Math.floor(Math.random() * 50) + 5,
+			timestamp: new Date().toISOString(),
+		};
 	},
-	{
-		type: 'function',
-		function: {
-			name: 'send_notification',
-			description: 'Sends a notification to a user via email or SMS',
-			parameters: {
-				type: 'object',
-				properties: {
-					recipient: { type: 'string', description: 'Email address or phone number' },
-					message: { type: 'string', description: 'Notification message content' },
-					channel: { type: 'string', enum: ['email', 'sms'], description: 'Delivery channel' },
-				},
-				required: ['recipient', 'message', 'channel'],
-			},
-		},
+});
+
+export const sendNotificationTool = createTool({
+	id: 'send-notification',
+	description: 'Sends a notification to a user via email or SMS',
+	inputSchema: z.object({
+		recipient: z.string().describe('Email address or phone number'),
+		message: z.string().describe('Notification message content'),
+		channel: z.enum(['email', 'sms']).describe('Delivery channel'),
+	}),
+	requireApproval: true,
+	execute: async (inputData) => {
+		const { recipient, message, channel } = inputData as { recipient: string; message: string; channel: string };
+		return {
+			sent: true,
+			recipient,
+			channel,
+			messagePreview: message.slice(0, 100),
+			timestamp: new Date().toISOString(),
+		};
 	},
-];
+});
 
 // ============================================================================
 // Approval Configuration
@@ -84,88 +105,16 @@ export const toolDefinitions: OpenAI.ChatCompletionTool[] = [
 /**
  * Tools that require approval before execution (tool-level approval).
  * Mirrors Mastra's `requireApproval: true` on individual tool definitions.
+ * Used by the Agentuity handler to determine suspension behavior.
  */
-export const TOOLS_REQUIRING_APPROVAL = new Set(['delete_user_data', 'send_notification']);
+export const TOOLS_REQUIRING_APPROVAL = new Set(['delete-user-data', 'send-notification']);
 
 /**
  * Suspend reasons for tools that require approval.
- * Mirrors Mastra's `suspend({ reason })` pattern where tools provide
+ * Mirrors Mastra's suspend payload pattern where tools provide
  * context about why approval is needed.
  */
 export const TOOL_SUSPEND_REASONS: Record<string, string> = {
-	delete_user_data: 'This will permanently delete all user data. This action cannot be undone.',
-	send_notification: 'This will send an external notification to the specified recipient.',
+	'delete-user-data': 'This will permanently delete all user data. This action cannot be undone.',
+	'send-notification': 'This will send an external notification to the specified recipient.',
 };
-
-// ============================================================================
-// Tool Executors
-// ============================================================================
-
-export interface ToolResult {
-	success: boolean;
-	data: Record<string, unknown>;
-}
-
-/**
- * Executes a tool by name with the given arguments.
- * In a real application, these would call actual APIs or databases.
- */
-export async function executeTool(toolName: string, args: Record<string, string>): Promise<ToolResult> {
-	switch (toolName) {
-		case 'get_weather': {
-			const conditions = ['Sunny', 'Cloudy', 'Rainy', 'Partly cloudy', 'Windy'];
-			return {
-				success: true,
-				data: {
-					location: args.location ?? 'Unknown',
-					temperature: `${Math.floor(Math.random() * 30) + 40}°F`,
-					condition: conditions[Math.floor(Math.random() * conditions.length)] ?? 'Unknown',
-					humidity: `${Math.floor(Math.random() * 60) + 30}%`,
-				},
-			};
-		}
-
-		case 'search_records': {
-			return {
-				success: true,
-				data: {
-					query: args.query ?? '',
-					results: [
-						{ id: '1', name: `Result for "${args.query}" #1`, relevance: 0.95 },
-						{ id: '2', name: `Result for "${args.query}" #2`, relevance: 0.82 },
-					],
-					total: 2,
-				},
-			};
-		}
-
-		case 'delete_user_data': {
-			return {
-				success: true,
-				data: {
-					deleted: true,
-					userId: args.userId ?? '',
-					reason: args.reason ?? '',
-					recordsRemoved: Math.floor(Math.random() * 50) + 5,
-					timestamp: new Date().toISOString(),
-				},
-			};
-		}
-
-		case 'send_notification': {
-			return {
-				success: true,
-				data: {
-					sent: true,
-					recipient: args.recipient ?? '',
-					channel: args.channel ?? 'email',
-					messagePreview: (args.message ?? '').slice(0, 100),
-					timestamp: new Date().toISOString(),
-				},
-			};
-		}
-
-		default:
-			return { success: false, data: { error: `Unknown tool: ${toolName}` } };
-	}
-}

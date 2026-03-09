@@ -4,9 +4,23 @@
  */
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
-import OpenAI from 'openai';
+import { Agent } from '@mastra/core/agent';
 
-const client = new OpenAI();
+// Bridge Agentuity AI Gateway → Mastra's model resolution
+if (!process.env.OPENAI_API_KEY && process.env.AGENTUITY_SDK_KEY) {
+	const gw = process.env.AGENTUITY_AIGATEWAY_URL || process.env.AGENTUITY_TRANSPORT_URL || 'https://agentuity.ai';
+	process.env.OPENAI_API_KEY = process.env.AGENTUITY_SDK_KEY;
+	process.env.OPENAI_BASE_URL = `${gw}/gateway/openai`;
+}
+
+// Mastra sub-agent for research (exported for use by the network routing agent)
+export const researchMastraAgent = new Agent({
+	id: 'research-agent',
+	name: 'Research Agent',
+	instructions:
+		'You are a research assistant. Research the topic and provide key insights as bullet points. Be concise and factual. Focus on extracting the most important and interesting facts. Do not write full paragraphs - only bullet points. Provide 5-7 key bullet points.',
+	model: 'openai/gpt-4o-mini',
+});
 
 const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
 
@@ -29,24 +43,12 @@ const agent = createAgent('research', {
 		input: ResearchInput,
 		output: ResearchOutput,
 	},
-	handler: async (ctx, { topic, model = 'gpt-5-mini' }) => {
+	handler: async (ctx, { topic }) => {
 		ctx.logger.info('──── Research Agent ────');
-		ctx.logger.info({ topic, model });
+		ctx.logger.info({ topic });
 
-		const prompt = `You are a research assistant. Research the following topic and provide key insights as bullet points.
-Be concise and factual. Focus on extracting the most important and interesting facts.
-Do not write full paragraphs - only bullet points.
-
-Topic: ${topic}
-
-Provide 5-7 key bullet points:`;
-
-		const completion = await client.chat.completions.create({
-			model,
-			messages: [{ role: 'user', content: prompt }],
-		});
-
-		const content = completion.choices[0]?.message?.content ?? '';
+		const result = await researchMastraAgent.generate(`Research topic: ${topic}`);
+		const content = result.text ?? '';
 
 		// Parse bullet points from the response
 		const insights = content

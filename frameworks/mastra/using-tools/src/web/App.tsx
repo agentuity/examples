@@ -75,7 +75,7 @@ export function App() {
 					<h1 className="text-5xl font-thin">Using Tools</h1>
 
 					<p className="text-gray-400 text-lg">
-						Agents with <span className="italic font-serif">OpenAI Function Calling</span>
+						Agents with <span className="italic font-serif">Mastra Tools</span>
 					</p>
 				</div>
 
@@ -113,14 +113,14 @@ export function App() {
 						{activeAgent === 'weather' ? (
 							<>
 								<strong className="text-gray-300">Weather Agent:</strong> Uses a single{' '}
-								<code className="text-cyan-400">get_weather</code> tool to fetch real weather
-								data from wttr.in API.
+								<code className="text-cyan-400">get-weather</code> Mastra tool to fetch real weather
+								data from the Open-Meteo API.
 							</>
 						) : (
 							<>
-								<strong className="text-gray-300">Activities Agent:</strong> Uses two tools:{' '}
-								<code className="text-cyan-400">get_weather</code> to check conditions and{' '}
-								<code className="text-cyan-400">get_activities</code> to suggest activities.
+								<strong className="text-gray-300">Activities Agent:</strong> Uses two Mastra tools:{' '}
+								<code className="text-cyan-400">get-weather</code> to check conditions and{' '}
+								<code className="text-cyan-400">get-activities</code> to suggest activities.
 							</>
 						)}
 					</div>
@@ -180,40 +180,6 @@ export function App() {
 					)}
 				</div>
 
-				{/* Tool Calls */}
-				{result?.toolCalls && result.toolCalls.length > 0 && (
-					<div className="bg-black border border-gray-900 rounded-lg p-8 flex flex-col gap-6">
-						<h3 className="text-white text-xl font-normal">Tool Calls</h3>
-
-						<div className="flex flex-col gap-4">
-							{result.toolCalls.map((call, index) => (
-								<div
-									key={`${call.tool}-${index}`}
-									className="bg-gray-950 border border-gray-800 rounded-md p-4"
-								>
-									<div className="flex items-center gap-2 mb-3">
-										<span className="bg-cyan-900/50 border border-cyan-700 text-cyan-400 px-2 py-0.5 rounded text-xs font-mono">
-											{call.tool}
-										</span>
-									</div>
-
-									<div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-										<span className="text-gray-500">Input:</span>
-										<code className="text-gray-300 font-mono text-xs bg-gray-900 px-2 py-1 rounded">
-											{call.input}
-										</code>
-
-										<span className="text-gray-500">Output:</span>
-										<code className="text-gray-300 font-mono text-xs bg-gray-900 px-2 py-1 rounded break-all">
-											{call.output}
-										</code>
-									</div>
-								</div>
-							))}
-						</div>
-					</div>
-				)}
-
 				{/* Next Steps */}
 				<div className="bg-black border border-gray-900 rounded-lg p-8">
 					<h3 className="text-white text-xl font-normal leading-none m-0 mb-6">Next Steps</h3>
@@ -226,7 +192,7 @@ export function App() {
 								text: (
 									<>
 										Check <code className="text-white">src/agent/weather/index.ts</code> to
-										see how a single tool is implemented with OpenAI function calling.
+										see how a Mastra tool and Agent are used inside the Agentuity wrapper.
 									</>
 								),
 							},
@@ -236,7 +202,7 @@ export function App() {
 								text: (
 									<>
 										Check <code className="text-white">src/agent/activities/index.ts</code>{' '}
-										to see how multiple tools work together.
+										to see how multiple Mastra tools work together.
 									</>
 								),
 							},
@@ -245,9 +211,9 @@ export function App() {
 								title: 'Add your own tools',
 								text: (
 									<>
-										Define new tool functions and add them to the{' '}
-										<code className="text-white">tools</code> array to extend agent
-										capabilities.
+										Use <code className="text-white">createTool()</code> from{' '}
+										<code className="text-white">@mastra/core/tools</code> to define new tools
+										and add them to the Mastra Agent&apos;s <code className="text-white">tools</code> map.
 									</>
 								),
 							},

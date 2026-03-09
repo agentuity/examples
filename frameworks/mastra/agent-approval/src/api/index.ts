@@ -1,5 +1,5 @@
 /**
- * API routes for the translation and approval agents.
+ * API routes for the approval agent.
  * Routes handle state operations (get/clear history, approve/decline);
  * agents handle core logic.
  */
@@ -15,46 +15,8 @@ import approval, {
 	type ApprovalHistoryEntry,
 	type PendingApproval,
 } from '../agent/approval';
-import translate, { AgentOutput, type HistoryEntry } from '../agent/translate';
 
 const api = createRouter();
-
-// ============================================================================
-// Translation Agent Routes
-// ============================================================================
-
-// State subset for history endpoints (derived from AgentOutput)
-export const StateSchema = AgentOutput.pick(['history', 'threadId', 'translationCount']);
-
-// Call the agent to translate text
-api.post('/translate', translate.validator(), async (c) => {
-	const data = c.req.valid('json');
-
-	return c.json(await translate.run(data));
-});
-
-// Retrieve translation history
-api.get('/translate/history', validator({ output: StateSchema }), async (c) => {
-	// Routes use c.var.* for Agentuity services (thread, kv, logger); agents use ctx.* directly
-	const history = (await c.var.thread.state.get<HistoryEntry[]>('history')) ?? [];
-
-	return c.json({
-		history,
-		threadId: c.var.thread.id,
-		translationCount: history.length,
-	});
-});
-
-// Clear translation history
-api.delete('/translate/history', validator({ output: StateSchema }), async (c) => {
-	await c.var.thread.state.delete('history');
-
-	return c.json({
-		history: [],
-		threadId: c.var.thread.id,
-		translationCount: 0,
-	});
-});
 
 // ============================================================================
 // Approval Agent Routes
@@ -69,7 +31,7 @@ api.post('/approval', approval.validator(), async (c) => {
 
 // ── Pending Approval ────────────────────────────────────────────────────────
 
-const PendingApprovalOutputSchema = s.object({
+export const PendingApprovalOutputSchema = s.object({
 	pendingApproval: PendingApprovalSchema.optional(),
 	threadId: s.string(),
 	hasPending: s.boolean(),
@@ -146,13 +108,13 @@ api.post('/approval/decline', validator({ output: ApprovalOutput }), async (c) =
 
 // ── Approval History ────────────────────────────────────────────────────────
 
-const ApprovalHistoryOutputSchema = s.object({
+export const ApprovalHistoryOutputSchema = s.object({
 	approvalHistory: s.array(ApprovalHistoryEntrySchema),
 	threadId: s.string(),
 	totalApprovals: s.number(),
 });
 
-const ApprovalStatsSchema = s.object({
+export const ApprovalStatsSchema = s.object({
 	threadId: s.string(),
 	totalRequests: s.number(),
 	approvedCount: s.number(),

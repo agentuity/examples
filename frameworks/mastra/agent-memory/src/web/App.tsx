@@ -25,7 +25,7 @@ export function App() {
 
 	// Combine history from initial fetch and chat results
 	const messages = historyData?.messages ?? [];
-	const preferences = chatResult?.preferences ?? historyData?.preferences;
+	const preferences = historyData?.preferences;
 	const threadId = chatResult?.threadId ?? historyData?.threadId;
 
 	// Scroll to bottom when messages change
@@ -134,7 +134,7 @@ export function App() {
 									Name: {preferences.name}
 								</span>
 							)}
-							{preferences.interests?.map((interest) => (
+							{preferences.interests?.map((interest: string) => (
 								<span
 									key={interest}
 									className="bg-purple-900/30 border border-purple-800 text-purple-400 px-2 py-1 rounded text-sm"
@@ -155,7 +155,7 @@ export function App() {
 						</div>
 					) : (
 						<>
-							{messages.map((msg, index) => (
+							{messages.map((msg: { role: string; content: string; timestamp: string }, index: number) => (
 								<div
 									key={`${msg.timestamp}-${index}`}
 									className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}

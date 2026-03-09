@@ -1,64 +1,82 @@
 /**
- * Moderated Agent: Demonstrates Mastra-style processors in Agentuity.
+ * Moderated Agent: Uses Mastra's built-in processors inside an Agentuity handler.
  *
  * Processors run at specific points in the agent's execution pipeline:
  * - Input processors: Run before messages reach the LLM
  * - Output processors: Run after the LLM generates a response
  *
- * This agent implements:
- * - Unicode normalization
- * - Length validation
- * - Prompt injection detection
- * - PII detection/redaction
- * - Content moderation
- * - Token limiting
- * - Quality checking with retry
- * - Response metadata enrichment
+ * This agent uses:
+ * - UnicodeNormalizer: Strips control chars and collapses whitespace
+ * - PromptInjectionDetector: Detects and rewrites injection/jailbreak attempts
+ * - PIIDetector: Detects and redacts PII (email, phone, credit-card)
+ * - ModerationProcessor: Blocks harmful content categories
+ * - TokenLimiterProcessor: Truncates output to token budget
  */
 
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
-import OpenAI from 'openai';
+import { Agent } from '@mastra/core/agent';
+
+// Bridge Agentuity AI Gateway → Mastra's model resolution
+if (!process.env.OPENAI_API_KEY && process.env.AGENTUITY_SDK_KEY) {
+	const gw = process.env.AGENTUITY_AIGATEWAY_URL || process.env.AGENTUITY_TRANSPORT_URL || 'https://agentuity.ai';
+	process.env.OPENAI_API_KEY = process.env.AGENTUITY_SDK_KEY;
+	process.env.OPENAI_BASE_URL = `${gw}/gateway/openai`;
+}
 
 import {
-	lengthValidator,
-	metadataEnricher,
-	moderationProcessor,
-	piiDetector,
-	promptInjectionDetector,
-	qualityChecker,
-	responseFilter,
-	runInputPipeline,
-	runOutputPipeline,
-	tokenLimiter,
-	unicodeNormalizer,
-	type InputProcessorResult,
-	type OutputProcessorResult,
-	type ProcessorContext,
-} from './processors';
-
-const client = new OpenAI();
+	ModerationProcessor,
+	PIIDetector,
+	PromptInjectionDetector,
+	TokenLimiterProcessor,
+	UnicodeNormalizer,
+} from '@mastra/core/processors';
 
 // ============================================================================
-// Configuration
+// Mastra Agent with processors
 // ============================================================================
 
-const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
-
-const DEFAULT_CONFIG = {
-	// Input processor settings
-	maxInputLength: 10000,
-	minInputLength: 1,
-	tokenLimit: 4000,
-	piiStrategy: 'redact' as const,
-	moderationThreshold: 0.7,
-	moderationCategories: ['hate', 'harassment', 'violence', 'self-harm'],
-
-	// Output processor settings
-	maxRetries: 3,
-	minResponseLength: 10,
-	maxResponseLength: 8000,
-};
+const moderatedMastraAgent = new Agent({
+	id: 'moderated-agent',
+	name: 'Moderated Agent',
+	instructions: 'You are a helpful assistant. Respond to user requests clearly and concisely.',
+	model: 'openai/gpt-4o-mini',
+	inputProcessors: [
+		new UnicodeNormalizer({
+			stripControlChars: true,
+			collapseWhitespace: true,
+		}),
+		new PromptInjectionDetector({
+			model: 'openai/gpt-4o-mini',
+			threshold: 0.8,
+			strategy: 'rewrite',
+			detectionTypes: ['injection', 'jailbreak', 'system-override'],
+		}),
+		new PIIDetector({
+			model: 'openai/gpt-4o-mini',
+			strategy: 'redact',
+			detectionTypes: ['email', 'phone', 'credit-card'],
+		}),
+		new ModerationProcessor({
+			model: 'openai/gpt-4o-mini',
+			categories: ['hate', 'harassment', 'violence', 'self-harm'],
+			threshold: 0.7,
+			strategy: 'block',
+		}),
+	],
+	outputProcessors: [
+		new TokenLimiterProcessor({
+			limit: 1000,
+			strategy: 'truncate',
+		}),
+		new ModerationProcessor({
+			model: 'openai/gpt-4o-mini',
+			categories: ['hate', 'harassment', 'violence'],
+			threshold: 0.7,
+			strategy: 'block',
+		}),
+	],
+});
 
 // ============================================================================
 // Schemas
@@ -106,8 +124,8 @@ export type ProcessingMetadata = s.infer<typeof ProcessingMetadataSchema>;
 export const AgentInput = s.object({
 	text: s.string().describe('The text to process'),
 	systemPrompt: s.string().optional().describe('Optional system prompt for the LLM'),
-	model: s.enum(MODELS).optional().describe('AI model to use'),
-	config: ProcessorConfigSchema.optional().describe('Processor configuration'),
+	model: s.string().optional().describe('AI model to use (unused — Mastra agent uses its configured model)'),
+	config: ProcessorConfigSchema.optional().describe('Processor configuration (informational)'),
 });
 
 export type AgentInputType = s.infer<typeof AgentInput>;
@@ -128,243 +146,55 @@ export type AgentOutputType = s.infer<typeof AgentOutput>;
 // ============================================================================
 
 const agent = createAgent('moderated', {
-	description: 'Processes text with input/output processors (moderation, PII, quality checks)',
+	description: 'Processes text with Mastra input/output processors (moderation, PII, prompt injection, token limiting)',
 	schema: {
 		input: AgentInput,
 		output: AgentOutput,
 	},
 	handler: async (ctx, input) => {
-		const { text, systemPrompt, model = 'gpt-5-nano', config = {} } = input;
-
-		// Build processor context
-		const processorCtx: ProcessorContext = {
-			logger: ctx.logger,
-			threadId: ctx.thread.id,
-			sessionId: ctx.sessionId,
-		};
-
-		// Merge config with defaults
-		const {
-			enableModeration = true,
-			enablePiiDetection = true,
-			enableInjectionDetection = true,
-			piiStrategy = DEFAULT_CONFIG.piiStrategy,
-			maxInputLength = DEFAULT_CONFIG.maxInputLength,
-			tokenLimit = DEFAULT_CONFIG.tokenLimit,
-			enableQualityCheck = false, // Disabled by default (adds latency)
-			enableResponseFilter = true,
-			maxResponseLength = DEFAULT_CONFIG.maxResponseLength,
-		} = config;
+		const { text } = input;
 
 		ctx.logger.info('──── Moderated Agent ────');
-		ctx.logger.info('Processing input', {
+		ctx.logger.info('Processing input via Mastra agent', {
 			textLength: text.length,
-			model,
-			config: {
-				enableModeration,
-				enablePiiDetection,
-				enableInjectionDetection,
-				enableQualityCheck,
-			},
 		});
 
-		// Track which processors ran
-		const inputProcessorsRan: string[] = [];
-		const outputProcessorsRan: string[] = [];
+		// Delegate to the Mastra agent — processors run automatically
+		const result = await moderatedMastraAgent.generate(text);
 
-		// ====================================================================
-		// INPUT PROCESSING PIPELINE
-		// ====================================================================
+		const response = result.text ?? 'Unable to process your request.';
+		const tokens = result.usage?.totalTokens ?? 0;
 
-		// Build input processor pipeline based on config
-		const inputProcessors: Array<(text: string) => InputProcessorResult | Promise<InputProcessorResult>> = [];
+		// Check if any processor blocked the request via tripwire
+		const blocked = !!result.tripwire;
+		const blockedReason = result.tripwire?.reason;
 
-		// 1. Unicode normalization (always enabled)
-		inputProcessors.push((t) => {
-			inputProcessorsRan.push('unicodeNormalizer');
-			return { text: unicodeNormalizer(t), continue: true };
-		});
-
-		// 2. Length validation
-		inputProcessors.push((t) => {
-			inputProcessorsRan.push('lengthValidator');
-			return lengthValidator(t, { maxLength: maxInputLength });
-		});
-
-		// 3. Prompt injection detection
-		if (enableInjectionDetection) {
-			inputProcessors.push((t) => {
-				inputProcessorsRan.push('promptInjectionDetector');
-				return promptInjectionDetector(t);
-			});
-		}
-
-		// 4. PII detection/redaction
-		if (enablePiiDetection) {
-			inputProcessors.push((t) => {
-				inputProcessorsRan.push('piiDetector');
-				return piiDetector(t, { strategy: piiStrategy });
-			});
-		}
-
-		// 5. Content moderation
-		if (enableModeration) {
-			inputProcessors.push(async (t) => {
-				inputProcessorsRan.push('moderationProcessor');
-				return moderationProcessor(client, t, {
-					categories: DEFAULT_CONFIG.moderationCategories,
-					threshold: DEFAULT_CONFIG.moderationThreshold,
-					strategy: 'block',
-				});
-			});
-		}
-
-		// 6. Token limiter (always last input processor)
-		inputProcessors.push((t) => {
-			inputProcessorsRan.push('tokenLimiter');
-			return tokenLimiter(t, { limit: tokenLimit, strategy: 'truncate' });
-		});
-
-		// Run input pipeline
-		const inputResult = await runInputPipeline(text, inputProcessors, processorCtx);
-
-		// If blocked by input processor, return early
-		if (!inputResult.continue) {
-			ctx.logger.warn('Request blocked by input processor', {
-				reason: inputResult.blockedReason,
+		if (blocked) {
+			ctx.logger.warn('Request blocked by processor tripwire', {
+				reason: blockedReason,
+				processorId: result.tripwire?.processorId,
 			});
 
 			return {
-				response: inputResult.blockedReason || 'Request blocked by safety filters.',
+				response: blockedReason ?? 'Request blocked by safety filters.',
 				success: false,
 				threadId: ctx.thread.id,
 				sessionId: ctx.sessionId,
-				tokens: 0,
+				tokens,
 				processingMetadata: {
-					inputProcessors: inputProcessorsRan,
+					inputProcessors: ['unicode-normalizer', 'prompt-injection-detector', 'pii-detector', 'moderation-input'],
 					outputProcessors: [],
 					blocked: true,
-					blockedReason: inputResult.blockedReason,
+					blockedReason,
 					retryCount: 0,
-					piiDetected: inputResult.metadata?.detectedPii as string[] | undefined,
-					piiRedacted: inputResult.metadata?.piiRedacted as boolean | undefined,
-					moderationResult: inputResult.metadata?.moderation as { flagged: boolean; categories?: string[] } | undefined,
-					estimatedTokens: inputResult.metadata?.estimatedTokens as number | undefined,
+					processedAt: new Date().toISOString(),
 				},
 			};
 		}
 
-		const processedInput = inputResult.text;
-
-		ctx.logger.info('Input processing complete', {
-			processorsRan: inputProcessorsRan,
-			piiDetected: inputResult.metadata?.detectedPii,
-			estimatedTokens: inputResult.metadata?.estimatedTokens,
-		});
-
-		// ====================================================================
-		// LLM CALL (with retry support)
-		// ====================================================================
-
-		let retryCount = 0;
-		let response = '';
-		let totalTokens = 0;
-		let outputResult: OutputProcessorResult = { text: '' };
-
-		const maxRetries = enableQualityCheck ? DEFAULT_CONFIG.maxRetries : 0;
-
-		while (retryCount <= maxRetries) {
-			// Build messages
-			const messages: OpenAI.ChatCompletionMessageParam[] = [];
-
-			if (systemPrompt) {
-				messages.push({ role: 'system', content: systemPrompt });
-			}
-
-			// Add retry feedback if this is a retry
-			if (retryCount > 0 && outputResult.retryFeedback) {
-				messages.push({
-					role: 'system',
-					content: `Previous response was inadequate. Feedback: ${outputResult.retryFeedback}`,
-				});
-			}
-
-			messages.push({ role: 'user', content: processedInput });
-
-			ctx.logger.info('Calling LLM', { model, retryCount, messageCount: messages.length });
-
-			const completion = await client.chat.completions.create({
-				model,
-				messages,
-			});
-
-			response = completion.choices[0]?.message?.content ?? '';
-			totalTokens += completion.usage?.total_tokens ?? 0;
-
-			// ====================================================================
-			// OUTPUT PROCESSING PIPELINE
-			// ====================================================================
-
-			// Reset for each attempt
-			outputProcessorsRan.length = 0;
-
-			// Build output processor pipeline
-			const outputProcessors: Array<(t: string, retry: number) => OutputProcessorResult | Promise<OutputProcessorResult>> =
-				[];
-
-			// 1. Quality checker (if enabled)
-			if (enableQualityCheck) {
-				outputProcessors.push(async (t, retry) => {
-					outputProcessorsRan.push('qualityChecker');
-					return qualityChecker(client, t, {
-						minLength: DEFAULT_CONFIG.minResponseLength,
-						maxRetries,
-						currentRetry: retry,
-					});
-				});
-			}
-
-			// 2. Response filter
-			if (enableResponseFilter) {
-				outputProcessors.push((t) => {
-					outputProcessorsRan.push('responseFilter');
-					return responseFilter(t, { maxLength: maxResponseLength, removePii: enablePiiDetection });
-				});
-			}
-
-			// 3. Metadata enricher (always last)
-			outputProcessors.push((t) => {
-				outputProcessorsRan.push('metadataEnricher');
-				return metadataEnricher(t, {
-					model,
-					retryCount,
-					inputTokens: inputResult.metadata?.estimatedTokens,
-				});
-			});
-
-			// Run output pipeline
-			outputResult = await runOutputPipeline(response, outputProcessors, processorCtx, retryCount);
-
-			// Check if retry requested
-			if (outputResult.retry && retryCount < maxRetries) {
-				ctx.logger.info('Output processor requested retry', {
-					retryCount,
-					feedback: outputResult.retryFeedback,
-				});
-				retryCount++;
-				continue;
-			}
-
-			// No retry needed or max retries reached
-			break;
-		}
-
 		ctx.logger.info('Processing complete', {
-			inputProcessors: inputProcessorsRan,
-			outputProcessors: outputProcessorsRan,
-			retryCount,
-			totalTokens,
-			responseLength: outputResult.text.length,
+			tokens,
+			responseLength: response.length,
 		});
 
 		// Store processing stats in thread state
@@ -374,31 +204,26 @@ const agent = createAgent('moderated', {
 				timestamp: new Date().toISOString(),
 				sessionId: ctx.sessionId,
 				inputLength: text.length,
-				outputLength: outputResult.text.length,
-				tokens: totalTokens,
-				retryCount,
+				outputLength: response.length,
+				tokens,
+				retryCount: 0,
 				blocked: false,
 			},
 			10
 		);
 
 		return {
-			response: outputResult.text,
+			response,
 			success: true,
 			threadId: ctx.thread.id,
 			sessionId: ctx.sessionId,
-			tokens: totalTokens,
+			tokens,
 			processingMetadata: {
-				inputProcessors: inputProcessorsRan,
-				outputProcessors: outputProcessorsRan,
+				inputProcessors: ['unicode-normalizer', 'prompt-injection-detector', 'pii-detector', 'moderation-input'],
+				outputProcessors: ['token-limiter', 'moderation-output'],
 				blocked: false,
-				retryCount,
-				piiDetected: inputResult.metadata?.detectedPii as string[] | undefined,
-				piiRedacted: inputResult.metadata?.piiRedacted as boolean | undefined,
-				moderationResult: inputResult.metadata?.moderation as { flagged: boolean; categories?: string[] } | undefined,
-				qualityScore: outputResult.metadata?.qualityScore as number | undefined,
-				estimatedTokens: inputResult.metadata?.estimatedTokens as number | undefined,
-				processedAt: outputResult.metadata?.processedAt as string | undefined,
+				retryCount: 0,
+				processedAt: new Date().toISOString(),
 			},
 		};
 	},

@@ -27,6 +27,7 @@ import {
   bootstrapRuntimeEnv,
   patchBunS3ForStorageDev,
   runShutdown,
+  mimeTypes,
 } from '@agentuity/runtime';
 import type { Context } from 'hono';
 import { websocket, serveStatic } from 'hono/bun';
@@ -75,7 +76,8 @@ app.use('*', createBaseMiddleware({
 	meter: otel.meter,
 }));
 
-app.use('/_agentuity/workbench/*', createCorsMiddleware());
+// Note: Workbench routes use their own CORS middleware (defined in createWorkbenchRouter)
+// which includes signature headers for production authentication
 app.use('/api/*', createCorsMiddleware());
 
 // Critical: otelMiddleware creates session/thread/waitUntilHandler
@@ -273,18 +275,11 @@ if (isDevelopment() && process.env.VITE_PORT) {
 				const url = new URL(c.req.url);
 				const queryString = url.search; // Includes the '?' prefix
 
-				// Get the requested WebSocket subprotocol (Vite uses 'vite-hmr')
-				const requestedProtocol = c.req.header('sec-websocket-protocol');
-
 				const success = server.upgrade(c.req.raw, {
 					data: { type: 'vite-hmr', queryString },
-					// Echo back the requested subprotocol so the browser accepts the connection
-					headers: requestedProtocol ? {
-						'Sec-WebSocket-Protocol': requestedProtocol,
-					} : undefined,
 				});
 				if (success) {
-					otel.logger.debug('[HMR Proxy] WebSocket upgrade successful (protocol: %s)', requestedProtocol || 'none');
+					otel.logger.debug('[HMR Proxy] WebSocket upgrade successful');
 					return new Response(null);
 				}
 				otel.logger.error('[HMR Proxy] WebSocket upgrade returned false');
@@ -342,30 +337,27 @@ if (isDevelopment() && process.env.VITE_PORT) {
 const { default: router_0 } = await import('../api/index.js');
 app.route('/api', router_0);
 
-const hasWorkbenchConfig = true;
-const hasWorkbench = isDevelopment() && hasWorkbenchConfig;
-if (hasWorkbench) {
-	// Mount workbench API routes (/_agentuity/workbench/*)
-	const workbenchRouter = createWorkbenchRouter();
-	app.route('/', workbenchRouter);
-}
+// Mount workbench API routes (/_agentuity/workbench/*)
+// Always available for cloud workbench communication
+// Auth is handled inside the router (signature verification in production)
+const workbenchRouter = createWorkbenchRouter();
+app.route('/', workbenchRouter);
 
-if (hasWorkbench) {
-	// Development mode: Let Vite serve source files with HMR
-	if (isDevelopment()) {
-		const workbenchSrcDir = import.meta.dir + '/workbench-src';
-		const workbenchIndexPath = import.meta.dir + '/workbench-src/index.html';
-		app.get('/workbench', async (c: Context) => {
-			const html = await Bun.file(workbenchIndexPath).text();
-			// Rewrite script/css paths to use Vite's @fs protocol
-			const withVite = html
-				.replace('src="./main.tsx"', `src="/@fs${workbenchSrcDir}/main.tsx"`)
-				.replace('href="./styles.css"', `href="/@fs${workbenchSrcDir}/styles.css"`);
-			return c.html(withVite);
-		});
-	} else {
-		// Production mode disables the workbench assets
-	}
+// hasWorkbenchConfig controls whether the local workbench UI is served (dev mode only)
+const hasWorkbenchConfig = true;
+
+// Workbench UI is only available in development mode (API routes are always available)
+if (hasWorkbenchConfig && isDevelopment()) {
+	const workbenchSrcDir = import.meta.dir + '/workbench-src';
+	const workbenchIndexPath = import.meta.dir + '/workbench-src/index.html';
+	app.get('/workbench', async (c: Context) => {
+		const html = await Bun.file(workbenchIndexPath).text();
+		// Rewrite script/css paths to use Vite's @fs protocol
+		const withVite = html
+			.replace('src="./main.tsx"', `src="/@fs${workbenchSrcDir}/main.tsx"`)
+			.replace('href="./styles.css"', `href="/@fs${workbenchSrcDir}/styles.css"`);
+		return c.html(withVite);
+	});
 }
 
 // Web routes - Runtime mode detection (dev proxies to Vite, prod serves static)
@@ -407,15 +399,25 @@ if (isDevelopment()) {
 	// 404 for unmatched API/system routes
 	app.all('/_agentuity/*', (c: Context) => c.notFound());
 	app.all('/api/*', (c: Context) => c.notFound());
-	if (!hasWorkbench) {
+	if (!(hasWorkbenchConfig && isDevelopment())) {
 		app.all('/workbench/*', (c: Context) => c.notFound());
 	}
 	
 	// SPA fallback - serve index.html for client-side routing
-	app.get('*', (c: Context) => {
+	app.get('*', async (c: Context) => {
 		const path = c.req.path;
-		// If path has a file extension, return 404 (prevents serving HTML for missing assets)
+		// If path has a file extension, try proxying to Vite first (serves public files like robots.txt, llms.txt)
+		// Fall back to 404 if Vite also returns 404
 		if (/\.[a-zA-Z0-9]+$/.test(path)) {
+			try {
+				const viteUrl = `http://127.0.0.1:${VITE_ASSET_PORT}${path}`;
+				const res = await fetch(viteUrl, { signal: AbortSignal.timeout(10000) });
+				if (res.status !== 404) {
+					return new Response(res.body, { status: res.status, headers: res.headers });
+				}
+			} catch {
+				// Vite unavailable, fall through to 404
+			}
 			return c.notFound();
 		}
 		return devHtmlHandler(c);
@@ -443,15 +445,15 @@ if (isDevelopment()) {
 	app.get('/', prodHtmlHandler);
 
 	// Serve static assets from /assets/* (Vite bundled output)
-	app.use('/assets/*', serveStatic({ root: import.meta.dir + '/client' }));
+	app.use('/assets/*', serveStatic({ root: import.meta.dir + '/client', mimes: mimeTypes }));
 
 	// Serve static public assets (favicon.ico, robots.txt, etc.)
-	app.use('/*', serveStatic({ root: import.meta.dir + '/client', rewriteRequestPath: (path) => path }));
+	app.use('/*', serveStatic({ root: import.meta.dir + '/client', rewriteRequestPath: (path) => path, mimes: mimeTypes }));
 
 	// 404 for unmatched API/system routes (IMPORTANT: comes before SPA fallback)
 	app.all('/_agentuity/*', (c: Context) => c.notFound());
 	app.all('/api/*', (c: Context) => c.notFound());
-	if (!hasWorkbench) {
+	if (!(hasWorkbenchConfig && isDevelopment())) {
 		app.all('/workbench/*', (c: Context) => c.notFound());
 	}
 
