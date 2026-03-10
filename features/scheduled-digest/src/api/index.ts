@@ -2,7 +2,7 @@ import { createRouter, cron, validator } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 import digestGenerator from '@agent/digest-generator';
 import { fetchAllSources } from '@lib/sources';
-import type { DigestEntry } from '@lib/types';
+import type { DigestEntry } from '@agent/digest-generator/types';
 
 const api = createRouter();
 

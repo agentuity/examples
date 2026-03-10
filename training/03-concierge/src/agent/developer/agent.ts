@@ -2,7 +2,6 @@ import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { join } from 'path';
 
 const agent = createAgent('developer', {
 	description:
@@ -38,7 +37,7 @@ const agent = createAgent('developer', {
 				docContent = cached.data as string;
 			} else {
 				ctx.logger.info('Loading Agentuity documentation from file');
-				docContent = await Bun.file(join(import.meta.dir, '../../content/agentuity/llms.txt')).text();
+				docContent = await Bun.file('src/content/agentuity/llms.txt').text();
 
 				// Cache indefinitely (content is static)
 				await ctx.kv.set('content', cacheKey, docContent);

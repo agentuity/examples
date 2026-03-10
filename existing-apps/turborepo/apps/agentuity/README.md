@@ -1,72 +1,147 @@
-# Agentuity Backend — TanStack + Turborepo Example
+# agentuity
 
-The Agentuity backend for the TanStack + Turborepo monorepo example. Runs on port 3500 and provides a `translate` agent with HTTP API routes consumed by `apps/web`.
+A new Agentuity project created with `agentuity create`.
+
+## What You Get
+
+A fully configured Agentuity project with:
+
+- ✅ **TypeScript** - Full type safety out of the box
+- ✅ **Bun runtime** - Fast JavaScript runtime and package manager
+- ✅ **Hot reload** - Development server with auto-rebuild
+- ✅ **Example agent** - Sample "hello" agent to get started
+- ✅ **React frontend** - Pre-configured web interface
+- ✅ **API routes** - Example API endpoints
+- ✅ **Type checking** - TypeScript configuration ready to go
 
 ## Project Structure
 
 ```
-apps/agentuity/
+my-app/
 ├── src/
-│   ├── agent/
-│   │   └── translate/
-│   │       ├── agent.ts   # Translation agent
-│   │       └── eval.ts    # Evals: adversarial + language-match
-│   └── api/
-│       └── index.ts       # API routes
-├── agentuity.json
-├── app.ts
-└── package.json
+│   ├── agent/            # Agent definitions
+│   │   └── hello/
+│   │       ├── agent.ts  # Example agent
+│   │       └── index.ts  # Default exports
+│   ├── api/              # API definitions
+│   │   └── index.ts      # Example routes
+│   └── web/              # React web application
+│       ├── public/       # Static assets
+│       ├── App.tsx       # Main React component
+│       ├── frontend.tsx  # Entry point
+│       └── index.html    # HTML template
+├── AGENTS.md             # Agent guidelines
+├── app.ts                # Application entry point
+├── tsconfig.json         # TypeScript configuration
+├── package.json          # Dependencies and scripts
+└── README.md             # Project documentation
 ```
 
-## Agent
+## Available Commands
 
-The `translate` agent (`src/agent/translate/agent.ts`) translates text using OpenAI via the Agentuity AI Gateway. It stores a rolling history of the last 5 translations in thread state.
+After creating your project, you can run:
 
-Schemas are imported from `@tanstack-turborepo/shared`, which also exports them to the frontend for end-to-end type safety.
-
-## API Routes
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/translate` | Translate text |
-| `GET` | `/api/translate/history` | Get thread translation history |
-| `DELETE` | `/api/translate/history` | Clear thread translation history |
-
-## Evals
-
-`src/agent/translate/eval.ts` defines two evals:
-
-- **adversarial** (score, 0-1): Tests whether the agent resists prompt injection attempts.
-- **language-match** (binary): Verifies the translation is in the requested target language, using OpenAI structured output.
-
-## Development
-
-Run from the monorepo root — Turborepo handles build ordering and runs both apps in parallel:
+### Development
 
 ```bash
-bun run dev
+bun dev
 ```
 
-The backend starts at http://localhost:3500. The Agent Workbench is at http://localhost:3500/workbench.
+Starts the development server at `http://localhost:3500`
 
-To run this app in isolation:
+### Build
 
 ```bash
-cd apps/agentuity
-bun run dev
+bun build
 ```
 
-## Deploy
+Compiles your application into the `.agentuity/` directory
+
+### Type Check
 
 ```bash
-cd apps/agentuity
+bun typecheck
+```
+
+Runs TypeScript type checking
+
+### Deploy to Agentuity
+
+```bash
 bun run deploy
 ```
 
-The frontend (`apps/web`) and backend are independently deployable.
+Deploys your application to the Agentuity cloud
 
-## Related
+## Next Steps
 
-- [Root README](../../README.md) — full monorepo overview
-- [Shared schemas](../../packages/shared/src/translate.ts)
-- [Frontend](../web/)
+After creating your project:
+
+1. **Customize the example agent** - Edit `src/agent/hello/agent.ts`
+2. **Add new agents** - Create new folders in `src/agent/`
+3. **Add new APIs** - Create new folders in `src/api/`
+4. **Add Web files** - Create new routes in `src/web/`
+5. **Customize the UI** - Edit `src/web/app.tsx`
+6. **Configure your app** - Modify `app.ts` to add middleware, configure services, etc.
+
+## Creating Custom Agents
+
+Create a new agent by adding a folder in `src/agent/`:
+
+```typescript
+// src/agent/my-agent/agent.ts
+import { createAgent } from '@agentuity/runtime';
+import { s } from '@agentuity/schema';
+
+const agent = createAgent({
+	description: 'My amazing agent',
+	schema: {
+		input: s.object({
+			name: s.string(),
+		}),
+		output: s.string(),
+	},
+	handler: async (_ctx, { name }) => {
+		return `Hello, ${name}! This is my custom agent.`;
+	},
+});
+
+export default agent;
+```
+
+## Adding API Routes
+
+Create custom routes in `src/api/`:
+
+```typescript
+// src/api/my-agent/route.ts
+import { createRouter } from '@agentuity/runtime';
+import myAgent from './agent';
+
+const router = createRouter();
+
+router.get('/', async (c) => {
+	const result = await myAgent.run({ message: 'Hello!' });
+	return c.json(result);
+});
+
+router.post('/', myAgent.validator(), async (c) => {
+	const data = c.req.valid('json');
+	const result = await myAgent.run(data);
+	return c.json(result);
+});
+
+export default router;
+```
+
+## Learn More
+
+- [Agentuity Documentation](https://agentuity.dev)
+- [Bun Documentation](https://bun.sh/docs)
+- [Hono Documentation](https://hono.dev/)
+- [Zod Documentation](https://zod.dev/)
+
+## Requirements
+
+- [Bun](https://bun.sh/) v1.0 or higher
+- TypeScript 5+

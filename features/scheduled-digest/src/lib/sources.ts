@@ -1,4 +1,4 @@
-import type { SourceData, SourceItem } from './types';
+import type { SourceData, SourceItem } from '@agent/digest-generator/types';
 
 export const SOURCES = [
 	{

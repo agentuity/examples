@@ -1,0 +1,39 @@
+{
+  "name": "code-runner-v1",
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "private": true,
+  "module": ".agentuity/app.js",
+  "type": "module",
+  "scripts": {
+    "build": "agentuity build",
+    "dev": "agentuity dev",
+    "start": "bun .agentuity/app.js",
+    "deploy": "agentuity deploy",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@agentuity/evals": "latest",
+    "@agentuity/frontend": "latest",
+    "@agentuity/react": "latest",
+    "@agentuity/runtime": "latest",
+    "@agentuity/schema": "latest",
+    "@agentuity/workbench": "latest",
+    "@ai-sdk/anthropic": "latest",
+    "@ai-sdk/openai": "latest",
+    "ai": "latest",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "shiki": "^4.0.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@agentuity/cli": "latest",
+    "@types/bun": "latest",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3",
+    "@tailwindcss/vite": "^4.2.1",
+    "tailwindcss": "^4.2.1"
+  }
+}

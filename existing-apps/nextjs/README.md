@@ -6,7 +6,7 @@ Upgrade pattern for an existing Next.js App Router frontend that adds an Agentui
 
 - Two-runtime architecture:
   - Next.js frontend runtime (`localhost:3001`)
-  - Agentuity backend runtime (`localhost:3500`)
+  - Agentuity backend runtime (`localhost:3501`)
 - Dev startup gate: `wait-on` checks backend health (`/api/health`) before Next.js boots
 - Translate workflow:
   - `GET /api/translate/history`, `POST /api/translate`, and `DELETE /api/translate/history` use `useAPI`
@@ -50,11 +50,11 @@ bun run build:agent
 bun run dev
 ```
 
-`bun run dev` starts both runtimes concurrently, and the web process uses `wait-on` to check `http://127.0.0.1:3500/api/health` before launching Next.js. Running `bun run dev` inside `agentuity/` starts only the backend, which serves the API and workbench but not the frontend page.
+`bun run dev` starts both runtimes concurrently, and the web process uses `wait-on` to check `http://127.0.0.1:3501/api/health` before launching Next.js. Running `bun run dev` inside `agentuity/` starts only the backend, which serves the API and workbench but not the frontend page.
 
 - Frontend: http://localhost:3001
-- Backend: http://localhost:3500
-- Workbench: http://localhost:3500/workbench
+- Backend: http://localhost:3501
+- Workbench: http://localhost:3501/workbench
 
 ### AI Credentials in Local-Only Mode
 
@@ -68,7 +68,7 @@ Without credentials, the backend still starts and history endpoints work, but `P
 ## Warnings and Local-vs-Cloud Notes
 
 - If Next.js warns about workspace root detection, keep `outputFileTracingRoot` in `next.config.ts` pointed to the monorepo root.
-- Local default mode uses rewrite proxying in development: `/api/:path* -> http://localhost:3500/api/:path*`.
+- Local default mode uses rewrite proxying in development: `/api/:path* -> http://localhost:3501/api/:path*`.
 - To override proxy target, set `AGENTUITY_PROXY_TARGET` (for example `https://backend.example.com`).
 - Cross-origin mode skips the rewrite and uses `NEXT_PUBLIC_AGENTUITY_BASE_URL` in `AgentuityProvider`.
 - In local-only mode without provider credentials, `POST /api/translate` can return `500`; history endpoints still work.
@@ -115,7 +115,10 @@ This example runs two separate runtimes when deployed.
 2. Fallback: explicit backend base URL from the frontend
 - Set frontend env: `NEXT_PUBLIC_AGENTUITY_BASE_URL=https://your-agentuity-backend.example.com`
 - Passes through `AgentuityProvider baseUrl`.
-- The backend uses `cors: { sameOrigin: true }`, which automatically trusts platform-set origins (`AGENTUITY_CLOUD_DOMAINS`) and same-origin requests. For custom domains, set `AUTH_TRUSTED_DOMAINS=https://your-frontend.example.com`.
+- Enable cross-origin backend access with:
+  - `AGENTUITY_CORS_ALLOWED_ORIGINS=https://your-frontend.example.com`
+
+Backend CORS is configured with trusted-origin mode plus optional extra origins from that env variable.
 
 ## Related
 

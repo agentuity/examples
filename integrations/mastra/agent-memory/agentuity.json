@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agentuity.dev/schema/cli/v1/agentuity.json",
+  "projectId": "proj_a3c79375f7d7280ffbcda07090945924",
+  "orgId": "org_2u8RgDTwcZWrZrZ3sZh24T5FCtz",
+  "region": "use",
+  "deployment": {
+    "resources": {
+      "memory": "500Mi",
+      "cpu": "500m",
+      "disk": "500Mi"
+    },
+    "domains": []
+  }
+}

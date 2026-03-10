@@ -30,7 +30,6 @@
   },
   "devDependencies": {
     "@agentuity/cli": "latest",
-    "@tailwindcss/vite": "^4",
     "@types/bun": "latest",
     "typescript": "^5",
     "vite": "^7.2.7"

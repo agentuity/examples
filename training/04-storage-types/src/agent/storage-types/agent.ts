@@ -171,8 +171,8 @@ const agent = createAgent('storage-types', {
 				/* Use KV storage to track user queries */
 				// Store all queries in one place for easy viewing
 				const existingQueries = await ctx.kv.get(KV_STORAGE_NAME, 'demo-user-queries');
-				const queryHistory: Array<{ query: string; timestamp: string; results: number; topResult: string }> = existingQueries.exists && Array.isArray(existingQueries.data)
-					? existingQueries.data
+				const queryHistory = existingQueries.exists
+					? existingQueries.data as any[]
 					: [];
 
 				// Add this query to the history with readable timestamp
@@ -183,8 +183,9 @@ const agent = createAgent('storage-types', {
 					topResult: searchResults[0]?.metadata?.sectionTitle || 'none'
 				});
 
-				// Store the updated history
-				await ctx.kv.set(KV_STORAGE_NAME, 'demo-user-queries', queryHistory);
+				// Store the updated history with nicer formatting
+				await ctx.kv.set(KV_STORAGE_NAME, 'demo-user-queries',
+					JSON.stringify(queryHistory, null, 2));
 
 				ctx.logger.info(`Query tracked in KV storage (${queryHistory.length} total queries)`);
 
