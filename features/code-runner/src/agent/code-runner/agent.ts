@@ -1,6 +1,6 @@
 import { createAgent } from '@agentuity/runtime';
 import { generateText, Output } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 import { s } from '@agentuity/schema';
 
@@ -39,10 +39,12 @@ const agent = createAgent('code-runner', {
 		ctx.logger.info('Generating code for prompt', { prompt: input.prompt });
 
 		// Step 1: Ask the LLM to produce both implementations in a single call.
-		// Output.object() with a Zod schema enforces structured JSON output,
-		// so we get typed `typescript` and `python` fields directly.
+		// Output.object() with a Zod schema enforces structured JSON output
+		// via Anthropic's native output_config.format, so we get typed
+		// `typescript` and `python` fields directly.
 		const { output } = await generateText({
-			model: openai('gpt-5.2'),
+			model: anthropic('claude-haiku-4-5'),
+			providerOptions: { anthropic: { structuredOutputMode: 'outputFormat' } },
 			output: Output.object({
 				schema: z.object({
 					typescript: z
