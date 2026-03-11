@@ -13,7 +13,7 @@ Open [localhost:3500](http://localhost:3500) for the frontend, or [localhost:350
 
 ## What's Inside
 
-An agent takes a coding prompt, asks an LLM to generate both TypeScript and Python solutions, then runs them in parallel sandboxes using `ctx.sandbox.run()`:
+An agent takes a coding prompt, uses Claude Haiku to generate both TypeScript and Python solutions, then runs them in parallel sandboxes using `ctx.sandbox.run()`:
 
 ```typescript
 const [tsResult, pyResult] = await Promise.all([
@@ -38,7 +38,7 @@ The frontend picks from three curated prompts (Fibonacci, FizzBuzz, Merge Sort) 
 
 An eval runs in the background after each response:
 
-- **`code-correctness`** (custom, score type): LLM-as-judge eval where Claude Haiku scores whether both implementations correctly solve the prompt (0-1 scale)
+- **`code-correctness`** (custom, score type): LLM-as-judge eval where an OpenAI model (`gpt-5-nano`) scores whether both implementations correctly solve the prompt (0-1 scale)
 
 Eval results appear in the [Agentuity App](https://app.agentuity.com), not in the agent response.
 
