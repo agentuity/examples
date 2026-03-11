@@ -220,8 +220,12 @@ const agent = createAgent('claude-code', {
 			}
 		} catch (err) {
 			ctx.logger.error('Claude Agent SDK query failed', { error: String(err) });
+			const detail = err instanceof Error ? err.message : String(err);
+			const authHint = detail.includes('exited with code 1')
+				? ' Make sure ANTHROPIC_API_KEY is available to local dev in `.env`, or configure another supported Claude auth method.'
+				: '';
 			return {
-				response: `Error communicating with Claude: ${err instanceof Error ? err.message : String(err)}`,
+				response: `Error communicating with Claude: ${detail}${authHint}`,
 				sessionId: ctx.sessionId,
 				threadId: ctx.thread.id,
 			};

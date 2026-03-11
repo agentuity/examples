@@ -4,15 +4,15 @@ An Agentuity agent that demonstrates **Claude Agent SDK** integration with **Age
 
 ## What It Does
 
-- **Code Intelligence** — Uses Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) to read, analyze, and generate code in a local workspace seeded with sample Python and TypeScript files.
+- **Code Intelligence** — Uses [Claude Agent SDK](https://platform.claude.com/docs/en/agent-sdk/overview) (`@anthropic-ai/claude-agent-sdk`) to read, analyze, and generate code in a local workspace seeded with sample Python and TypeScript files.
 - **Sandbox Execution** — Runs user code safely in isolated Agentuity Sandboxes (`ctx.sandbox.run()`) using the Bun runtime.
 - **Conversation History** — Maintains multi-turn conversations via Agentuity thread state, so the agent remembers prior context.
 - **Chat Frontend** — A React-based chat UI for interacting with the agent conversationally.
 
 ## Quick Start
 
-1. Install the [Agentuity CLI](https://agentuity.sh): `curl -fsS https://agentuity.sh | sh`
-2. Import the project: `agentuity project import`
+1. Import the project: `agentuity project import`
+2. Add `ANTHROPIC_API_KEY=...` to `.env`
 3. Install dependencies: `bun install`
 4. Start the dev server: `bun run dev`
 5. Open `http://localhost:3500` and start chatting about code.
@@ -20,7 +20,7 @@ An Agentuity agent that demonstrates **Claude Agent SDK** integration with **Age
 ## Project Structure
 
 ```
-claude-code-agent/
+claude-code/
 ├── src/
 │   ├── agent/claude-code/
 │   │   ├── index.ts         # Agent handler (Claude Agent SDK + Sandbox)
@@ -66,4 +66,20 @@ The agent workspace includes these reference files:
 
 - [Bun](https://bun.sh/) v1.0+
 - [Agentuity CLI](https://agentuity.sh)
-- ANTHROPIC_API_KEY (auto-provided by Agentuity AI Gateway)
+- `ANTHROPIC_API_KEY` in local `.env` for the Claude Agent SDK
+
+## Environment
+
+This example calls `@anthropic-ai/claude-agent-sdk` directly, so `ANTHROPIC_API_KEY` is the main manual local setup step.
+
+Agentuity services such as dev mode, thread state, and sandboxes use `AGENTUITY_SDK_KEY` through the normal project setup from `agentuity project import`.
+
+Minimal local `.env`:
+
+```bash
+ANTHROPIC_API_KEY=...
+```
+
+## Resources
+
+- [Claude Agent SDK overview](https://platform.claude.com/docs/en/agent-sdk/overview)

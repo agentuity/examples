@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "claude-code-agent",
+      "name": "claude-code",
       "dependencies": {
         "@agentuity/frontend": "^1.0.31",
         "@agentuity/react": "^1.0.31",

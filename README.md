@@ -50,6 +50,7 @@ Examples for building agents with the [Agentuity SDK](https://github.com/agentui
 | [langchain](./integrations/langchain) | Dynamic models/tools, prompts, streaming, structured output |
 | [openai](./integrations/openai) | OpenAI Agents SDK handoffs, tool calling, streaming, context |
 | [chat-sdk](./integrations/chat-sdk) | Multi-platform chatbot (Slack, Discord) with conversation memory |
+| [claude-code](./integrations/claude-code) | Claude Agent SDK chat interface with sandboxed code execution |
 
 ### [features/](./features)
 

@@ -41,6 +41,12 @@ bun run dev
 |---|---|
 | `chat-sdk` | Multi-platform chatbot (Slack, Discord) |
 
+### Claude Agent SDK
+
+| Example | Pattern |
+|---|---|
+| `claude-code` | Conversational code intelligence + sandbox execution |
+
 ## More Examples
 
 - Step-by-step tutorials: [training/](../training)
