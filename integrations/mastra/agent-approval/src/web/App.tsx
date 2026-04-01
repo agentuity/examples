@@ -22,12 +22,23 @@ export function App() {
 	const { data: approvalResult, invoke: sendApproval, isLoading } = useAPI('POST /api/approval');
 	const { data: approveResult, invoke: approve, isLoading: isApproving } = useAPI('POST /api/approval/approve');
 	const { data: declineResult, invoke: decline, isLoading: isDeclining } = useAPI('POST /api/approval/decline');
+	const { data: pendingData, refetch: refetchPending } = useAPI('GET /api/approval/pending');
 	const { data: historyData, refetch: refetchHistory } = useAPI('GET /api/approval/history');
 	const { data: statsData, refetch: refetchStats } = useAPI('GET /api/approval/stats');
 	const { invoke: clearHistory } = useAPI('DELETE /api/approval/history');
 
-	// Use the most recent result from any action
-	const result = approveResult ?? declineResult ?? approvalResult;
+	const hydratedPendingResult = pendingData?.pendingApproval
+		? {
+				response: `Tool "${pendingData.pendingApproval.toolName}" still requires approval. ${pendingData.pendingApproval.reason}`,
+				suspended: true,
+				pendingApproval: pendingData.pendingApproval,
+				threadId: pendingData.threadId,
+				sessionId: '',
+				tokens: 0,
+		  }
+		: null;
+
+	const result = hydratedPendingResult ?? approveResult ?? declineResult ?? approvalResult;
 	const history = historyData?.approvalHistory ?? [];
 	const stats = statsData;
 	const isWorking = isLoading || isApproving || isDeclining;
@@ -35,28 +46,33 @@ export function App() {
 	const handleSend = useCallback(async () => {
 		track('approval_request', { model, requireToolApproval });
 		await sendApproval({ text, model, requireToolApproval });
+		await refetchPending();
+		await refetchHistory();
 		await refetchStats();
-	}, [text, model, requireToolApproval, sendApproval, refetchStats, track]);
+	}, [text, model, requireToolApproval, sendApproval, refetchPending, refetchHistory, refetchStats, track]);
 
 	const handleApprove = useCallback(async () => {
 		track('approval_approved');
 		await approve(undefined);
+		await refetchPending();
 		await refetchHistory();
 		await refetchStats();
-	}, [approve, refetchHistory, refetchStats, track]);
+	}, [approve, refetchPending, refetchHistory, refetchStats, track]);
 
 	const handleDecline = useCallback(async () => {
 		track('approval_declined');
 		await decline(undefined);
+		await refetchPending();
 		await refetchHistory();
 		await refetchStats();
-	}, [decline, refetchHistory, refetchStats, track]);
+	}, [decline, refetchPending, refetchHistory, refetchStats, track]);
 
 	const handleClearHistory = useCallback(async () => {
 		await clearHistory();
+		await refetchPending();
 		await refetchHistory();
 		await refetchStats();
-	}, [clearHistory, refetchHistory, refetchStats]);
+	}, [clearHistory, refetchPending, refetchHistory, refetchStats]);
 
 	return (
 		<div className="text-white flex font-sans justify-center min-h-screen">
@@ -232,7 +248,7 @@ export function App() {
 
 							{/* Metadata */}
 							<div className="text-gray-500 flex text-xs gap-4">
-								{result.toolExecuted && (
+								{'toolExecuted' in result && result.toolExecuted && (
 									<span>
 										Tool <strong className="text-gray-400">{result.toolExecuted}</strong>
 									</span>

@@ -50,7 +50,7 @@ Research sub-agent tools: search-web (web search), lookup-info (entity lookup)
 Operations sub-agent tools: delete-records (data deletion), send-notification (email/SMS)
 Confirmation sub-agent tools: request-confirmation (when user needs to confirm or choose)
 
-Use the appropriate tool based on the user's request. For dangerous or irreversible actions, prefer using request-confirmation first to verify intent.`;
+Use the appropriate tool based on the user's request. Route destructive operations like delete-records and send-notification directly to their operations tools so approval can handle them. Use request-confirmation when the user explicitly asks to confirm or choose.`;
 
 // ============================================================================
 // Mastra Network Routing Agent

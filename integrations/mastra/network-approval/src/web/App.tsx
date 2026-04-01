@@ -1,5 +1,5 @@
 import { useAPI } from '@agentuity/react';
-import { type ChangeEvent, useCallback, useState } from 'react';
+import { type ChangeEvent, useCallback, useEffect, useState } from 'react';
 import './App.css';
 
 const WORKBENCH_PATH = process.env.AGENTUITY_PUBLIC_WORKBENCH_PATH;
@@ -8,54 +8,191 @@ const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
 const EXAMPLE_REQUESTS = [
 	{ label: 'Search (safe)', text: 'Search the web for recent AI news' },
 	{ label: 'Lookup (safe)', text: 'Look up information about OpenAI' },
-	{ label: 'Delete (approval)', text: 'Delete all expired user records' },
+	{ label: 'Delete (approval)', text: 'Delete all expired records from the database' },
 	{ label: 'Notify (approval)', text: 'Send an email notification to user@example.com saying their account is ready' },
 	{ label: 'Confirm (suspend)', text: 'I need to confirm before deleting the old backup files' },
 ];
+
+type ResultState = {
+	response: string;
+	suspended: boolean;
+	suspendType?: string;
+	pendingApproval?: {
+		subAgent: string;
+		toolName: string;
+		reason: string;
+		toolArgs?: string;
+	};
+	suspendedExecution?: {
+		subAgent: string;
+		toolName: string;
+		suspendPayload: string;
+	};
+	toolExecuted?: string;
+	subAgent?: string;
+	threadId: string;
+	sessionId: string;
+	tokens: number;
+};
+
+function getSuspendedMessage(suspendPayload: string | undefined): string {
+	if (!suspendPayload) {
+		return 'Execution is suspended and waiting for your input.';
+	}
+
+	try {
+		const parsed = JSON.parse(suspendPayload) as { message?: unknown };
+
+		if (typeof parsed.message === 'string' && parsed.message.trim().length > 0) {
+			return parsed.message;
+		}
+	} catch {
+		return 'Execution is suspended and waiting for your input.';
+	}
+
+	return 'Execution is suspended and waiting for your input.';
+}
+
+function formatJson(value: string | undefined): string | null {
+	if (!value) {
+		return null;
+	}
+
+	try {
+		return JSON.stringify(JSON.parse(value), null, 2);
+	} catch {
+		return value;
+	}
+}
+
+function getResultMessage(result: {
+	response?: string;
+	suspended?: boolean;
+	suspendType?: string;
+	pendingApproval?: { reason?: string };
+	suspendedExecution?: { suspendPayload?: string };
+	toolExecuted?: string;
+} | null): string {
+	if (!result) {
+		return '';
+	}
+
+	if (result.response?.trim()) {
+		return result.response;
+	}
+
+	if (result.suspended && result.suspendType === 'approval') {
+		return result.pendingApproval?.reason?.trim() || 'This operation is waiting for approval.';
+	}
+
+	if (result.suspended && result.suspendType === 'suspend') {
+		return getSuspendedMessage(result.suspendedExecution?.suspendPayload);
+	}
+
+	if (result.toolExecuted) {
+		return `Completed ${result.toolExecuted}.`;
+	}
+
+	return '';
+}
 
 export function App() {
 	const [text, setText] = useState(EXAMPLE_REQUESTS[0]!.text);
 	const [model, setModel] = useState<(typeof MODELS)[number]>('gpt-5-nano');
 	const [requireToolApproval, setRequireToolApproval] = useState(false);
+	const [latestResult, setLatestResult] = useState<ResultState | null>(null);
 
-	const { data: networkResult, invoke: sendNetwork, isLoading } = useAPI('POST /api/network');
-	const { data: approveResult, invoke: approve, isLoading: isApproving } = useAPI('POST /api/network/approve');
-	const { data: declineResult, invoke: decline, isLoading: isDeclining } = useAPI('POST /api/network/decline');
-	const { data: resumeResult, invoke: resume, isLoading: isResuming } = useAPI('POST /api/network/resume');
-	const { data: historyData, refetch: refetchHistory } = useAPI('GET /api/network/history');
+	const { invoke: sendNetwork, isLoading } = useAPI('POST /api/network');
+	const { invoke: approve, isLoading: isApproving } = useAPI('POST /api/network/approve');
+	const { invoke: decline, isLoading: isDeclining } = useAPI('POST /api/network/decline');
+	const { invoke: resume, isLoading: isResuming } = useAPI('POST /api/network/resume');
+	const { data: networkState, refetch: refetchNetworkState } = useAPI('GET /api/network/state');
 	const { invoke: clearHistory } = useAPI('DELETE /api/network/history');
 
-	// Use the most recent result from any action
-	const result = resumeResult ?? approveResult ?? declineResult ?? networkResult;
-	const history = historyData?.networkHistory ?? [];
+	const stateResult: ResultState | null = networkState?.pendingApproval
+		? {
+				response: `Tool "${networkState.pendingApproval.toolName}" (${networkState.pendingApproval.subAgent} sub-agent) still requires approval. ${networkState.pendingApproval.reason}`,
+				suspended: true,
+				suspendType: 'approval',
+				pendingApproval: networkState.pendingApproval,
+				subAgent: networkState.pendingApproval.subAgent,
+				threadId: networkState.threadId,
+				sessionId: '',
+				tokens: 0,
+		  }
+		: networkState?.suspendedExecution
+			? {
+					response: getSuspendedMessage(networkState.suspendedExecution.suspendPayload),
+					suspended: true,
+					suspendType: 'suspend',
+					suspendedExecution: networkState.suspendedExecution,
+					subAgent: networkState.suspendedExecution.subAgent,
+				threadId: networkState.threadId,
+				sessionId: '',
+				tokens: 0,
+		  }
+		: null;
+
+	const result: ResultState | null = stateResult ?? latestResult;
+	const resultMessage = getResultMessage(result);
+	const displayResult: ResultState | null = result && resultMessage ? { ...result, response: resultMessage } : null;
+	const history = networkState?.networkHistory ?? [];
+	const stats = networkState?.stats;
 	const isWorking = isLoading || isApproving || isDeclining || isResuming;
 
+	const refreshState = useCallback(async () => {
+		await refetchNetworkState();
+	}, [refetchNetworkState]);
+
 	const handleSend = useCallback(async () => {
-		await sendNetwork({ text, model, requireToolApproval });
-	}, [text, model, requireToolApproval, sendNetwork]);
+		const nextResult = await sendNetwork({ text, model, requireToolApproval });
+		if (nextResult) {
+			setLatestResult(nextResult);
+		}
+		await refreshState();
+	}, [text, model, requireToolApproval, sendNetwork, refreshState]);
 
 	const handleApprove = useCallback(async () => {
-		await approve();
-		await refetchHistory();
-	}, [approve, refetchHistory]);
+		const nextResult = await approve(undefined);
+		if (nextResult) {
+			setLatestResult(nextResult);
+		}
+		await refreshState();
+	}, [approve, refreshState]);
 
 	const handleDecline = useCallback(async () => {
-		await decline();
-		await refetchHistory();
-	}, [decline, refetchHistory]);
+		const nextResult = await decline(undefined);
+		if (nextResult) {
+			setLatestResult(nextResult);
+		}
+		await refreshState();
+	}, [decline, refreshState]);
 
 	const handleResume = useCallback(
 		async (confirmed: boolean) => {
-			await resume({ confirmed });
-			await refetchHistory();
+			const nextResult = await resume({ confirmed });
+			if (nextResult) {
+				setLatestResult(nextResult);
+			}
+			await refreshState();
 		},
-		[resume, refetchHistory]
+		[resume, refreshState]
 	);
 
 	const handleClearHistory = useCallback(async () => {
 		await clearHistory();
-		await refetchHistory();
-	}, [clearHistory, refetchHistory]);
+		setLatestResult(null);
+		await refreshState();
+	}, [clearHistory, refreshState]);
+
+	// Refetch state after each completed (non-suspended) operation to ensure stats are current.
+	// The in-handler refetch may be deduped against the initial mount fetch; a delayed
+	// refetch in useEffect runs after the render cycle and reliably picks up fresh state.
+	useEffect(() => {
+		if (!latestResult || latestResult.suspended) return;
+		const timer = setTimeout(() => void refetchNetworkState(), 200);
+		return () => clearTimeout(timer);
+	}, [latestResult, refetchNetworkState]);
 
 	return (
 		<div className="text-white flex font-sans justify-center min-h-screen">
@@ -161,106 +298,181 @@ export function App() {
 					/>
 
 					{/* Result */}
-					{isWorking && !result ? (
+					{isWorking && !displayResult ? (
 						<div
 							className="text-sm bg-gray-950 border border-gray-800 rounded-md text-gray-600 py-3 px-4"
 							data-loading
 						/>
-					) : !result?.response ? (
+					) : !displayResult ? (
 						<div className="text-sm bg-gray-950 border border-gray-800 rounded-md text-gray-600 py-3 px-4">
 							Response will appear here
 						</div>
 					) : (
 						<div className="flex flex-col gap-3">
 							<div
-								className={`text-sm bg-gray-950 border rounded-md py-3 px-4 ${
-									result.suspended ? 'border-yellow-700 text-yellow-400' : 'border-gray-800 text-cyan-500'
+								className={`text-sm bg-gray-950 border rounded-md py-3 px-4 whitespace-pre-wrap ${
+									displayResult.suspended ? 'border-yellow-700 text-yellow-400' : 'border-gray-800 text-cyan-500'
 								}`}
 							>
-								{result.response}
+								{displayResult.response}
 							</div>
 
 							{/* Approval actions */}
-							{result.suspended && result.suspendType === 'approval' && (
-								<div className="flex gap-2">
-									<button
-										type="button"
-										className="bg-green-950 border border-green-700 rounded text-green-400 text-sm py-1.5 px-4 cursor-pointer transition-colors hover:bg-green-900 disabled:opacity-50"
-										onClick={handleApprove}
-										disabled={isWorking}
-									>
-										{isApproving ? 'Approving...' : 'Approve'}
-									</button>
-									<button
-										type="button"
-										className="bg-red-950 border border-red-700 rounded text-red-400 text-sm py-1.5 px-4 cursor-pointer transition-colors hover:bg-red-900 disabled:opacity-50"
-										onClick={handleDecline}
-										disabled={isWorking}
-									>
-										{isDeclining ? 'Declining...' : 'Decline'}
-									</button>
-									{result.pendingApproval && (
-										<span className="text-gray-500 text-xs self-center ml-2">
-											{result.pendingApproval.subAgent} / {result.pendingApproval.toolName}
-										</span>
+							{displayResult.suspended && displayResult.suspendType === 'approval' && (
+								<div className="bg-yellow-950/30 border border-yellow-800 rounded-md p-4 flex flex-col gap-3">
+									<div className="text-yellow-300 text-xs font-medium uppercase tracking-wide">
+										Awaiting Approval
+									</div>
+									{displayResult.pendingApproval && (
+										<div className="flex flex-col gap-1.5">
+											<div className="text-xs text-gray-400">
+												Tool:{' '}
+												<code className="text-yellow-300">
+													{displayResult.pendingApproval.subAgent} / {displayResult.pendingApproval.toolName}
+												</code>
+											</div>
+											{displayResult.pendingApproval.reason && (
+												<div className="text-xs text-gray-400">
+													Reason:{' '}
+													<span className="text-gray-300">{displayResult.pendingApproval.reason}</span>
+												</div>
+											)}
+											{formatJson(displayResult.pendingApproval.toolArgs) && (
+												<div className="text-xs text-gray-500">
+													Args:
+													<pre className="text-gray-400 break-all whitespace-pre-wrap mt-1">
+														{formatJson(displayResult.pendingApproval.toolArgs)}
+													</pre>
+												</div>
+											)}
+										</div>
 									)}
+									<div className="flex gap-2 mt-1">
+										<button
+											type="button"
+											className="bg-green-950 border border-green-700 rounded text-green-400 text-sm py-1.5 px-4 cursor-pointer transition-colors hover:bg-green-900 disabled:opacity-50"
+											onClick={handleApprove}
+											disabled={isWorking}
+										>
+											{isApproving ? 'Approving...' : 'Approve'}
+										</button>
+										<button
+											type="button"
+											className="bg-red-950 border border-red-700 rounded text-red-400 text-sm py-1.5 px-4 cursor-pointer transition-colors hover:bg-red-900 disabled:opacity-50"
+											onClick={handleDecline}
+											disabled={isWorking}
+										>
+											{isDeclining ? 'Declining...' : 'Decline'}
+										</button>
+									</div>
 								</div>
 							)}
 
 							{/* Resume actions */}
-							{result.suspended && result.suspendType === 'suspend' && (
-								<div className="flex gap-2">
-									<button
-										type="button"
-										className="bg-green-950 border border-green-700 rounded text-green-400 text-sm py-1.5 px-4 cursor-pointer transition-colors hover:bg-green-900 disabled:opacity-50"
-										onClick={() => handleResume(true)}
-										disabled={isWorking}
-									>
-										{isResuming ? 'Resuming...' : 'Confirm'}
-									</button>
-									<button
-										type="button"
-										className="bg-red-950 border border-red-700 rounded text-red-400 text-sm py-1.5 px-4 cursor-pointer transition-colors hover:bg-red-900 disabled:opacity-50"
-										onClick={() => handleResume(false)}
-										disabled={isWorking}
-									>
-										Cancel
-									</button>
-									{result.suspendedExecution && (
-										<span className="text-gray-500 text-xs self-center ml-2">
-											{result.suspendedExecution.subAgent} / {result.suspendedExecution.toolName}
-										</span>
+							{displayResult.suspended && displayResult.suspendType === 'suspend' && (
+								<div className="bg-blue-950/20 border border-blue-800 rounded-md p-4 flex flex-col gap-3">
+									<div className="text-blue-300 text-xs font-medium uppercase tracking-wide">
+										Awaiting Input
+									</div>
+									{displayResult.suspendedExecution && (
+										<div className="flex flex-col gap-1.5">
+											<div className="text-xs text-gray-400">
+												Tool:{' '}
+												<code className="text-blue-300">
+													{displayResult.suspendedExecution.subAgent} / {displayResult.suspendedExecution.toolName}
+												</code>
+											</div>
+											{formatJson(displayResult.suspendedExecution.suspendPayload) && (
+												<div className="text-xs text-gray-500">
+													Payload:
+													<pre className="text-gray-400 break-all whitespace-pre-wrap mt-1">
+														{formatJson(displayResult.suspendedExecution.suspendPayload)}
+													</pre>
+												</div>
+											)}
+										</div>
 									)}
+									<div className="flex gap-2 mt-1">
+										<button
+											type="button"
+											className="bg-green-950 border border-green-700 rounded text-green-400 text-sm py-1.5 px-4 cursor-pointer transition-colors hover:bg-green-900 disabled:opacity-50"
+											onClick={() => handleResume(true)}
+											disabled={isWorking}
+										>
+											{isResuming ? 'Resuming...' : 'Confirm'}
+										</button>
+										<button
+											type="button"
+											className="bg-red-950 border border-red-700 rounded text-red-400 text-sm py-1.5 px-4 cursor-pointer transition-colors hover:bg-red-900 disabled:opacity-50"
+											onClick={() => handleResume(false)}
+											disabled={isWorking}
+										>
+											Cancel
+										</button>
+									</div>
 								</div>
 							)}
 
 							{/* Metadata */}
 							<div className="text-gray-500 flex text-xs gap-4">
-								{result.subAgent && (
+								{displayResult.subAgent && (
 									<span>
-										Sub-agent <strong className="text-gray-400">{result.subAgent}</strong>
+										Sub-agent <strong className="text-gray-400">{displayResult.subAgent}</strong>
 									</span>
 								)}
-								{result.toolExecuted && (
+								{displayResult.toolExecuted && (
 									<span>
-										Tool <strong className="text-gray-400">{result.toolExecuted}</strong>
+										Tool <strong className="text-gray-400">{displayResult.toolExecuted}</strong>
 									</span>
 								)}
-								{result.tokens > 0 && (
+								{displayResult.tokens > 0 && (
 									<span>
-										Tokens <strong className="text-gray-400">{result.tokens}</strong>
+										Tokens <strong className="text-gray-400">{displayResult.tokens}</strong>
 									</span>
 								)}
-								{result.threadId && (
+								{displayResult.threadId && (
 									<span>
 										Thread{' '}
-										<strong className="text-gray-400">{result.threadId.slice(0, 12)}...</strong>
+										<strong className="text-gray-400">{displayResult.threadId.slice(0, 12)}...</strong>
 									</span>
 								)}
 							</div>
 						</div>
 					)}
 				</div>
+
+				{/* Stats */}
+				{stats && (
+					<div className="bg-black border border-gray-900 rounded-lg p-8 flex flex-col gap-4">
+						<h3 className="text-white text-xl font-normal">Network Stats</h3>
+						<div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+							<div className="bg-gray-950 border border-gray-800 rounded-md py-3 px-4 text-center">
+								<div className="text-2xl font-thin text-white">{stats.totalOperations}</div>
+								<div className="text-gray-500 text-xs mt-1">Total</div>
+							</div>
+							<div className="bg-gray-950 border border-gray-800 rounded-md py-3 px-4 text-center">
+								<div className="text-2xl font-thin text-cyan-400">{stats.immediateCount}</div>
+								<div className="text-gray-500 text-xs mt-1">Immediate</div>
+							</div>
+							<div className="bg-gray-950 border border-gray-800 rounded-md py-3 px-4 text-center">
+								<div className="text-2xl font-thin text-green-400">{stats.approvedCount}</div>
+								<div className="text-gray-500 text-xs mt-1">Approved</div>
+							</div>
+							<div className="bg-gray-950 border border-gray-800 rounded-md py-3 px-4 text-center">
+								<div className="text-2xl font-thin text-red-400">{stats.declinedCount}</div>
+								<div className="text-gray-500 text-xs mt-1">Declined</div>
+							</div>
+							<div className="bg-gray-950 border border-gray-800 rounded-md py-3 px-4 text-center">
+								<div className="text-2xl font-thin text-blue-400">{stats.resumedCount}</div>
+								<div className="text-gray-500 text-xs mt-1">Resumed</div>
+							</div>
+							<div className="bg-gray-950 border border-gray-800 rounded-md py-3 px-4 text-center">
+								<div className="text-2xl font-thin text-cyan-300">{stats.totalTokens}</div>
+								<div className="text-gray-500 text-xs mt-1">Tokens</div>
+							</div>
+						</div>
+					</div>
+				)}
 
 				{/* History */}
 				<div className="bg-black border border-gray-900 rounded-lg p-8 flex flex-col gap-6">

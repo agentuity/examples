@@ -196,6 +196,44 @@ export const NetworkStatsSchema = s.object({
 	totalTokens: s.number(),
 });
 
+export const NetworkStateOutputSchema = s.object({
+	threadId: s.string(),
+	networkHistory: s.array(NetworkHistoryEntrySchema),
+	pendingApproval: PendingApprovalSchema.optional(),
+	suspendedExecution: SuspendedExecutionSchema.optional(),
+	hasPending: s.boolean(),
+	hasSuspended: s.boolean(),
+	stats: NetworkStatsSchema,
+});
+
+function buildNetworkStats(threadId: string, history: NetworkHistoryEntry[]) {
+	return {
+		threadId,
+		totalOperations: history.length,
+		immediateCount: history.filter((h) => h.type === 'immediate').length,
+		approvedCount: history.filter((h) => h.type === 'approved').length,
+		declinedCount: history.filter((h) => h.type === 'declined').length,
+		resumedCount: history.filter((h) => h.type === 'resumed').length,
+		totalTokens: history.reduce((sum, h) => sum + h.tokens, 0),
+	};
+}
+
+api.get('/network/state', validator({ output: NetworkStateOutputSchema }), async (c) => {
+	const history = (await c.var.thread.state.get<NetworkHistoryEntry[]>('networkHistory')) ?? [];
+	const pending = await c.var.thread.state.get<PendingApproval>('pendingApproval');
+	const suspended = await c.var.thread.state.get<SuspendedExecution>('suspendedExecution');
+
+	return c.json({
+		threadId: c.var.thread.id,
+		networkHistory: history,
+		pendingApproval: pending ?? undefined,
+		suspendedExecution: suspended ?? undefined,
+		hasPending: pending !== null && pending !== undefined,
+		hasSuspended: suspended !== null && suspended !== undefined,
+		stats: buildNetworkStats(c.var.thread.id, history),
+	});
+});
+
 // Retrieve network operation history
 api.get('/network/history', validator({ output: NetworkHistoryOutputSchema }), async (c) => {
 	const history = (await c.var.thread.state.get<NetworkHistoryEntry[]>('networkHistory')) ?? [];
@@ -224,15 +262,7 @@ api.delete('/network/history', validator({ output: NetworkHistoryOutputSchema })
 api.get('/network/stats', validator({ output: NetworkStatsSchema }), async (c) => {
 	const history = (await c.var.thread.state.get<NetworkHistoryEntry[]>('networkHistory')) ?? [];
 
-	return c.json({
-		threadId: c.var.thread.id,
-		totalOperations: history.length,
-		immediateCount: history.filter((h) => h.type === 'immediate').length,
-		approvedCount: history.filter((h) => h.type === 'approved').length,
-		declinedCount: history.filter((h) => h.type === 'declined').length,
-		resumedCount: history.filter((h) => h.type === 'resumed').length,
-		totalTokens: history.reduce((sum, h) => sum + h.tokens, 0),
-	});
+	return c.json(buildNetworkStats(c.var.thread.id, history));
 });
 
 export default api;

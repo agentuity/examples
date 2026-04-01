@@ -1,5 +1,5 @@
 {
-  "name": "structured-output",
+  "name": "opencode-assistant-v1",
   "version": "0.0.1",
   "license": "Apache-2.0",
   "private": true,
@@ -13,25 +13,25 @@
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "@agentuity/evals": "latest",
     "@agentuity/frontend": "latest",
     "@agentuity/react": "latest",
     "@agentuity/runtime": "latest",
     "@agentuity/schema": "latest",
     "@agentuity/workbench": "latest",
-    "@mastra/core": "latest",
+    "@opencode-ai/sdk": "^1.2.24",
+    "@streamdown/code": "^1.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "zod": "^3.23.0"
+    "streamdown": "^2.2.0"
   },
   "devDependencies": {
     "@agentuity/cli": "latest",
-    "@tailwindcss/vite": "^4.1.18",
     "@types/bun": "latest",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "groq-sdk": "^1.1.2",
+    "typescript": "^5",
+    "@tailwindcss/vite": "^4.1.18",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5"
+    "@vitejs/plugin-react": "^4.5.2"
   }
 }
