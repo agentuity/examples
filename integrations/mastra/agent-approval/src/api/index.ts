@@ -4,7 +4,9 @@
  * agents handle core logic.
  */
 
-import { createRouter, validator } from '@agentuity/runtime';
+import { Hono } from 'hono';
+import type { Env } from '@agentuity/runtime';
+import { validator } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 import approval, {
 	AgentOutput as ApprovalOutput,
@@ -16,29 +18,26 @@ import approval, {
 	type PendingApproval,
 } from '../agent/approval';
 
-const api = createRouter();
+const router = new Hono<Env>()
 
 // ============================================================================
 // Approval Agent Routes
 // ============================================================================
 
 // Call the approval agent to process a request (may suspend for approval)
-api.post('/approval', approval.validator(), async (c) => {
+.post('/approval', approval.validator(), async (c) => {
 	const data = c.req.valid('json');
 
 	return c.json(await approval.run(data));
-});
+})
 
 // ── Pending Approval ────────────────────────────────────────────────────────
 
-export const PendingApprovalOutputSchema = s.object({
+.get('/approval/pending', validator({ output: s.object({
 	pendingApproval: PendingApprovalSchema.optional(),
 	threadId: s.string(),
 	hasPending: s.boolean(),
-});
-
-// Get the current pending approval for this thread
-api.get('/approval/pending', validator({ output: PendingApprovalOutputSchema }), async (c) => {
+}) }), async (c) => {
 	const pending = await c.var.thread.state.get<PendingApproval>('pendingApproval');
 
 	return c.json({
@@ -46,7 +45,7 @@ api.get('/approval/pending', validator({ output: PendingApprovalOutputSchema }),
 		threadId: c.var.thread.id,
 		hasPending: pending !== null && pending !== undefined,
 	});
-});
+})
 
 // ── Approve / Decline ───────────────────────────────────────────────────────
 
@@ -55,7 +54,7 @@ api.get('/approval/pending', validator({ output: PendingApprovalOutputSchema }),
  * Mirrors Mastra's agent.approveToolCall({ runId }) pattern.
  * Executes the suspended tool and returns the LLM response with the result.
  */
-api.post('/approval/approve', validator({ output: ApprovalOutput }), async (c) => {
+.post('/approval/approve', validator({ output: ApprovalOutput }), async (c) => {
 	const pending = await c.var.thread.state.get<PendingApproval>('pendingApproval');
 
 	if (!pending) {
@@ -76,14 +75,14 @@ api.post('/approval/approve', validator({ output: ApprovalOutput }), async (c) =
 	const result = await approveToolCall(pending, c.var.thread);
 
 	return c.json(result);
-});
+})
 
 /**
  * Decline a pending tool call.
  * Mirrors Mastra's agent.declineToolCall({ runId }) pattern.
  * The LLM responds acknowledging the declined tool without executing it.
  */
-api.post('/approval/decline', validator({ output: ApprovalOutput }), async (c) => {
+.post('/approval/decline', validator({ output: ApprovalOutput }), async (c) => {
 	const pending = await c.var.thread.state.get<PendingApproval>('pendingApproval');
 
 	if (!pending) {
@@ -104,26 +103,16 @@ api.post('/approval/decline', validator({ output: ApprovalOutput }), async (c) =
 	const result = await declineToolCall(pending, c.var.thread);
 
 	return c.json(result);
-});
+})
 
 // ── Approval History ────────────────────────────────────────────────────────
 
-export const ApprovalHistoryOutputSchema = s.object({
+// Retrieve approval history
+.get('/approval/history', validator({ output: s.object({
 	approvalHistory: s.array(ApprovalHistoryEntrySchema),
 	threadId: s.string(),
 	totalApprovals: s.number(),
-});
-
-export const ApprovalStatsSchema = s.object({
-	threadId: s.string(),
-	totalRequests: s.number(),
-	approvedCount: s.number(),
-	declinedCount: s.number(),
-	totalTokens: s.number(),
-});
-
-// Retrieve approval history
-api.get('/approval/history', validator({ output: ApprovalHistoryOutputSchema }), async (c) => {
+}) }), async (c) => {
 	const history = (await c.var.thread.state.get<ApprovalHistoryEntry[]>('approvalHistory')) ?? [];
 
 	return c.json({
@@ -131,10 +120,14 @@ api.get('/approval/history', validator({ output: ApprovalHistoryOutputSchema }),
 		threadId: c.var.thread.id,
 		totalApprovals: history.length,
 	});
-});
+})
 
 // Clear approval history
-api.delete('/approval/history', validator({ output: ApprovalHistoryOutputSchema }), async (c) => {
+.delete('/approval/history', validator({ output: s.object({
+	approvalHistory: s.array(ApprovalHistoryEntrySchema),
+	threadId: s.string(),
+	totalApprovals: s.number(),
+}) }), async (c) => {
 	await c.var.thread.state.delete('approvalHistory');
 	await c.var.thread.state.delete('pendingApproval');
 
@@ -143,10 +136,16 @@ api.delete('/approval/history', validator({ output: ApprovalHistoryOutputSchema 
 		threadId: c.var.thread.id,
 		totalApprovals: 0,
 	});
-});
+})
 
 // Get approval stats
-api.get('/approval/stats', validator({ output: ApprovalStatsSchema }), async (c) => {
+.get('/approval/stats', validator({ output: s.object({
+	threadId: s.string(),
+	totalRequests: s.number(),
+	approvedCount: s.number(),
+	declinedCount: s.number(),
+	totalTokens: s.number(),
+}) }), async (c) => {
 	const history = (await c.var.thread.state.get<ApprovalHistoryEntry[]>('approvalHistory')) ?? [];
 
 	return c.json({
@@ -158,4 +157,4 @@ api.get('/approval/stats', validator({ output: ApprovalStatsSchema }), async (c)
 	});
 });
 
-export default api;
+export default router;

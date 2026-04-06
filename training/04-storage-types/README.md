@@ -2,6 +2,11 @@
 
 Demonstrates all three Agentuity storage backends in a single agent workflow: Object Storage for binary files, Vector Storage for semantic search, and KV Storage for query history.
 
+## Prerequisites
+
+- [Bun](https://bun.sh/) installed
+- [Agentuity CLI](https://agentuity.dev/cli/installation) installed and logged in (`agentuity login`)
+
 ## Getting Started
 
 ```bash

@@ -1,36 +1,33 @@
-import { createRouter, validator } from '@agentuity/runtime';
-import translateAgent, { type HistoryEntry } from '../agent/translate/agent';
-import { TranslateHistoryStateSchema } from '../agent/translate/state';
+import { Hono } from 'hono';
+import type { Env } from '@agentuity/runtime';
+import translate from '@agent/translate';
+import type { HistoryEntry } from '../agent/translate/agent';
 
-const router = createRouter();
+const router = new Hono<Env>()
+	.get('/health', (c) => {
+		return c.json({ status: 'ok', timestamp: new Date().toISOString() });
+	})
+	.post('/translate', translate.validator(), async (c) => {
+		const input = c.req.valid('json');
+		return c.json(await translate.run(input));
+	})
+	.get('/translate/history', async (c) => {
+		const history = (await c.var.thread.state.get<HistoryEntry[]>('history')) ?? [];
 
-router.get('/health', (c) => {
-	return c.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+		return c.json({
+			history,
+			threadId: c.var.thread.id,
+			translationCount: history.length,
+		});
+	})
+	.delete('/translate/history', async (c) => {
+		await c.var.thread.state.delete('history');
 
-router.post('/translate', translateAgent.validator(), async (c) => {
-	const input = c.req.valid('json');
-	return c.json(await translateAgent.run(input));
-});
-
-router.get('/translate/history', validator({ output: TranslateHistoryStateSchema }), async (c) => {
-	const history = (await c.var.thread.state.get<HistoryEntry[]>('history')) ?? [];
-
-	return c.json({
-		history,
-		threadId: c.var.thread.id,
-		translationCount: history.length,
+		return c.json({
+			history: [] as HistoryEntry[],
+			threadId: c.var.thread.id,
+			translationCount: 0,
+		});
 	});
-});
-
-router.delete('/translate/history', validator({ output: TranslateHistoryStateSchema }), async (c) => {
-	await c.var.thread.state.delete('history');
-
-	return c.json({
-		history: [],
-		threadId: c.var.thread.id,
-		translationCount: 0,
-	});
-});
 
 export default router;

@@ -2,14 +2,14 @@
  * API routes for the streaming agent.
  */
 
-import { createRouter } from '@agentuity/runtime';
-import streaming from '../agent/streaming';
+import { Hono } from 'hono';
+import type { Env } from '@agentuity/runtime';
+import streaming from '@agent/streaming';
 
-const api = createRouter();
+const router = new Hono<Env>()
+	.post('/chat', streaming.validator(), async (c) => {
+		const data = c.req.valid('json');
+		return c.json(await streaming.run(data));
+	});
 
-api.post('/chat', streaming.validator(), async (c) => {
-	const data = c.req.valid('json');
-	return c.json(await streaming.run(data));
-});
-
-export default api;
+export default router;

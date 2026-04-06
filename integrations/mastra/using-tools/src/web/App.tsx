@@ -1,42 +1,37 @@
-import { useAnalytics, useAPI } from '@agentuity/react';
 import { type ChangeEvent, useCallback, useState } from 'react';
 import './App.css';
 
 const WORKBENCH_PATH = process.env.AGENTUITY_PUBLIC_WORKBENCH_PATH;
 
+type AgentResult = {
+	response: string;
+	tokens: number;
+};
+
 export function App() {
 	const [message, setMessage] = useState('What is the weather in London?');
 	const [activeAgent, setActiveAgent] = useState<'weather' | 'activities'>('weather');
-
-	// API hooks for weather and activities agents
-	const {
-		data: weatherResult,
-		invoke: askWeather,
-		isLoading: isWeatherLoading,
-	} = useAPI('POST /api/weather');
-
-	const {
-		data: activitiesResult,
-		invoke: askActivities,
-		isLoading: isActivitiesLoading,
-	} = useAPI('POST /api/activities');
-
-	const { track } = useAnalytics();
-
-	const isLoading = isWeatherLoading || isActivitiesLoading;
-	const result = activeAgent === 'weather' ? weatherResult : activitiesResult;
+	const [result, setResult] = useState<AgentResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 
 	const handleSubmit = useCallback(async () => {
-		track('agent_query', { agent: activeAgent, message });
-		if (activeAgent === 'weather') {
-			await askWeather({ message });
-		} else {
-			await askActivities({ message });
+		setIsLoading(true);
+		try {
+			const res = await fetch(`/api/${activeAgent}`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ message }),
+			});
+			const data = await res.json();
+			setResult(data);
+		} finally {
+			setIsLoading(false);
 		}
-	}, [activeAgent, message, askWeather, askActivities, track]);
+	}, [activeAgent, message]);
 
 	const handleAgentChange = (agent: 'weather' | 'activities') => {
 		setActiveAgent(agent);
+		setResult(null);
 		if (agent === 'weather') {
 			setMessage('What is the weather in London?');
 		} else {

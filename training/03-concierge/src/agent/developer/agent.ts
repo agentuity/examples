@@ -63,7 +63,7 @@ const agent = createAgent('developer', {
 
 			// Generate response using OpenAI
 			const result = await generateText({
-				model: openai('gpt-4o-mini'),
+				model: openai('gpt-5-nano'),
 				system: `You are an expert on the Agentuity platform, helping developers understand and use the SDK effectively.
 
 Use the following Agentuity documentation to answer questions:

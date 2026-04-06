@@ -13,11 +13,8 @@
 		"strict": true,
 		"skipLibCheck": true,
 		"noFallthroughCasesInSwitch": true,
-		"noUncheckedIndexedAccess": true,
-		"noImplicitOverride": true,
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
-		"noPropertyAccessFromIndexSignature": false,
 		"paths": {
 			"@agent/*": ["./src/agent/*"],
 			"@api/*": ["./src/api/*"]

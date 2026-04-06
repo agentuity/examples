@@ -37,7 +37,7 @@ const memoryMastraAgent = new Agent({
   id: 'memory-agent',
   name: 'Memory Agent',
   instructions: 'You are a helpful assistant with memory...',
-  model: 'openai/gpt-4o-mini',
+  model: 'openai/gpt-5-nano',
 });
 ```
 

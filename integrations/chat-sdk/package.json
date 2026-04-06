@@ -13,17 +13,18 @@
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "@agentuity/runtime": "latest",
-    "@agentuity/schema": "latest",
+    "@agentuity/runtime": "^2.0.0",
+    "@agentuity/schema": "^2.0.0",
     "@ai-sdk/anthropic": "latest",
     "@chat-adapter/discord": "latest",
     "@chat-adapter/slack": "latest",
     "@chat-adapter/state-memory": "latest",
     "ai": "latest",
-    "chat": "latest"
+    "chat": "latest",
+    "hono": "^4.7.0"
   },
   "devDependencies": {
-    "@agentuity/cli": "latest",
+    "@agentuity/cli": "^2.0.0",
     "@types/bun": "latest",
     "typescript": "^5"
   }

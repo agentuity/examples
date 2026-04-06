@@ -2,6 +2,11 @@
 
 A minimal agent that greets users by name, generates a unique greeting with an LLM, and tracks how many times each name has been greeted using KV storage.
 
+## Prerequisites
+
+- [Bun](https://bun.sh/) installed
+- [Agentuity CLI](https://agentuity.dev/cli/installation) installed and logged in (`agentuity login`)
+
 ## Getting Started
 
 ```bash

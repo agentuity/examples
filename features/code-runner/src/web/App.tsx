@@ -1,20 +1,52 @@
 import { useCallback, useState } from 'react';
-import { useAPI } from '@agentuity/react';
 import { PROMPTS } from '../lib/prompts';
 import { CodeBlock } from './CodeBlock';
 import { CopyButton } from './CopyButton';
 import './App.css';
 
+interface RuntimeResult {
+	code: string;
+	exitCode: number;
+	durationMs: number;
+	stdout: string;
+	stderr: string;
+}
+
+interface RunResult {
+	prompt: string;
+	typescript: RuntimeResult;
+	python: RuntimeResult;
+}
+
 export function App() {
 	const [selectedPrompt, setSelectedPrompt] = useState(0);
-
-	// useAPI provides typed fetch with loading/error state.
-	// The route string 'POST /api/run' matches the API route in src/api/index.ts.
-	const { data, invoke, isLoading, error, reset } = useAPI('POST /api/run');
+	const [data, setData] = useState<RunResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	const handleRun = useCallback(async () => {
-		await invoke({ prompt: PROMPTS[selectedPrompt]!.prompt });
-	}, [invoke, selectedPrompt]);
+		setIsLoading(true);
+		setError(null);
+		try {
+			const res = await fetch('/api/run', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ prompt: PROMPTS[selectedPrompt]!.prompt }),
+			});
+			if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+			const result = await res.json();
+			setData(result);
+		} catch (err) {
+			setError(String(err));
+		} finally {
+			setIsLoading(false);
+		}
+	}, [selectedPrompt]);
+
+	const reset = useCallback(() => {
+		setData(null);
+		setError(null);
+	}, []);
 
 	return (
 		<div className="text-white flex font-sans justify-center min-h-screen">
@@ -116,10 +148,10 @@ export function App() {
 
 				{/* Error State */}
 				{error && (
-					<div className="text-red-400 text-sm">{String(error)}</div>
+					<div className="text-red-400 text-sm">{error}</div>
 				)}
 
-				{/* Results Grid — side-by-side cards for TypeScript and Python */}
+				{/* Results Grid -- side-by-side cards for TypeScript and Python */}
 				{data && (
 					<div className="grid grid-cols-2 gap-6">
 						{(

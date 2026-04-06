@@ -1,12 +1,12 @@
-import { createRouter } from '@agentuity/runtime';
-import agent from '@agent/researcher';
+import { Hono } from 'hono';
+import type { Env } from '@agentuity/runtime';
+import researcher from '@agent/researcher';
 
-const api = createRouter();
+const router = new Hono<Env>()
+	.post('/research', researcher.validator(), async (c) => {
+		const data = c.req.valid('json');
+		const result = await researcher.run(data);
+		return c.json(result);
+	});
 
-api.post('/research', agent.validator(), async (c) => {
-	const data = c.req.valid('json');
-	const result = await agent.run(data);
-	return c.json(result);
-});
-
-export default api;
+export default router;

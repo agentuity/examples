@@ -75,7 +75,7 @@ const getDocumentation = tool(
 // LangChain Model
 // ---------------------------------------------------------------------------
 
-const model = new ChatOpenAI({ model: 'gpt-4.1', temperature: 0.3, maxTokens: 1500 });
+const model = new ChatOpenAI({ model: 'gpt-5', maxTokens: 1500 });
 
 // ---------------------------------------------------------------------------
 // Static system prompt — base personality and instructions
@@ -85,64 +85,6 @@ const STATIC_SYSTEM_PROMPT = `You are a knowledgeable programming assistant call
 You specialize in web development, TypeScript, and AI/LLM frameworks.
 Always be helpful and provide accurate, well-structured answers.
 When using tools, explain what you found and how it relates to the user's question.`;
-
-// ---------------------------------------------------------------------------
-// Middleware: Dynamic system prompt based on expertise level
-// ---------------------------------------------------------------------------
-
-let activePromptMode = '';
-
-const dynamicSystemPromptMiddleware = createMiddleware({
-	name: 'DynamicSystemPrompt',
-	wrapModelCall: (request, handler) => {
-		const runtime = request.runtime as { context?: { expertiseLevel?: string; verbosity?: string } } | undefined;
-		const expertiseLevel = runtime?.context?.expertiseLevel ?? 'beginner';
-		const verbosity = runtime?.context?.verbosity ?? 'detailed';
-
-		let dynamicAddition = '';
-
-		if (expertiseLevel === 'expert') {
-			dynamicAddition = `\n\nThe user is an expert developer. Be technical and concise. Skip basic explanations. Use precise terminology. Include advanced patterns and edge cases.`;
-			activePromptMode = 'Expert mode: technical, concise, advanced patterns';
-		} else if (expertiseLevel === 'intermediate') {
-			dynamicAddition = `\n\nThe user has intermediate programming knowledge. Provide clear explanations with some technical depth. Include code examples when helpful. Mention best practices.`;
-			activePromptMode = 'Intermediate mode: balanced explanations with examples';
-		} else {
-			dynamicAddition = `\n\nThe user is a beginner. Use simple language and avoid jargon. Break concepts into small steps. Provide analogies where helpful. Always include basic code examples with comments.`;
-			activePromptMode = 'Beginner mode: simple language, step-by-step, analogies';
-		}
-
-		if (verbosity === 'concise') {
-			dynamicAddition += ' Keep responses short and to the point.';
-			activePromptMode += ' + concise';
-		} else {
-			dynamicAddition += ' Provide thorough, detailed explanations.';
-			activePromptMode += ' + detailed';
-		}
-
-		// Prepend the dynamic prompt to the first system message
-		const messages = request.messages.map((m: any, i: number) => {
-			if (i === 0 && m._getType?.() === 'system') {
-				return { ...m, content: m.content + dynamicAddition };
-			}
-			return m;
-		});
-
-		return handler({ ...request, messages });
-	},
-});
-
-// ---------------------------------------------------------------------------
-// LangChain Agent — static prompt + dynamic middleware + custom state
-// ---------------------------------------------------------------------------
-
-const langchainAgent = createLangChainAgent({
-	model,
-	tools: [search, getDocumentation],
-	middleware: [dynamicSystemPromptMiddleware],
-	systemPrompt: STATIC_SYSTEM_PROMPT,
-	stateSchema: AgentState,
-});
 
 // ---------------------------------------------------------------------------
 // Agentuity Agent Wrapper
@@ -175,8 +117,56 @@ const agent = createAgent('system-prompt', {
 		ctx.logger.info('──── System Prompt Agent ────');
 		ctx.logger.info({ message, expertiseLevel, verbosity });
 
-		// Reset prompt mode tracking
-		activePromptMode = '';
+		// Track prompt mode — scoped to this request
+		let activePromptMode = '';
+
+		// Middleware and agent created per-request so the closure captures the local variable
+		const dynamicSystemPromptMiddleware = createMiddleware({
+			name: 'DynamicSystemPrompt',
+			wrapModelCall: (request, handler) => {
+				const runtime = request.runtime as { context?: { expertiseLevel?: string; verbosity?: string } } | undefined;
+				const level = runtime?.context?.expertiseLevel ?? 'beginner';
+				const verb = runtime?.context?.verbosity ?? 'detailed';
+
+				let dynamicAddition = '';
+
+				if (level === 'expert') {
+					dynamicAddition = `\n\nThe user is an expert developer. Be technical and concise. Skip basic explanations. Use precise terminology. Include advanced patterns and edge cases.`;
+					activePromptMode = 'Expert mode: technical, concise, advanced patterns';
+				} else if (level === 'intermediate') {
+					dynamicAddition = `\n\nThe user has intermediate programming knowledge. Provide clear explanations with some technical depth. Include code examples when helpful. Mention best practices.`;
+					activePromptMode = 'Intermediate mode: balanced explanations with examples';
+				} else {
+					dynamicAddition = `\n\nThe user is a beginner. Use simple language and avoid jargon. Break concepts into small steps. Provide analogies where helpful. Always include basic code examples with comments.`;
+					activePromptMode = 'Beginner mode: simple language, step-by-step, analogies';
+				}
+
+				if (verb === 'concise') {
+					dynamicAddition += ' Keep responses short and to the point.';
+					activePromptMode += ' + concise';
+				} else {
+					dynamicAddition += ' Provide thorough, detailed explanations.';
+					activePromptMode += ' + detailed';
+				}
+
+				const messages = request.messages.map((m: any, i: number) => {
+					if (i === 0 && m._getType?.() === 'system') {
+						return { ...m, content: m.content + dynamicAddition };
+					}
+					return m;
+				});
+
+				return handler({ ...request, messages });
+			},
+		});
+
+		const langchainAgent = createLangChainAgent({
+			model,
+			tools: [search, getDocumentation],
+			middleware: [dynamicSystemPromptMiddleware],
+			systemPrompt: STATIC_SYSTEM_PROMPT,
+			stateSchema: AgentState,
+		});
 
 		const result = await langchainAgent.invoke(
 			{

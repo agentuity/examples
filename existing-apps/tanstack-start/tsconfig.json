@@ -19,9 +19,7 @@
 		"noUncheckedSideEffectImports": true,
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./src/*"],
-			"@agentuity/routes": ["./agentuity/src/generated/routes.ts"],
-			"@agentuity/frontend": ["./node_modules/@agentuity/frontend"]
+			"@/*": ["./src/*"]
 		}
 	}
 }

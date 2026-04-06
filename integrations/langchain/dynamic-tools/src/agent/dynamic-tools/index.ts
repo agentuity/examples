@@ -124,109 +124,7 @@ const allTools = [publicSearch, publicWeather, readDatabase, writeDatabase, dele
 // LangChain Model
 // ---------------------------------------------------------------------------
 
-const model = new ChatOpenAI({ model: 'gpt-4.1', temperature: 0.1, maxTokens: 1000 });
-
-// ---------------------------------------------------------------------------
-// Middleware 1: Filter by state (authentication + message count)
-// ---------------------------------------------------------------------------
-
-let appliedFilters: string[] = [];
-
-const stateBasedTools = createMiddleware({
-	name: 'StateBasedTools',
-	wrapModelCall: (request, handler) => {
-		const runtime = request.runtime as { context?: { authenticated?: boolean } } | undefined;
-		const isAuthenticated = runtime?.context?.authenticated ?? false;
-		const messageCount = request.state.messages.length;
-
-		let filteredTools = request.tools;
-		const filters: string[] = [];
-
-		// Only show public_ tools if not authenticated
-		if (!isAuthenticated) {
-			filteredTools = request.tools.filter(
-				(t: any) => typeof t.name === 'string' && t.name.startsWith('public_'),
-			);
-			filters.push('unauthenticated: public_ tools only');
-		} else if (messageCount < 5) {
-			// Authenticated but early in conversation: hide advanced_search
-			filteredTools = request.tools.filter(
-				(t: any) => typeof t.name === 'string' && t.name !== 'advanced_search',
-			);
-			filters.push('authenticated, <5 msgs: no advanced_search');
-		} else {
-			filters.push('authenticated, 5+ msgs: all tools');
-		}
-
-		appliedFilters = filters;
-		return handler({ ...request, tools: filteredTools });
-	},
-});
-
-// ---------------------------------------------------------------------------
-// Middleware 2: Filter by runtime context (user role)
-// ---------------------------------------------------------------------------
-
-const contextBasedTools = createMiddleware({
-	name: 'ContextBasedTools',
-	wrapModelCall: (request, handler) => {
-		const runtime = request.runtime as { context?: { userRole?: string } } | undefined;
-		const userRole = runtime?.context?.userRole ?? 'viewer';
-
-		let filteredTools = request.tools;
-
-		if (userRole === 'admin') {
-			// Admins get all tools
-			appliedFilters.push(`role=${userRole}: all tools`);
-		} else if (userRole === 'editor') {
-			filteredTools = request.tools.filter((t: any) => t.name !== 'delete_data');
-			appliedFilters.push(`role=${userRole}: no delete_data`);
-		} else {
-			// viewer: only read_ and public_ tools
-			filteredTools = request.tools.filter(
-				(t: any) =>
-					typeof t.name === 'string' &&
-					(t.name.startsWith('read_') || t.name.startsWith('public_')),
-			);
-			appliedFilters.push(`role=${userRole}: read/public only`);
-		}
-
-		return handler({ ...request, tools: filteredTools });
-	},
-});
-
-// ---------------------------------------------------------------------------
-// Middleware 3: Conditional tool visibility + custom tool execution (calculate_tip)
-// ---------------------------------------------------------------------------
-
-const dynamicToolMiddleware = createMiddleware({
-	name: 'DynamicToolMiddleware',
-	wrapModelCall: (request, handler) => {
-		// calculate_tip is always visible (it survived the previous filters)
-		const hasTip = request.tools.some((t: any) => t.name === 'calculate_tip');
-		appliedFilters.push(hasTip ? 'dynamic: calculate_tip visible' : 'dynamic: calculate_tip filtered out');
-		return handler(request);
-	},
-	wrapToolCall: (request, handler) => {
-		// Custom execution wrapper — e.g. add logging around calculate_tip calls
-		if (request.toolCall.name === 'calculate_tip') {
-			appliedFilters.push('dynamic: intercepted calculate_tip execution');
-		}
-		return handler(request);
-	},
-});
-
-// ---------------------------------------------------------------------------
-// LangChain Agent — all three middleware layers composed
-// ---------------------------------------------------------------------------
-
-const langchainAgent = createLangChainAgent({
-	model,
-	tools: allTools,
-	middleware: [stateBasedTools, contextBasedTools, dynamicToolMiddleware],
-	systemPrompt:
-		'You are a helpful assistant. Use the available tools to answer questions. If a tool is not available, explain that the user may need different permissions.',
-});
+const model = new ChatOpenAI({ model: 'gpt-5', maxTokens: 1000 });
 
 // ---------------------------------------------------------------------------
 // Agentuity Agent Wrapper
@@ -265,8 +163,91 @@ const agent = createAgent('dynamic-tools', {
 		ctx.logger.info('──── Dynamic Tools Agent ────');
 		ctx.logger.info({ message, userRole, authenticated, historyLength: conversationHistory.length });
 
-		// Reset filters for this invocation
-		appliedFilters = [];
+		// Track applied filters — scoped to this request
+		const appliedFilters: string[] = [];
+
+		// Tracks the final filtered tool count after all middleware runs; updated
+		// by each wrapModelCall so the last middleware's count wins (innermost).
+		let filteredToolCount = allTools.length;
+
+		// Middleware and agent created per-request so closures capture the local array
+		const stateBasedTools = createMiddleware({
+			name: 'StateBasedTools',
+			wrapModelCall: (request, handler) => {
+				const runtime = request.runtime as { context?: { authenticated?: boolean } } | undefined;
+				const isAuthenticated = runtime?.context?.authenticated ?? false;
+				const messageCount = request.state.messages.length;
+
+				let filteredTools = request.tools;
+
+				if (!isAuthenticated) {
+					filteredTools = request.tools.filter(
+						(t: any) => typeof t.name === 'string' && t.name.startsWith('public_'),
+					);
+					appliedFilters.push('unauthenticated: public_ tools only');
+				} else if (messageCount < 5) {
+					filteredTools = request.tools.filter(
+						(t: any) => typeof t.name === 'string' && t.name !== 'advanced_search',
+					);
+					appliedFilters.push('authenticated, <5 msgs: no advanced_search');
+				} else {
+					appliedFilters.push('authenticated, 5+ msgs: all tools');
+				}
+
+				filteredToolCount = filteredTools.length;
+				return handler({ ...request, tools: filteredTools });
+			},
+		});
+
+		const contextBasedTools = createMiddleware({
+			name: 'ContextBasedTools',
+			wrapModelCall: (request, handler) => {
+				const runtime = request.runtime as { context?: { userRole?: string } } | undefined;
+				const role = runtime?.context?.userRole ?? 'viewer';
+
+				let filteredTools = request.tools;
+
+				if (role === 'admin') {
+					appliedFilters.push(`role=${role}: all tools`);
+				} else if (role === 'editor') {
+					filteredTools = request.tools.filter((t: any) => t.name !== 'delete_data');
+					appliedFilters.push(`role=${role}: no delete_data`);
+				} else {
+					filteredTools = request.tools.filter(
+						(t: any) =>
+							typeof t.name === 'string' &&
+							(t.name.startsWith('read_') || t.name.startsWith('public_')),
+					);
+					appliedFilters.push(`role=${role}: read/public only`);
+				}
+
+				filteredToolCount = filteredTools.length;
+				return handler({ ...request, tools: filteredTools });
+			},
+		});
+
+		const dynamicToolMiddleware = createMiddleware({
+			name: 'DynamicToolMiddleware',
+			wrapModelCall: (request, handler) => {
+				const hasTip = request.tools.some((t: any) => t.name === 'calculate_tip');
+				appliedFilters.push(hasTip ? 'dynamic: calculate_tip visible' : 'dynamic: calculate_tip filtered out');
+				return handler(request);
+			},
+			wrapToolCall: (request, handler) => {
+				if (request.toolCall.name === 'calculate_tip') {
+					appliedFilters.push('dynamic: intercepted calculate_tip execution');
+				}
+				return handler(request);
+			},
+		});
+
+		const langchainAgent = createLangChainAgent({
+			model,
+			tools: allTools,
+			middleware: [stateBasedTools, contextBasedTools, dynamicToolMiddleware],
+			systemPrompt:
+				'You are a helpful assistant. Use the available tools to answer questions. If a tool is not available, explain that the user may need different permissions.',
+		});
 
 		// Build messages
 		const messages = [
@@ -300,7 +281,7 @@ const agent = createAgent('dynamic-tools', {
 		return {
 			response,
 			filtersApplied: appliedFilters,
-			availableToolCount: allTools.length,
+			availableToolCount: filteredToolCount,
 			threadId: ctx.thread.id,
 			sessionId: ctx.sessionId,
 		};

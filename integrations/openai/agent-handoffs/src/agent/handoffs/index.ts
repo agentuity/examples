@@ -58,7 +58,7 @@ const billingAgent = new Agent({
 	name: 'Billing Agent',
 	instructions:
 		'You are a billing specialist. Help customers with invoice lookups, payment status, and billing questions. Use the lookup_invoice tool to find invoices.',
-	model: 'gpt-4.1',
+	model: 'gpt-5',
 	tools: [lookupInvoice],
 });
 
@@ -66,7 +66,7 @@ const refundAgent = new Agent({
 	name: 'Refund Agent',
 	instructions:
 		'You are a refund specialist. Process refund requests immediately using the process_refund tool. Do not ask for confirmation — just process the refund right away based on the information provided.',
-	model: 'gpt-4.1',
+	model: 'gpt-5',
 	tools: [processRefund],
 });
 
@@ -78,7 +78,7 @@ const faqAgent = new Agent({
 - Free trial: 14 days, no credit card required
 - Plans: Starter ($89/mo), Pro ($249/mo), Enterprise (custom)
 - Refund policy: Full refund within 30 days`,
-	model: 'gpt-4.1',
+	model: 'gpt-5',
 });
 
 // ---------------------------------------------------------------------------
@@ -90,31 +90,34 @@ const EscalationData = z.object({
 	reason: z.string().describe('Why this is being escalated to refunds'),
 });
 
-const triageAgent = Agent.create({
-	name: 'Triage Agent',
-	instructions: `You are a customer service triage agent. Route customer requests to the right specialist:
+// Factory: creates the triage agent with logger access for onHandoff callbacks
+function createTriageAgent(logger: { info: (...args: unknown[]) => void }) {
+	return Agent.create({
+		name: 'Triage Agent',
+		instructions: `You are a customer service triage agent. Route customer requests to the right specialist:
 - Billing questions (invoices, payments, account balance) → Billing Agent
 - Refund requests → Refund Agent (use escalate_to_refund)
 - General questions (hours, pricing, plans, policies) → FAQ Agent
 
 Always route to a specialist. Do not try to answer questions yourself.`,
-	model: 'gpt-4.1',
-	handoffs: [
-		// Basic handoff — just pass the agent directly
-		billingAgent,
-		// Customized handoff — with callback, typed input, and custom tool name
-		handoff(refundAgent, {
-			onHandoff: (_ctx, input) => {
-				console.log('Refund escalation:', input?.reason);
-			},
-			inputType: EscalationData,
-			toolNameOverride: 'escalate_to_refund',
-			toolDescriptionOverride: 'Escalate to refund specialist with a reason',
-		}),
-		// Basic handoff for FAQ
-		faqAgent,
-	],
-});
+		model: 'gpt-5',
+		handoffs: [
+			// Basic handoff — just pass the agent directly
+			billingAgent,
+			// Customized handoff — with callback, typed input, and custom tool name
+			handoff(refundAgent, {
+				onHandoff: (_ctx, input) => {
+					logger.info('Refund escalation:', input?.reason);
+				},
+				inputType: EscalationData,
+				toolNameOverride: 'escalate_to_refund',
+				toolDescriptionOverride: 'Escalate to refund specialist with a reason',
+			}),
+			// Basic handoff for FAQ
+			faqAgent,
+		],
+	});
+}
 
 // ---------------------------------------------------------------------------
 // Agentuity Agent Wrapper
@@ -139,6 +142,7 @@ const agent = createAgent('handoffs', {
 		ctx.logger.info('──── Agent Handoffs ────');
 		ctx.logger.info({ message });
 
+		const triageAgent = createTriageAgent(ctx.logger);
 		const result = await run(triageAgent, message);
 
 		ctx.logger.info('Run result', {

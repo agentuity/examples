@@ -10,9 +10,6 @@
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "@agentuity/core": "latest",
-    "@agentuity/frontend": "latest",
-    "@agentuity/react": "latest",
     "@tanstack/react-router": "^1.121.0",
     "@tanstack/react-router-devtools": "^1.121.0",
     "@tanstack-turborepo/shared": "workspace:*",
@@ -20,7 +17,6 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@tanstack-turborepo/agentuity": "workspace:*",
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

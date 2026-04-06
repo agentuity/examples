@@ -60,7 +60,7 @@ const networkMastraAgent = new Agent({
 	id: 'network-routing-agent',
 	name: 'Network Routing Agent',
 	instructions: NETWORK_INSTRUCTIONS,
-	model: 'openai/gpt-4o-mini',
+	model: 'openai/gpt-5-nano',
 	tools: {
 		'search-web': searchWebTool,
 		'lookup-info': lookupInfoTool,
@@ -236,7 +236,7 @@ const agent = createAgent('network', {
 				status: 'suspended',
 				suspendedAt: new Date().toISOString(),
 				conversationState: JSON.stringify(conversationMessages),
-				model: 'openai/gpt-4o-mini',
+				model: 'openai/gpt-5-nano',
 			};
 
 			await ctx.thread.state.set('suspendedExecution', suspended);
@@ -280,7 +280,7 @@ const agent = createAgent('network', {
 				status: 'pending',
 				requestedAt: new Date().toISOString(),
 				conversationState: JSON.stringify(conversationMessages),
-				model: 'openai/gpt-4o-mini',
+				model: 'openai/gpt-5-nano',
 			};
 
 			await ctx.thread.state.set('pendingApproval', pendingApproval);

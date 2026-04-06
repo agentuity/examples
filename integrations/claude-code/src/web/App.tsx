@@ -1,4 +1,3 @@
-import { useAPI } from '@agentuity/react';
 import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { marked } from 'marked';
 import './App.css';
@@ -75,18 +74,22 @@ function MessageContent({ content, role }: { content: string; role: 'user' | 'as
 export function App() {
 	const [input, setInput] = useState('');
 	const [messages, setMessages] = useState<Message[]>([]);
+	const [isLoading, setIsLoading] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
-
-	const { data: historyData } = useAPI('GET /api/chat/history');
-	const { invoke: sendChat, isLoading } = useAPI('POST /api/chat');
-	const { invoke: clearHistory } = useAPI('DELETE /api/chat/history');
 
 	// Load history on mount
 	useEffect(() => {
-		if (historyData?.messages) {
-			setMessages(historyData.messages as Message[]);
-		}
-	}, [historyData]);
+		fetch('/api/chat/history')
+			.then((res) => res.json())
+			.then((data) => {
+				if (data?.messages) {
+					setMessages(data.messages as Message[]);
+				}
+			})
+			.catch(() => {
+				// Silently ignore history load errors
+			});
+	}, []);
 
 	// Auto-scroll to bottom
 	useEffect(() => {
@@ -104,22 +107,32 @@ export function App() {
 				{ role: 'user', content: userPrompt, timestamp: new Date().toISOString() },
 			]);
 			setInput('');
+			setIsLoading(true);
 
-			const result = await sendChat({ prompt: userPrompt });
+			try {
+				const res = await fetch('/api/chat', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ prompt: userPrompt }),
+				});
+				const result = await res.json();
 
-			if (result) {
-				setMessages((prev) => [
-					...prev,
-					{
-						role: 'assistant',
-						content: result.response,
-						timestamp: new Date().toISOString(),
-						executionResult: result.executionResult,
-					},
-				]);
+				if (result) {
+					setMessages((prev) => [
+						...prev,
+						{
+							role: 'assistant',
+							content: result.response,
+							timestamp: new Date().toISOString(),
+							executionResult: result.executionResult,
+						},
+					]);
+				}
+			} finally {
+				setIsLoading(false);
 			}
 		},
-		[input, isLoading, sendChat],
+		[input, isLoading],
 	);
 
 	const handleKeyDown = useCallback(
@@ -133,9 +146,9 @@ export function App() {
 	);
 
 	const handleClear = useCallback(async () => {
-		await clearHistory();
+		await fetch('/api/chat/history', { method: 'DELETE' });
 		setMessages([]);
-	}, [clearHistory]);
+	}, []);
 
 	return (
 		<div className="text-white flex font-sans justify-center min-h-screen">

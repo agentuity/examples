@@ -4,6 +4,11 @@ A multi-platform AI chatbot with conversation memory, using Vercel's [Chat SDK](
 
 > Looking for detailed setup instructions? See [SETUP.md](./SETUP.md).
 
+## Prerequisites
+
+- [Bun](https://bun.sh/) installed
+- [Agentuity CLI](https://agentuity.dev/cli/installation) installed and logged in (`agentuity login`)
+
 ## Quick Start
 
 ```bash

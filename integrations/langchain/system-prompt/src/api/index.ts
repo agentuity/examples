@@ -2,14 +2,14 @@
  * API routes for the system prompt agent.
  */
 
-import { createRouter } from '@agentuity/runtime';
-import systemPrompt from '../agent/system-prompt';
+import { Hono } from 'hono';
+import type { Env } from '@agentuity/runtime';
+import systemPrompt from '@agent/system-prompt';
 
-const api = createRouter();
+const router = new Hono<Env>()
+	.post('/chat', systemPrompt.validator(), async (c) => {
+		const data = c.req.valid('json');
+		return c.json(await systemPrompt.run(data));
+	});
 
-api.post('/chat', systemPrompt.validator(), async (c) => {
-	const data = c.req.valid('json');
-	return c.json(await systemPrompt.run(data));
-});
-
-export default api;
+export default router;

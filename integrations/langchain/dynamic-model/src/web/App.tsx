@@ -1,21 +1,37 @@
-import { useAPI } from '@agentuity/react';
 import { type ChangeEvent, type FormEvent, useCallback, useState } from 'react';
 import './App.css';
 
 type Message = { role: string; content: string };
 
+type ChatResult = {
+	response: string;
+	modelUsed: string;
+	messageCount: number;
+	threadId: string;
+	sessionId: string;
+};
+
 export function App() {
 	const [message, setMessage] = useState('');
 	const [history, setHistory] = useState<Message[]>([]);
+	const [result, setResult] = useState<ChatResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 
-	const { data: chatResult, invoke: chat, isLoading } = useAPI('POST /api/chat');
-	const result = chatResult as {
-		response: string;
-		modelUsed: string;
-		messageCount: number;
-		threadId: string;
-		sessionId: string;
-	} | null;
+	const chat = useCallback(async (body: { message: string; conversationHistory: Message[] }) => {
+		setIsLoading(true);
+		try {
+			const res = await fetch('/api/chat', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body),
+			});
+			const data = await res.json();
+			setResult(data);
+			return data;
+		} finally {
+			setIsLoading(false);
+		}
+	}, []);
 
 	const handleSubmit = useCallback(
 		async (e: FormEvent) => {

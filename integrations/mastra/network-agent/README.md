@@ -42,7 +42,7 @@ const routingMastraAgent = new Agent({
   id: 'routing-agent',
   name: 'Network Routing Agent',
   instructions: 'You are a network of writers and researchers...',
-  model: 'openai/gpt-4o-mini',
+  model: 'openai/gpt-5-nano',
   agents: {
     researchAgent: researchMastraAgent,
     writingAgent: writingMastraAgent,
@@ -77,7 +77,7 @@ export const researchMastraAgent = new Agent({
   id: 'research-agent',
   name: 'Research Agent',
   instructions: 'Research the topic and provide key insights as bullet points...',
-  model: 'openai/gpt-4o-mini',
+  model: 'openai/gpt-5-nano',
 });
 
 // Writing agent: full-paragraph reports
@@ -85,7 +85,7 @@ export const writingMastraAgent = new Agent({
   id: 'writing-agent',
   name: 'Writing Agent',
   instructions: 'Transform research insights into well-structured content...',
-  model: 'openai/gpt-4o-mini',
+  model: 'openai/gpt-5-nano',
 });
 ```
 

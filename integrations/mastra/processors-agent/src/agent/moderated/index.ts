@@ -35,25 +35,25 @@ const moderatedMastraAgent = new Agent({
 	id: 'moderated-agent',
 	name: 'Moderated Agent',
 	instructions: 'You are a helpful assistant. Respond to user requests clearly and concisely.',
-	model: 'openai/gpt-4o-mini',
+	model: 'openai/gpt-5-nano',
 	inputProcessors: [
 		new UnicodeNormalizer({
 			stripControlChars: true,
 			collapseWhitespace: true,
 		}),
 		new PromptInjectionDetector({
-			model: 'openai/gpt-4o-mini',
+			model: 'openai/gpt-5-nano',
 			threshold: 0.8,
 			strategy: 'rewrite',
 			detectionTypes: ['injection', 'jailbreak', 'system-override'],
 		}),
 		new PIIDetector({
-			model: 'openai/gpt-4o-mini',
+			model: 'openai/gpt-5-nano',
 			strategy: 'redact',
 			detectionTypes: ['email', 'phone', 'credit-card'],
 		}),
 		new ModerationProcessor({
-			model: 'openai/gpt-4o-mini',
+			model: 'openai/gpt-5-nano',
 			categories: ['hate', 'harassment', 'violence', 'self-harm'],
 			threshold: 0.7,
 			strategy: 'block',
@@ -65,7 +65,7 @@ const moderatedMastraAgent = new Agent({
 			strategy: 'truncate',
 		}),
 		new ModerationProcessor({
-			model: 'openai/gpt-4o-mini',
+			model: 'openai/gpt-5-nano',
 			categories: ['hate', 'harassment', 'violence'],
 			threshold: 0.7,
 			strategy: 'block',

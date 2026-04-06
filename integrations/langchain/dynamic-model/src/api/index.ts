@@ -2,15 +2,14 @@
  * API routes for the dynamic model agent.
  */
 
-import { createRouter } from '@agentuity/runtime';
-import dynamicModel from '../agent/dynamic-model';
+import { Hono } from 'hono';
+import type { Env } from '@agentuity/runtime';
+import dynamicModel from '@agent/dynamic-model';
 
-const api = createRouter();
+const router = new Hono<Env>()
+	.post('/chat', dynamicModel.validator(), async (c) => {
+		const data = c.req.valid('json');
+		return c.json(await dynamicModel.run(data));
+	});
 
-// Send a message to the dynamic model agent
-api.post('/chat', dynamicModel.validator(), async (c) => {
-	const data = c.req.valid('json');
-	return c.json(await dynamicModel.run(data));
-});
-
-export default api;
+export default router;

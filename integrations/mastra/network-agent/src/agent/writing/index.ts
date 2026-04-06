@@ -14,7 +14,7 @@ export const writingMastraAgent = new Agent({
 	name: 'Writing Agent',
 	instructions:
 		'You are a professional writer. Transform research insights into well-structured content. Write in full paragraphs, no bullet points. Create a cohesive narrative that flows naturally. Include all the key insights in your writing. Write in an engaging, informative style. Target 200-400 words.',
-	model: 'openai/gpt-4o-mini',
+	model: 'openai/gpt-5-nano',
 });
 
 const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;

@@ -1,4 +1,3 @@
-import { useAPI } from '@agentuity/react';
 import { type ChangeEvent, type FormEvent, useCallback, useState } from 'react';
 import './App.css';
 
@@ -12,19 +11,36 @@ const SUGGESTIONS = [
 	{ label: 'Quick: what is Agentuity?', message: 'What is Agentuity?', expertise: 'beginner' as const, verbosity: 'concise' as const },
 ];
 
+type ChatResult = {
+	response: string;
+	promptMode: string;
+	staticPrompt: string;
+	threadId: string;
+	sessionId: string;
+};
+
 export function App() {
 	const [message, setMessage] = useState('');
 	const [expertiseLevel, setExpertiseLevel] = useState<(typeof EXPERTISE_LEVELS)[number]>('beginner');
 	const [verbosity, setVerbosity] = useState<(typeof VERBOSITY)[number]>('detailed');
+	const [result, setResult] = useState<ChatResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 
-	const { data: chatResult, invoke: chat, isLoading } = useAPI('POST /api/chat');
-	const result = chatResult as {
-		response: string;
-		promptMode: string;
-		staticPrompt: string;
-		threadId: string;
-		sessionId: string;
-	} | null;
+	const chat = useCallback(async (body: { message: string; expertiseLevel: string; verbosity: string }) => {
+		setIsLoading(true);
+		try {
+			const res = await fetch('/api/chat', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body),
+			});
+			const data = await res.json();
+			setResult(data);
+			return data;
+		} finally {
+			setIsLoading(false);
+		}
+	}, []);
 
 	const handleSubmit = useCallback(
 		async (e: FormEvent) => {

@@ -1,4 +1,3 @@
-import { useAPI } from '@agentuity/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Streamdown } from 'streamdown';
 import { createCodePlugin } from '@streamdown/code';
@@ -149,28 +148,31 @@ export function App() {
 	const [error, setError] = useState<string | null>(null);
 	const [phase, setPhase] = useState<string | null>(null);
 
-	const startApi = useAPI('POST /api/start');
-	const statusApi = useAPI('GET /api/status');
-	const stopApi = useAPI('POST /api/stop');
-
 	// Rehydrate from KV on mount (once only)
 	const rehydrated = useRef(false);
 	useEffect(() => {
-		const data = statusApi.data;
-		if (!rehydrated.current && data?.exists && data.repoUrl) {
-			rehydrated.current = true;
-			setRepoUrl(data.repoUrl);
-			if (data.ready && data.phase === 'ready') {
-				setState('ready');
-			} else if (data.phase === 'creating' || data.phase === 'booting' || data.phase === 'cloning') {
-				// Resume polling: a setup is in progress from a previous request
-				setPhase(data.phase);
-				setState('booting');
-			} else if (data.phase === 'error') {
-				setError(data.error || 'Previous workspace setup failed.');
+		if (rehydrated.current) return;
+		(async () => {
+			try {
+				const res = await fetch('/api/status');
+				if (!res.ok) return;
+				const data: { exists?: boolean; repoUrl?: string; ready?: boolean; phase?: string; error?: string } = await res.json();
+				if (!data.exists || !data.repoUrl) return;
+				rehydrated.current = true;
+				setRepoUrl(data.repoUrl);
+				if (data.ready && data.phase === 'ready') {
+					setState('ready');
+				} else if (data.phase === 'creating' || data.phase === 'booting' || data.phase === 'cloning') {
+					setPhase(data.phase);
+					setState('booting');
+				} else if (data.phase === 'error') {
+					setError(data.error || 'Previous workspace setup failed.');
+				}
+			} catch {
+				// Network error on mount, ignore
 			}
-		}
-	}, [statusApi.data]);
+		})();
+	}, []);
 
 	// Poll GET /api/status while booting to track setup progress
 	useEffect(() => {
@@ -222,36 +224,40 @@ export function App() {
 		setPhase(null);
 
 		try {
-			const data = await startApi.invoke({ repoUrl });
-			if (data?.accepted) {
-				setPhase(data.phase);
+			const res = await fetch('/api/start', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ repoUrl }),
+			});
+			const data: { accepted?: boolean; phase?: string; sessionId?: string; message?: string } = await res.json();
+			if (data.accepted) {
+				if (data.phase) setPhase(data.phase);
 				if (data.phase === 'ready' && data.sessionId) {
-					// Already ready (rehydration case)
 					setState('ready');
 				}
 				// Otherwise, the polling effect handles the transition
 			} else {
-				setError(data?.message || 'Workspace failed to start. Try again.');
+				setError(data.message || 'Workspace failed to start. Try again.');
 				setState('idle');
 			}
 		} catch (err) {
 			setError(String(err));
 			setState('idle');
 		}
-	}, [startApi, repoUrl]);
+	}, [repoUrl]);
 
 	const handleStop = useCallback(async () => {
 		setState('stopping');
 		setError(null);
 
 		try {
-			await stopApi.invoke();
+			await fetch('/api/stop', { method: 'POST' });
 			setState('idle');
 		} catch (err) {
 			setError(String(err));
 			setState('ready');
 		}
-	}, [stopApi]);
+	}, []);
 
 	return (
 		<div className="text-white flex font-sans justify-center min-h-screen">
@@ -313,7 +319,7 @@ export function App() {
 					</div>
 				)}
 
-				{/* Ready State — Chat */}
+				{/* Ready State -- Chat */}
 				{state === 'ready' && <ChatPanel repoUrl={repoUrl} onStop={handleStop} isReconnected={rehydrated.current} />}
 
 				{/* Stopping State */}
@@ -364,14 +370,13 @@ function ReasoningBlock({ part, isStreaming }: { part: PartData; isStreaming: bo
 	);
 }
 
-// Chat panel — rendered only when workspace is ready so EventSource connects
+// Chat panel -- rendered only when workspace is ready so EventSource connects
 function ChatPanel({ repoUrl, onStop, isReconnected }: { repoUrl: string; onStop: () => void; isReconnected?: boolean }) {
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [question, setQuestion] = useState('');
 	const [isStreaming, setIsStreaming] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
-	const askApi = useAPI('POST /api/ask');
 	const [isConnected, setIsConnected] = useState(false);
 
 	useEffect(() => {
@@ -429,13 +434,22 @@ function ChatPanel({ repoUrl, onStop, isReconnected }: { repoUrl: string; onStop
 		setIsStreaming(true);
 
 		try {
-			await askApi.invoke({ question: q });
+			const res = await fetch('/api/ask', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ question: q }),
+			});
+			if (!res.ok) {
+				setIsStreaming(false);
+				const errorPart: PartData = { id: 'error', type: 'text', text: `Error: Request failed (${res.status})` };
+				setMessages((prev) => [...prev, { role: 'assistant', parts: new Map([['error', errorPart]]) }]);
+			}
 		} catch (err) {
 			setIsStreaming(false);
 			const errorPart: PartData = { id: 'error', type: 'text', text: `Error: ${String(err)}` };
 			setMessages((prev) => [...prev, { role: 'assistant', parts: new Map([['error', errorPart]]) }]);
 		}
-	}, [question, isStreaming, askApi]);
+	}, [question, isStreaming]);
 
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
@@ -463,7 +477,7 @@ function ChatPanel({ repoUrl, onStop, isReconnected }: { repoUrl: string; onStop
 						<span className="text-gray-600 text-sm">Ask a question about the codebase</span>
 						{isReconnected && (
 							<span className="text-gray-700 text-xs">
-								Reconnected to existing session — the AI remembers your prior questions
+								Reconnected to existing session -- the AI remembers your prior questions
 							</span>
 						)}
 					</div>

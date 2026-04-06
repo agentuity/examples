@@ -1,4 +1,3 @@
-import { useAnalytics, useAPI } from '@agentuity/react';
 import { type ChangeEvent, useCallback, useState } from 'react';
 import './App.css';
 
@@ -12,16 +11,29 @@ const EXAMPLE_PROMPTS = [
 	'Tell me some historical facts about Paris',
 ];
 
+type NetworkResult = {
+	message: string;
+	response: string;
+	events: unknown[];
+	executedPrimitives: string[];
+	sessionId: string;
+	threadId: string;
+};
+
+async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
+	const res = await fetch(`/api${path}`, {
+		method,
+		headers: body ? { 'Content-Type': 'application/json' } : undefined,
+		body: body ? JSON.stringify(body) : undefined,
+	});
+	return res.json() as Promise<T>;
+}
+
 export function App() {
 	const [message, setMessage] = useState('');
 	const [model, setModel] = useState<(typeof MODELS)[number]>('gpt-5-mini');
-
-	// API hooks for network agent
-	const { data: historyData, refetch: refetchHistory } = useAPI('GET /api/network/history');
-	const { data: networkResult, invoke: sendMessage, isLoading } = useAPI('POST /api/network');
-	const { invoke: clearHistory } = useAPI('DELETE /api/network/history');
-
-	const { track } = useAnalytics();
+	const [networkResult, setNetworkResult] = useState<NetworkResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 
 	// Conversation history from network agent
 	const conversation = networkResult?.events ?? [];
@@ -29,16 +41,19 @@ export function App() {
 
 	const handleSend = useCallback(async () => {
 		if (!message.trim()) return;
-		track('network_message', { message, model });
-		await sendMessage({ message, model });
-		setMessage('');
-	}, [message, model, sendMessage, track]);
+		setIsLoading(true);
+		try {
+			const res = await api<NetworkResult>('POST', '/network', { message, model });
+			setNetworkResult(res);
+			setMessage('');
+		} finally {
+			setIsLoading(false);
+		}
+	}, [message, model]);
 
 	const handleClearHistory = useCallback(async () => {
-		track('clear_history');
-		await clearHistory();
-		await refetchHistory();
-	}, [clearHistory, refetchHistory, track]);
+		await api('DELETE', '/network/history');
+	}, []);
 
 	const handleExampleClick = useCallback((prompt: string) => {
 		setMessage(prompt);

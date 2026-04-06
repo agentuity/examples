@@ -4,7 +4,7 @@ An Agentuity agent that demonstrates **Claude Agent SDK** integration with **Age
 
 ## What It Does
 
-- **Code Intelligence** — Uses [Claude Agent SDK](https://platform.claude.com/docs/en/agent-sdk/overview) (`@anthropic-ai/claude-agent-sdk`) to read, analyze, and generate code in a local workspace seeded with sample Python and TypeScript files.
+- **Code Intelligence** — Uses [Claude Agent SDK](https://platform.claude.com/docs/en/agent-sdk/overview) (`@anthropic-ai/claude-agent-sdk`) to read, analyze, and generate code in a local workspace seeded with sample TypeScript files.
 - **Sandbox Execution** — Runs user code safely in isolated Agentuity Sandboxes (`ctx.sandbox.run()`) using the Bun runtime.
 - **Conversation History** — Maintains multi-turn conversations via Agentuity thread state, so the agent remembers prior context.
 - **Chat Frontend** — A React-based chat UI for interacting with the agent conversationally.
@@ -24,7 +24,7 @@ claude-code/
 ├── src/
 │   ├── agent/claude-code/
 │   │   ├── index.ts         # Agent handler (Claude Agent SDK + Sandbox)
-│   │   └── sample-files.ts  # Sample Python/TS files for the workspace
+│   │   └── sample-files.ts  # Sample TypeScript files for the workspace
 │   ├── api/
 │   │   └── index.ts         # Chat API routes
 │   └── web/
@@ -33,7 +33,7 @@ claude-code/
 │       ├── frontend.tsx      # React entry point
 │       └── index.html        # HTML template
 ├── app.ts                    # Application entry point
-├── agentuity.config.ts       # Vite config (React + Tailwind)
+├── vite.config.ts            # Vite config (React + Tailwind)
 └── package.json
 ```
 
@@ -44,6 +44,16 @@ claude-code/
 3. Claude Code reads, writes, and analyzes files using built-in tools (Read, Write, Edit, Glob, Grep).
 4. When the user asks to run code, the agent ships workspace files to an Agentuity Sandbox for execution.
 5. Results (analysis + execution output) are returned to the chat UI.
+
+## Security Considerations
+
+The agent calls Claude Agent SDK with `permissionMode: 'bypassPermissions'` and `allowDangerouslySkipPermissions: true`. This is intentional for this example:
+
+- **Tool scope is narrow.** Claude Code is granted only `Read`, `Write`, `Edit`, `Glob`, and `Grep`. There is no `Bash` tool, so it cannot execute arbitrary commands.
+- **Workspace is isolated.** Each thread gets its own temporary directory; there is no shared filesystem between sessions.
+- **Code execution is sandboxed.** When the user asks to run code, files are shipped to an Agentuity Sandbox (`ctx.sandbox.run()`), not executed on the host.
+
+In a multi-tenant or shared environment, consider restricting `cwd` to a tighter boundary and auditing which tools are permitted before adopting this pattern.
 
 ## API Endpoints
 

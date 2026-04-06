@@ -15,9 +15,6 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@agentuity/core": "latest",
-		"@agentuity/frontend": "latest",
-		"@agentuity/react": "latest",
 		"next": "^15.3.0",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0"

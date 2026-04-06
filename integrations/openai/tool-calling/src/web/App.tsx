@@ -1,4 +1,3 @@
-import { useAPI } from '@agentuity/react';
 import { type ChangeEvent, type FormEvent, useCallback, useState } from 'react';
 import './App.css';
 
@@ -16,23 +15,46 @@ type Step = {
 	toolArgs?: string;
 };
 
+type ChatResult = {
+	response: string;
+	steps: Step[];
+	threadId: string;
+	sessionId: string;
+};
+
 export function App() {
 	const [message, setMessage] = useState('');
 	const [showSteps, setShowSteps] = useState(false);
+	const [result, setResult] = useState<ChatResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
-	const { data: chatResult, invoke: chat, isLoading } = useAPI('POST /api/chat');
-	const result = chatResult as {
-		response: string;
-		steps: Step[];
-		threadId: string;
-		sessionId: string;
-	} | null;
+	const chat = useCallback(async (msg: string) => {
+		setIsLoading(true);
+		setError(null);
+		try {
+			const res = await fetch('/api/chat', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ message: msg }),
+			});
+			if (!res.ok) {
+				throw new Error(`Request failed: ${res.status}`);
+			}
+			const data = await res.json();
+			setResult(data);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Something went wrong');
+		} finally {
+			setIsLoading(false);
+		}
+	}, []);
 
 	const handleSubmit = useCallback(
 		async (e: FormEvent) => {
 			e.preventDefault();
 			if (!message.trim() || isLoading) return;
-			await chat({ message: message.trim() });
+			await chat(message.trim());
 		},
 		[message, isLoading, chat],
 	);
@@ -40,7 +62,7 @@ export function App() {
 	const handleSuggestion = useCallback(
 		async (suggestion: string) => {
 			setMessage(suggestion);
-			await chat({ message: suggestion });
+			await chat(suggestion);
 		},
 		[chat],
 	);
@@ -134,6 +156,13 @@ export function App() {
 					)}
 				</form>
 
+				{/* Error */}
+				{error && (
+					<div className="bg-red-950/30 border border-red-900/50 rounded-lg p-4 text-red-400 text-sm">
+						{error}
+					</div>
+				)}
+
 				{/* Response */}
 				{isLoading ? (
 					<div
@@ -178,7 +207,7 @@ export function App() {
 								>
 									Tool Usage Trace
 									<span className="text-gray-500 text-sm font-normal">
-										({result.steps.length} steps) {showSteps ? '▾' : '▸'}
+										({result.steps.length} steps) {showSteps ? '\u25BE' : '\u25B8'}
 									</span>
 								</button>
 
@@ -197,7 +226,7 @@ export function App() {
 											>
 												<span className="text-xs uppercase tracking-wide text-gray-500 block mb-1">
 													{step.type === 'tool_call'
-														? `Tool Call → ${step.toolName}`
+														? `Tool Call \u2192 ${step.toolName}`
 														: step.type === 'tool_result'
 															? 'Tool Result'
 															: step.type}

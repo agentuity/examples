@@ -1,4 +1,3 @@
-import { useAPI } from '@agentuity/react';
 import { type ChangeEvent, useCallback, useEffect, useState } from 'react';
 import './App.css';
 
@@ -34,6 +33,46 @@ type ResultState = {
 	sessionId: string;
 	tokens: number;
 };
+
+type NetworkHistoryEntry = {
+	id: string;
+	toolName: string;
+	subAgent: string;
+	toolArgs: string;
+	type: string;
+	requestedAt: string;
+	resolvedAt: string;
+	tokens: number;
+};
+
+type StatsData = {
+	threadId: string;
+	totalOperations: number;
+	immediateCount: number;
+	approvedCount: number;
+	declinedCount: number;
+	resumedCount: number;
+	totalTokens: number;
+};
+
+type NetworkState = {
+	threadId: string;
+	networkHistory: NetworkHistoryEntry[];
+	pendingApproval?: ResultState['pendingApproval'] & { reason: string };
+	suspendedExecution?: ResultState['suspendedExecution'];
+	hasPending: boolean;
+	hasSuspended: boolean;
+	stats: StatsData;
+};
+
+async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
+	const res = await fetch(`/api${path}`, {
+		method,
+		headers: body ? { 'Content-Type': 'application/json' } : undefined,
+		body: body ? JSON.stringify(body) : undefined,
+	});
+	return res.json() as Promise<T>;
+}
 
 function getSuspendedMessage(suspendPayload: string | undefined): string {
 	if (!suspendPayload) {
@@ -102,12 +141,19 @@ export function App() {
 	const [requireToolApproval, setRequireToolApproval] = useState(false);
 	const [latestResult, setLatestResult] = useState<ResultState | null>(null);
 
-	const { invoke: sendNetwork, isLoading } = useAPI('POST /api/network');
-	const { invoke: approve, isLoading: isApproving } = useAPI('POST /api/network/approve');
-	const { invoke: decline, isLoading: isDeclining } = useAPI('POST /api/network/decline');
-	const { invoke: resume, isLoading: isResuming } = useAPI('POST /api/network/resume');
-	const { data: networkState, refetch: refetchNetworkState } = useAPI('GET /api/network/state');
-	const { invoke: clearHistory } = useAPI('DELETE /api/network/history');
+	const [isLoading, setIsLoading] = useState(false);
+	const [isApproving, setIsApproving] = useState(false);
+	const [isDeclining, setIsDeclining] = useState(false);
+	const [isResuming, setIsResuming] = useState(false);
+
+	const [networkState, setNetworkState] = useState<NetworkState | null>(null);
+
+	const refreshState = useCallback(async () => {
+		const state = await api<NetworkState>('GET', '/network/state');
+		setNetworkState(state);
+	}, []);
+
+	useEffect(() => { void refreshState(); }, [refreshState]);
 
 	const stateResult: ResultState | null = networkState?.pendingApproval
 		? {
@@ -127,11 +173,11 @@ export function App() {
 					suspendType: 'suspend',
 					suspendedExecution: networkState.suspendedExecution,
 					subAgent: networkState.suspendedExecution.subAgent,
-				threadId: networkState.threadId,
-				sessionId: '',
-				tokens: 0,
-		  }
-		: null;
+					threadId: networkState.threadId,
+					sessionId: '',
+					tokens: 0,
+			  }
+			: null;
 
 	const result: ResultState | null = stateResult ?? latestResult;
 	const resultMessage = getResultMessage(result);
@@ -140,59 +186,58 @@ export function App() {
 	const stats = networkState?.stats;
 	const isWorking = isLoading || isApproving || isDeclining || isResuming;
 
-	const refreshState = useCallback(async () => {
-		await refetchNetworkState();
-	}, [refetchNetworkState]);
-
 	const handleSend = useCallback(async () => {
-		const nextResult = await sendNetwork({ text, model, requireToolApproval });
-		if (nextResult) {
+		setIsLoading(true);
+		try {
+			const nextResult = await api<ResultState>('POST', '/network', { text, model, requireToolApproval });
 			setLatestResult(nextResult);
+			await refreshState();
+		} finally {
+			setIsLoading(false);
 		}
-		await refreshState();
-	}, [text, model, requireToolApproval, sendNetwork, refreshState]);
+	}, [text, model, requireToolApproval, refreshState]);
 
 	const handleApprove = useCallback(async () => {
-		const nextResult = await approve(undefined);
-		if (nextResult) {
+		setIsApproving(true);
+		try {
+			const nextResult = await api<ResultState>('POST', '/network/approve');
 			setLatestResult(nextResult);
+			await refreshState();
+		} finally {
+			setIsApproving(false);
 		}
-		await refreshState();
-	}, [approve, refreshState]);
+	}, [refreshState]);
 
 	const handleDecline = useCallback(async () => {
-		const nextResult = await decline(undefined);
-		if (nextResult) {
+		setIsDeclining(true);
+		try {
+			const nextResult = await api<ResultState>('POST', '/network/decline');
 			setLatestResult(nextResult);
+			await refreshState();
+		} finally {
+			setIsDeclining(false);
 		}
-		await refreshState();
-	}, [decline, refreshState]);
+	}, [refreshState]);
 
 	const handleResume = useCallback(
 		async (confirmed: boolean) => {
-			const nextResult = await resume({ confirmed });
-			if (nextResult) {
+			setIsResuming(true);
+			try {
+				const nextResult = await api<ResultState>('POST', '/network/resume', { confirmed });
 				setLatestResult(nextResult);
+				await refreshState();
+			} finally {
+				setIsResuming(false);
 			}
-			await refreshState();
 		},
-		[resume, refreshState]
+		[refreshState]
 	);
 
 	const handleClearHistory = useCallback(async () => {
-		await clearHistory();
+		await api('DELETE', '/network/history');
 		setLatestResult(null);
 		await refreshState();
-	}, [clearHistory, refreshState]);
-
-	// Refetch state after each completed (non-suspended) operation to ensure stats are current.
-	// The in-handler refetch may be deduped against the initial mount fetch; a delayed
-	// refetch in useEffect runs after the render cycle and reliably picks up fresh state.
-	useEffect(() => {
-		if (!latestResult || latestResult.suspended) return;
-		const timer = setTimeout(() => void refetchNetworkState(), 200);
-		return () => clearTimeout(timer);
-	}, [latestResult, refetchNetworkState]);
+	}, [refreshState]);
 
 	return (
 		<div className="text-white flex font-sans justify-center min-h-screen">

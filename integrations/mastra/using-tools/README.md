@@ -6,7 +6,7 @@ Mastra agents calling tools to fetch live data, deployed on Agentuity.
 
 **Mastra handles**: tool definitions (`createTool` with Zod schemas), agent orchestration (`Agent` with model + tools), and automatic tool calling via the LLM.
 
-**Agentuity handles**: deployment, schema validation (`@agentuity/schema`), API routing, and the AI Gateway bridge so Mastra's `openai/gpt-4o-mini` model string resolves through Agentuity's gateway.
+**Agentuity handles**: deployment, schema validation (`@agentuity/schema`), API routing, and the AI Gateway bridge so Mastra's `openai/gpt-5-nano` model string resolves through Agentuity's gateway.
 
 ## Architecture
 
@@ -58,7 +58,7 @@ const weatherMastraAgent = new Agent({
   id: 'weather-agent',
   name: 'Weather Agent',
   instructions: 'You are a helpful weather assistant...',
-  model: 'openai/gpt-4o-mini',
+  model: 'openai/gpt-5-nano',
   tools: { weatherTool },
 });
 ```

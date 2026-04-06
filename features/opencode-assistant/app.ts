@@ -1,8 +1,8 @@
 import { createApp } from '@agentuity/runtime';
+import router from './src/api';
 
-const { server, logger } = await createApp({
-	setup: async () => {},
-	shutdown: async () => {},
+export default await createApp({
+	agents: [],
+	router,
+	workbench: true,
 });
-
-logger.debug('Running %s', server.url);

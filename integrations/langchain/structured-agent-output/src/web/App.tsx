@@ -1,4 +1,3 @@
-import { useAPI } from '@agentuity/react';
 import { type ChangeEvent, type FormEvent, useCallback, useState } from 'react';
 import './App.css';
 
@@ -9,23 +8,42 @@ const SUGGESTIONS = [
 	{ label: 'Bob Wilson info', message: 'Who is Bob Wilson? Get his details.' },
 ];
 
+type ContactInfo = {
+	name: string;
+	email: string;
+	phone: string;
+	company: string;
+	role: string;
+	summary: string;
+};
+
+type ChatResult = {
+	structuredResponse: ContactInfo;
+	rawResponse: string;
+	threadId: string;
+	sessionId: string;
+};
+
 export function App() {
 	const [message, setMessage] = useState('');
+	const [result, setResult] = useState<ChatResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 
-	const { data: chatResult, invoke: chat, isLoading } = useAPI('POST /api/chat');
-	const result = chatResult as {
-		structuredResponse: {
-			name: string;
-			email: string;
-			phone: string;
-			company: string;
-			role: string;
-			summary: string;
-		};
-		rawResponse: string;
-		threadId: string;
-		sessionId: string;
-	} | null;
+	const chat = useCallback(async (body: { message: string }) => {
+		setIsLoading(true);
+		try {
+			const res = await fetch('/api/chat', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body),
+			});
+			const data = await res.json();
+			setResult(data);
+			return data;
+		} finally {
+			setIsLoading(false);
+		}
+	}, []);
 
 	const handleSubmit = useCallback(
 		async (e: FormEvent) => {
@@ -167,7 +185,7 @@ export function App() {
 								))}
 							</div>
 							<div className="text-gray-500 flex flex-wrap text-xs gap-4 mt-2">
-								{result.threadId && (
+								{result?.threadId && (
 									<span>
 										Thread{' '}
 										<strong className="text-gray-400">

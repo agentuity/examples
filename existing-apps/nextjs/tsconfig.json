@@ -19,9 +19,7 @@
 			}
 		],
 		"paths": {
-			"@/*": ["./*"],
-			"@agentuity/routes": ["./agentuity/src/generated/routes.ts"],
-			"@agentuity/frontend": ["./node_modules/@agentuity/frontend"]
+			"@/*": ["./*"]
 		}
 	},
 	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

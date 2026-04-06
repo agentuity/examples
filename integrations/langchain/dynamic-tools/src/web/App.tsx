@@ -1,4 +1,3 @@
-import { useAPI } from '@agentuity/react';
 import { type ChangeEvent, type FormEvent, useCallback, useState } from 'react';
 import './App.css';
 
@@ -13,19 +12,36 @@ const SUGGESTIONS = [
 	{ label: 'Calculate tip (runtime)', message: 'Calculate a 20% tip on $85', role: 'viewer', auth: false },
 ];
 
+type ChatResult = {
+	response: string;
+	filtersApplied: string[];
+	availableToolCount: number;
+	threadId: string;
+	sessionId: string;
+};
+
 export function App() {
 	const [message, setMessage] = useState('');
 	const [role, setRole] = useState<(typeof ROLES)[number]>('viewer');
 	const [authenticated, setAuthenticated] = useState(false);
+	const [result, setResult] = useState<ChatResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 
-	const { data: chatResult, invoke: chat, isLoading } = useAPI('POST /api/chat');
-	const result = chatResult as {
-		response: string;
-		filtersApplied: string[];
-		availableToolCount: number;
-		threadId: string;
-		sessionId: string;
-	} | null;
+	const chat = useCallback(async (body: { message: string; userRole: string; authenticated: boolean }) => {
+		setIsLoading(true);
+		try {
+			const res = await fetch('/api/chat', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body),
+			});
+			const data = await res.json();
+			setResult(data);
+			return data;
+		} finally {
+			setIsLoading(false);
+		}
+	}, []);
 
 	const handleSubmit = useCallback(
 		async (e: FormEvent) => {
@@ -41,7 +57,7 @@ export function App() {
 			setMessage(s.message);
 			setRole(s.role as (typeof ROLES)[number]);
 			setAuthenticated(s.auth);
-			await chat({ message: s.message, userRole: s.role as 'viewer' | 'editor' | 'admin', authenticated: s.auth });
+			await chat({ message: s.message, userRole: s.role, authenticated: s.auth });
 		},
 		[chat],
 	);

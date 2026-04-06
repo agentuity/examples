@@ -1,10 +1,11 @@
-import { createRouter, cron, validator } from '@agentuity/runtime';
+import { Hono } from 'hono';
+import type { Context } from 'hono';
+import type { Env } from '@agentuity/runtime';
+import { cron, validator } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 import digestGenerator from '@agent/digest-generator';
 import { fetchAllSources } from '@lib/sources';
 import type { DigestEntry } from '@agent/digest-generator/types';
-
-const api = createRouter();
 
 // Schema for digest responses
 export const DigestResponseSchema = s.object({
@@ -50,7 +51,7 @@ export const TriggerResponseSchema = s.object({
 });
 
 // Helper: run the full digest pipeline
-async function generateDigest(c: { var: { logger: any; kv: any; stream: any } }) {
+async function generateDigest(c: Context<Env>) {
 	const { logger, kv, stream } = c.var;
 
 	logger.info('Fetching content from sources');
@@ -98,48 +99,46 @@ async function generateDigest(c: { var: { logger: any; kv: any; stream: any } })
 	return entry;
 }
 
-// Cron: runs every hour in deployed environments
-api.post(
-	'/digest',
-	cron('0 * * * *', { auth: true }, async (c) => {
-		c.var.logger.info('Cron triggered: generating digest');
+const router = new Hono<Env>()
+	// Cron: runs every hour in deployed environments
+	.post(
+		'/digest',
+		cron('0 * * * *', { auth: true }, async (c) => {
+			c.var.logger.info('Cron triggered: generating digest');
 
-		await generateDigest(c);
+			await generateDigest(c);
 
-		return c.text('OK');
-	}),
-);
+			return c.text('OK');
+		}),
+	)
+	// Manual trigger (for testing / demo "run now" button)
+	.post('/digest/now', validator({ output: TriggerResponseSchema }), async (c) => {
+		c.var.logger.info('Manual trigger: generating digest');
 
-// Manual trigger (for testing / demo "run now" button)
-api.post('/digest/now', validator({ output: TriggerResponseSchema }), async (c) => {
-	c.var.logger.info('Manual trigger: generating digest');
+		try {
+			const entry = await generateDigest(c);
+			return c.json({ status: 'ok', digest: entry });
+		} catch (err) {
+			c.var.logger.error('Failed to generate digest', { error: err });
+			return c.json({ status: 'error', error: String(err) });
+		}
+	})
+	// GET: Frontend fetches the latest digest
+	.get('/digests/latest', validator({ output: DigestResponseSchema }), async (c) => {
+		const result = await c.var.kv.get<DigestEntry>('digests', 'latest');
+		if (!result.exists) {
+			return c.json({ exists: false });
+		}
+		return c.json({ exists: true, digest: result.data });
+	})
+	// GET: Frontend fetches digest history
+	.get('/digests/history', validator({ output: HistoryResponseSchema }), async (c) => {
+		const results = await c.var.kv.search<DigestEntry>('digests', 'digest-');
+		const digests = Object.values(results)
+			.sort((a, b) => b.value.date.localeCompare(a.value.date))
+			.slice(0, 20)
+			.map((item) => item.value);
+		return c.json({ digests });
+	});
 
-	try {
-		const entry = await generateDigest(c);
-		return c.json({ status: 'ok', digest: entry });
-	} catch (err) {
-		c.var.logger.error('Failed to generate digest', { error: err });
-		return c.json({ status: 'error', error: String(err) });
-	}
-});
-
-// GET: Frontend fetches the latest digest
-api.get('/digests/latest', validator({ output: DigestResponseSchema }), async (c) => {
-	const result = await c.var.kv.get<DigestEntry>('digests', 'latest');
-	if (!result.exists) {
-		return c.json({ exists: false });
-	}
-	return c.json({ exists: true, digest: result.data });
-});
-
-// GET: Frontend fetches digest history
-api.get('/digests/history', validator({ output: HistoryResponseSchema }), async (c) => {
-	const results = await c.var.kv.search<DigestEntry>('digests', 'digest-');
-	const digests = Object.values(results)
-		.sort((a, b) => b.created_at.localeCompare(a.created_at))
-		.slice(0, 20)
-		.map((item) => item.value);
-	return c.json({ digests });
-});
-
-export default api;
+export default router;

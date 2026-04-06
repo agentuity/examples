@@ -1,17 +1,11 @@
-/**
- * API routes for the handoffs agent.
- * The triage agent routes to specialists; routes just forward requests.
- */
+import { Hono } from 'hono';
+import type { Env } from '@agentuity/runtime';
+import handoffs from '@agent/handoffs';
 
-import { createRouter } from '@agentuity/runtime';
-import handoffs from '../agent/handoffs';
+const router = new Hono<Env>()
+	.post('/chat', handoffs.validator(), async (c) => {
+		const data = c.req.valid('json');
+		return c.json(await handoffs.run(data));
+	});
 
-const api = createRouter();
-
-// Send a message to the triage agent
-api.post('/chat', handoffs.validator(), async (c) => {
-	const data = c.req.valid('json');
-	return c.json(await handoffs.run(data));
-});
-
-export default api;
+export default router;

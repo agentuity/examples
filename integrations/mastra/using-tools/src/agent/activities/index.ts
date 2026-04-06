@@ -158,7 +158,7 @@ const activitiesMastraAgent = new Agent({
 3. Provide a friendly response with personalized activity recommendations
 
 Always check the weather first before suggesting activities, as outdoor activities depend on weather conditions.`,
-	model: 'openai/gpt-4o-mini',
+	model: 'openai/gpt-5-nano',
 	tools: { weatherTool, activitiesTool },
 });
 

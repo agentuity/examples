@@ -7,14 +7,13 @@ Upgrade pattern for an existing TanStack Start frontend that adds an Agentuity b
 - Two-runtime architecture:
   - TanStack Start frontend runtime (`localhost:3000`)
   - Agentuity backend runtime (`localhost:3500`)
-- Translate workflow using `useAPI`:
+- Translate workflow using plain `fetch()`:
   - `POST /api/translate`
   - `GET /api/translate/history`
   - `DELETE /api/translate/history`
 - Eval wiring on the translate agent:
   - `adversarial` preset eval
   - `language-match` custom eval
-- Type-safe route augmentation via `@agentuity/routes`
 - Local proxy mode and cross-origin `baseUrl` mode
 - Route-scoped dev proxy for `'/api/translate*'` to the Agentuity backend
 
@@ -33,16 +32,15 @@ tanstack-start/
 ├── src/
 │   ├── router.tsx                        # getRouter() + route registration
 │   ├── routes/__root.tsx                 # TanStack Start root shell
-│   ├── routes/index.tsx                  # Translate/history UI using useAPI
+│   ├── routes/index.tsx                  # Translate/history UI (plain fetch)
 │   └── routeTree.gen.ts                  # Generated route tree
 ├── agentuity/
 │   ├── src/agent/translate/agent.ts      # Translate agent
 │   ├── src/agent/translate/eval.ts       # Evals (adversarial + language-match)
 │   ├── src/agent/translate/state.ts      # History state schema
-│   ├── src/api/index.ts                  # /api/translate* routes
-│   └── src/generated/routes.ts           # Generated frontend route augmentation
+│   └── src/api/index.ts                  # /api/translate* routes
 ├── vite.config.ts                        # TanStack Start plugin + /api proxy
-└── tsconfig.json                         # @agentuity/routes alias
+└── tsconfig.json
 ```
 
 ## Running Locally
@@ -73,19 +71,15 @@ If the project is not registered with Agentuity Cloud, translation calls require
 
 Without credentials, the backend still starts and history endpoints work, but `POST /api/translate` returns `500`.
 
-## Frontend Type Safety
+## Frontend API Calls
 
-The route component keeps the required side-effect import:
+The route component uses plain `fetch()` to call the Agentuity backend:
 
-```tsx
-import '@agentuity/routes';
-```
+- `POST /api/translate` with JSON body `{ text, toLanguage, model }`
+- `GET /api/translate/history`
+- `DELETE /api/translate/history`
 
-That enables typed `useAPI` route keys and payloads for:
-
-- `useAPI('POST /api/translate')`
-- `useAPI('GET /api/translate/history')`
-- `useAPI('DELETE /api/translate/history')`
+No wrapper library or provider component is needed. The `VITE_AGENTUITY_BASE_URL` env variable sets the base URL for cross-origin mode; in local proxy mode it defaults to empty (same origin).
 
 ## Verification Workflow
 
@@ -98,9 +92,8 @@ bun run typecheck
 bun run test
 ```
 
-- `build:agent` regenerates `agentuity/src/generated/routes.ts`, which typed frontend routes depend on.
-- Keep `import '@agentuity/routes'` so generated route typings are loaded.
-- Keep exact method+path literal keys in `useAPI(...)` for strong typing.
+- `build:agent` builds the Agentuity backend.
+- `typecheck` runs TypeScript type checking across the frontend.
 
 ## Deployment
 
@@ -112,11 +105,11 @@ This example runs two separate runtimes when deployed.
 
 2. Fallback: explicit backend base URL from the frontend
 - Set frontend env: `VITE_AGENTUITY_BASE_URL=https://your-agentuity-backend.example.com`
-- Passes through `AgentuityProvider baseUrl`.
+- The `fetch()` calls in the route component prepend this as the base URL.
 - Enable cross-origin backend access with:
   - `AGENTUITY_CORS_ALLOWED_ORIGINS=https://your-frontend.example.com`
 
-Backend CORS is configured with trusted-origin mode plus optional extra origins from that env variable.
+By default, the Agentuity runtime reflects any origin for CORS. For tighter control, add a `cors` option to `createApp()` (e.g., `cors: { sameOrigin: true }` or `cors: { origin: ['https://your-frontend.example.com'] }`).
 
 ## Related
 

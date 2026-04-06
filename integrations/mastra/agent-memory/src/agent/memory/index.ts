@@ -62,7 +62,7 @@ When users share personal information (name, interests, facts about themselves),
 When users ask about previous conversations or their stored information, recall it accurately.
 
 Be conversational, friendly, and demonstrate that you remember context from earlier in the conversation.`,
-	model: 'openai/gpt-4o-mini',
+	model: 'openai/gpt-5-nano',
 });
 
 const agent = createAgent('memory', {

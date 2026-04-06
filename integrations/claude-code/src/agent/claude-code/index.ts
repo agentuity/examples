@@ -126,8 +126,8 @@ function pickMainFile(
 function extractResponseText(messages: SDKMessage[]): string {
 	// Prefer the final result message — it contains the clean response text
 	for (let i = messages.length - 1; i >= 0; i--) {
-		const msg = messages[i];
-		if (msg.type === 'result' && msg.subtype === 'success' && (msg as any).result) {
+		const msg = messages[i]!;
+		if (msg.type === 'result' && (msg as any).subtype === 'success' && (msg as any).result) {
 			return (msg as any).result;
 		}
 	}
@@ -193,6 +193,11 @@ const agent = createAgent('claude-code', {
 		let costUsd = 0;
 
 		try {
+			// Security note: bypassPermissions and allowDangerouslySkipPermissions are used here
+			// because this agent runs in a sandboxed Agentuity environment with per-thread
+			// isolated workspaces. Tool access is restricted to Read, Write, Edit, Glob, and Grep —
+			// no Bash or network tools are granted. For multi-tenant or shared deployments,
+			// evaluate whether tighter permission scoping is appropriate for your trust model.
 			const q = query({
 				prompt: fullPrompt,
 				options: {

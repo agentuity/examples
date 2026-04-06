@@ -141,9 +141,10 @@ const agent = createAgent('researcher', {
 			const newBreadth = Math.ceil(currentBreadth / 2);
 			if (currentDepth > 1 && newBreadth > 0) {
 				// Build refined query from learnings
+				const lastLearning = research.learnings[research.learnings.length - 1];
 				const refinedPrompt =
-					research.learnings.length > 0
-						? `${prompt}. Follow-up: ${research.learnings[research.learnings.length - 1].followUpQuestions.join(', ')}`
+					lastLearning
+						? `${prompt}. Follow-up: ${lastLearning.followUpQuestions.join(', ')}`
 						: prompt;
 
 				await deepResearch(refinedPrompt, currentDepth - 1, newBreadth);

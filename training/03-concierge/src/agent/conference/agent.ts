@@ -63,7 +63,7 @@ const agent = createAgent('conference', {
 
 			// Generate response using OpenAI
 			const result = await generateText({
-				model: openai('gpt-4o-mini'),
+				model: openai('gpt-5-nano'),
 				system: `You are an expert on AI Engineer World Fair 2025, taking place June 3-5, 2025 at the SF Marriott Marquis in San Francisco.
 
 Use the following conference information to answer questions accurately:

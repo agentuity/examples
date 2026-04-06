@@ -4,34 +4,32 @@
   "license": "Apache-2.0",
   "private": true,
   "module": ".agentuity/app.js",
-  "exports": {
-    "./routes": "./src/generated/routes.ts",
-    "./registry": "./src/generated/registry.ts"
-  },
   "type": "module",
   "scripts": {
     "build": "agentuity build",
-    "build:routes": "agentuity build --dev",
     "dev": "agentuity dev",
     "start": "bun .agentuity/app.js",
     "deploy": "agentuity deploy",
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "@agentuity/core": "latest",
-    "@agentuity/evals": "latest",
-    "@agentuity/frontend": "latest",
-    "@agentuity/runtime": "latest",
-    "@agentuity/schema": "latest",
-    "@agentuity/workbench": "latest",
+    "@agentuity/evals": "^2.0.0",
+    "@agentuity/runtime": "^2.0.0",
+    "@agentuity/schema": "^2.0.0",
+    "@agentuity/workbench": "^2.0.0",
     "@tanstack-turborepo/shared": "workspace:*",
-    "hono": "^4.7.13",
-    "openai": "latest"
+    "hono": "^4.7.0",
+    "openai": "latest",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@agentuity/cli": "latest",
+    "@agentuity/cli": "^2.0.0",
+    "@vitejs/plugin-react": "^4.4.0",
     "@types/bun": "latest",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "typescript": "^5",
-    "vite": "^7.2.7"
+    "vite": "^7.0.0"
   }
 }

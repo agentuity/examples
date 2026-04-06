@@ -48,6 +48,8 @@ const calculate = tool({
 		await new Promise((r) => setTimeout(r, 300));
 		try {
 			const sanitized = expression.replace(/[^0-9+\-*/().%\s]/g, '');
+			// WARNING: new Function() is equivalent to eval(). This is for demo purposes only.
+			// In real applications, use a proper math parser library (e.g., mathjs).
 			const result = new Function(`return ${sanitized}`)();
 			return `${expression} = ${result}`;
 		} catch {
@@ -77,8 +79,7 @@ const assistant = new Agent({
 	name: 'Streaming Assistant',
 	instructions:
 		'You are a helpful assistant. Use the available tools to answer questions. When a question requires multiple pieces of information, use multiple tools.',
-	model: 'gpt-4.1',
-	modelSettings: { temperature: 0.3 },
+	model: 'gpt-5',
 	tools: [search, calculate, getTime],
 });
 

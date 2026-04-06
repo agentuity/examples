@@ -1,5 +1,4 @@
-import { useAnalytics, useAPI } from '@agentuity/react';
-import { type ChangeEvent, useCallback, useState } from 'react';
+import { type ChangeEvent, useCallback, useEffect, useState } from 'react';
 import './App.css';
 
 const WORKBENCH_PATH = process.env.AGENTUITY_PUBLIC_WORKBENCH_PATH;
@@ -12,67 +11,125 @@ const EXAMPLE_REQUESTS = [
 	{ label: "Email (approval)", text: "Send an email to john@example.com" },
 ];
 
+type ApprovalResult = {
+	response: string;
+	suspended: boolean;
+	pendingApproval?: {
+		toolName: string;
+		reason: string;
+		toolArgs: string;
+	};
+	toolExecuted?: string;
+	threadId: string;
+	sessionId: string;
+	tokens: number;
+};
+
+type HistoryEntry = {
+	id: string;
+	toolName: string;
+	toolArgs: string;
+	status: string;
+	requestedAt: string;
+	resolvedAt: string;
+	tokens: number;
+};
+
+type StatsData = {
+	threadId: string;
+	totalRequests: number;
+	approvedCount: number;
+	declinedCount: number;
+	totalTokens: number;
+};
+
+async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
+	const res = await fetch(`/api${path}`, {
+		method,
+		headers: body ? { 'Content-Type': 'application/json' } : undefined,
+		body: body ? JSON.stringify(body) : undefined,
+	});
+	return res.json() as Promise<T>;
+}
+
 export function App() {
 	const [text, setText] = useState(EXAMPLE_REQUESTS[0]!.text);
 	const [model, setModel] = useState<(typeof MODELS)[number]>('gpt-5-nano');
 	const [requireToolApproval, setRequireToolApproval] = useState(false);
 
-	const { track } = useAnalytics();
+	const [approvalResult, setApprovalResult] = useState<ApprovalResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [isApproving, setIsApproving] = useState(false);
+	const [isDeclining, setIsDeclining] = useState(false);
 
-	const { data: approvalResult, invoke: sendApproval, isLoading } = useAPI('POST /api/approval');
-	const { data: approveResult, invoke: approve, isLoading: isApproving } = useAPI('POST /api/approval/approve');
-	const { data: declineResult, invoke: decline, isLoading: isDeclining } = useAPI('POST /api/approval/decline');
-	const { data: pendingData, refetch: refetchPending } = useAPI('GET /api/approval/pending');
-	const { data: historyData, refetch: refetchHistory } = useAPI('GET /api/approval/history');
-	const { data: statsData, refetch: refetchStats } = useAPI('GET /api/approval/stats');
-	const { invoke: clearHistory } = useAPI('DELETE /api/approval/history');
+	const [pendingData, setPendingData] = useState<{ pendingApproval?: ApprovalResult['pendingApproval']; threadId?: string } | null>(null);
+	const [history, setHistory] = useState<HistoryEntry[]>([]);
+	const [stats, setStats] = useState<StatsData | null>(null);
 
-	const hydratedPendingResult = pendingData?.pendingApproval
+	const refresh = useCallback(async () => {
+		const [p, h, s] = await Promise.all([
+			api<{ pendingApproval?: ApprovalResult['pendingApproval']; threadId: string }>('GET', '/approval/pending'),
+			api<{ approvalHistory: HistoryEntry[] }>('GET', '/approval/history'),
+			api<StatsData>('GET', '/approval/stats'),
+		]);
+		setPendingData(p);
+		setHistory(h.approvalHistory);
+		setStats(s);
+	}, []);
+
+	useEffect(() => { void refresh(); }, [refresh]);
+
+	const hydratedPendingResult: ApprovalResult | null = pendingData?.pendingApproval
 		? {
 				response: `Tool "${pendingData.pendingApproval.toolName}" still requires approval. ${pendingData.pendingApproval.reason}`,
 				suspended: true,
 				pendingApproval: pendingData.pendingApproval,
-				threadId: pendingData.threadId,
+				threadId: pendingData.threadId ?? '',
 				sessionId: '',
 				tokens: 0,
 		  }
 		: null;
 
-	const result = hydratedPendingResult ?? approveResult ?? declineResult ?? approvalResult;
-	const history = historyData?.approvalHistory ?? [];
-	const stats = statsData;
+	const result = hydratedPendingResult ?? approvalResult;
 	const isWorking = isLoading || isApproving || isDeclining;
 
 	const handleSend = useCallback(async () => {
-		track('approval_request', { model, requireToolApproval });
-		await sendApproval({ text, model, requireToolApproval });
-		await refetchPending();
-		await refetchHistory();
-		await refetchStats();
-	}, [text, model, requireToolApproval, sendApproval, refetchPending, refetchHistory, refetchStats, track]);
+		setIsLoading(true);
+		try {
+			const res = await api<ApprovalResult>('POST', '/approval', { text, model, requireToolApproval });
+			setApprovalResult(res);
+			await refresh();
+		} finally {
+			setIsLoading(false);
+		}
+	}, [text, model, requireToolApproval, refresh]);
 
 	const handleApprove = useCallback(async () => {
-		track('approval_approved');
-		await approve(undefined);
-		await refetchPending();
-		await refetchHistory();
-		await refetchStats();
-	}, [approve, refetchPending, refetchHistory, refetchStats, track]);
+		setIsApproving(true);
+		try {
+			const res = await api<ApprovalResult>('POST', '/approval/approve');
+			setApprovalResult(res);
+			await refresh();
+		} finally {
+			setIsApproving(false);
+		}
+	}, [refresh]);
 
 	const handleDecline = useCallback(async () => {
-		track('approval_declined');
-		await decline(undefined);
-		await refetchPending();
-		await refetchHistory();
-		await refetchStats();
-	}, [decline, refetchPending, refetchHistory, refetchStats, track]);
+		setIsDeclining(true);
+		try {
+			const res = await api<ApprovalResult>('POST', '/approval/decline');
+			setApprovalResult(res);
+			await refresh();
+		} finally {
+			setIsDeclining(false);
+		}
+	}, [refresh]);
 
 	const handleClearHistory = useCallback(async () => {
-		await clearHistory();
-		await refetchPending();
-		await refetchHistory();
-		await refetchStats();
-	}, [clearHistory, refetchPending, refetchHistory, refetchStats]);
+		await api('DELETE', '/approval/history');
+		await refresh();
+	}, [refresh]);
 
 	return (
 		<div className="text-white flex font-sans justify-center min-h-screen">
@@ -248,7 +305,7 @@ export function App() {
 
 							{/* Metadata */}
 							<div className="text-gray-500 flex text-xs gap-4">
-								{'toolExecuted' in result && result.toolExecuted && (
+								{result.toolExecuted && (
 									<span>
 										Tool <strong className="text-gray-400">{result.toolExecuted}</strong>
 									</span>

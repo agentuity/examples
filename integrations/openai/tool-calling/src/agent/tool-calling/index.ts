@@ -70,8 +70,7 @@ const assistant = new Agent({
 	name: 'Research Assistant',
 	instructions:
 		'You are a helpful assistant with access to search and weather tools. Use them when the user asks about current information or weather. Be concise.',
-	model: 'gpt-4.1',
-	modelSettings: { temperature: 0.1 },
+	model: 'gpt-5',
 	tools: [search, getWeather],
 });
 

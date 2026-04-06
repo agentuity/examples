@@ -12,14 +12,14 @@ Initialize a `ChatOpenAI` model instance with explicit parameters:
 import { ChatOpenAI } from "@langchain/openai";
 
 const model = new ChatOpenAI({
-  model: "gpt-4.1",
+  model: "gpt-5",
   temperature: 0.1,
   maxTokens: 1000,
   timeout: 30,
 });
 ```
 
-You can also use a model identifier string: `model: "openai:gpt-4.1"`.
+You can also use a model identifier string: `model: "openai:gpt-5"`.
 
 ### 2. Static Tools with Zod Schemas
 

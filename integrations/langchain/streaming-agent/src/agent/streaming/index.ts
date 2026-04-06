@@ -47,6 +47,8 @@ const calculate = tool(
 		try {
 			// Simple safe math evaluation
 			const sanitized = expression.replace(/[^0-9+\-*/().%\s]/g, '');
+			// WARNING: new Function() is equivalent to eval(). This is for demo purposes only.
+			// In real applications, use a proper math parser library (e.g., mathjs).
 			const result = new Function(`return ${sanitized}`)();
 			return `${expression} = ${result}`;
 		} catch {
@@ -77,7 +79,7 @@ const getTime = tool(
 // LangChain Model & Agent
 // ---------------------------------------------------------------------------
 
-const model = new ChatOpenAI({ model: 'gpt-4.1', temperature: 0.3, maxTokens: 1500 });
+const model = new ChatOpenAI({ model: 'gpt-5', maxTokens: 1500 });
 
 const langchainAgent = createLangChainAgent({
 	model,

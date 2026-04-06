@@ -1,11 +1,28 @@
-import { useAPI } from '@agentuity/react';
-import { type ChangeEvent, useState } from 'react';
+import { type ChangeEvent, useCallback, useState } from 'react';
 
 const WORKBENCH_PATH = process.env.AGENTUITY_PUBLIC_WORKBENCH_PATH;
 
 export function App() {
-	const [prompt, setPrompt] = useState('Tell me a joke');
-	const { data: greeting, invoke, isLoading: running } = useAPI('POST /api/hello');
+	const [prompt, setPrompt] = useState('World');
+	const [greeting, setGreeting] = useState<string | null>(null);
+	const [running, setRunning] = useState(false);
+
+	const invoke = useCallback(async (name: string) => {
+		setRunning(true);
+		try {
+			const res = await fetch('/api/hello', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ name }),
+			});
+			const data = await res.json();
+			setGreeting(data.personal_count > 1
+					? `${data.greeting} (greeted ${data.personal_count} times)`
+					: data.greeting);
+		} finally {
+			setRunning(false);
+		}
+	}, []);
 
 	return (
 		<div className="app-container">
@@ -54,7 +71,7 @@ export function App() {
 							onChange={(e: ChangeEvent<HTMLInputElement>) =>
 								setPrompt(e.currentTarget.value)
 							}
-							placeholder="Enter your prompt"
+							placeholder="Enter a name"
 							type="text"
 							value={prompt}
 						/>
@@ -65,7 +82,7 @@ export function App() {
 							<button
 								className={`button ${running ? 'disabled' : ''}`}
 								disabled={running}
-								onClick={() => invoke({ prompt })}
+								onClick={() => invoke(prompt)}
 								type="button"
 							>
 								{running ? 'Running...' : 'Ask AI'}

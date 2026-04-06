@@ -12,8 +12,8 @@ Use `createMiddleware()` with `wrapModelCall` to select between models based on 
 import { ChatOpenAI } from "@langchain/openai";
 import { createAgent, createMiddleware } from "langchain";
 
-const basicModel = new ChatOpenAI({ model: "gpt-4.1-mini" });
-const advancedModel = new ChatOpenAI({ model: "gpt-4.1" });
+const basicModel = new ChatOpenAI({ model: "gpt-5-mini" });
+const advancedModel = new ChatOpenAI({ model: "gpt-5" });
 
 const dynamicModelSelection = createMiddleware({
   name: "DynamicModelSelection",
@@ -29,8 +29,8 @@ const dynamicModelSelection = createMiddleware({
 
 ### 2. Two-Tier Model Strategy
 
-- **gpt-4.1-mini** — Fast and cost-effective for simple, short conversations
-- **gpt-4.1** — More capable model activated when conversation complexity grows (>10 messages)
+- **gpt-5-mini** — Fast and cost-effective for simple, short conversations
+- **gpt-5** — More capable model activated when conversation complexity grows (>10 messages)
 
 ### 3. Middleware Integration
 
@@ -45,12 +45,12 @@ The middleware hooks into the agent's execution pipeline via `createAgent({ midd
 ### Request
 
 ```bash
-# Simple request (uses gpt-4.1-mini)
+# Simple request (uses gpt-5-mini)
 curl -X POST http://localhost:3500/api/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "What is the weather in Tokyo?"}'
 
-# Complex request with history (uses gpt-4.1 if >10 messages)
+# Complex request with history (uses gpt-5 if >10 messages)
 curl -X POST http://localhost:3500/api/chat \
   -H "Content-Type: application/json" \
   -d '{
@@ -75,7 +75,7 @@ curl -X POST http://localhost:3500/api/chat \
 ```json
 {
   "response": "The weather in Tokyo is 80°F, sunny and humid.",
-  "modelUsed": "gpt-4.1-mini",
+  "modelUsed": "gpt-5-mini",
   "messageCount": 1,
   "threadId": "...",
   "sessionId": "..."

@@ -100,7 +100,7 @@ Guidelines:
 - Each block should have 2-5 activities
 - Be realistic with time estimates
 - Adjust the focus based on the plan type provided in the request`,
-	model: 'openai/gpt-4o-mini',
+	model: 'openai/gpt-5-nano',
 });
 
 // ---------------------------------------------------------------------------

@@ -1,32 +1,26 @@
-import { StrictMode } from 'react';
+/**
+ * This file is the entry point for the React app, it sets up the root
+ * element and renders the App component to the DOM.
+ *
+ * It is included in `src/index.html`.
+ */
+
+import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { AgentuityProvider } from '@agentuity/react';
 import { App } from './App';
 
-function init() {
-	const elem = document.getElementById('root');
-	if (!elem) {
-		throw new Error('Root element not found');
-	}
+const elem = document.getElementById('root')!;
+const app = (
+	<StrictMode>
+		<App />
+	</StrictMode>
+);
 
-	const app = (
-		<StrictMode>
-			<AgentuityProvider>
-				<App />
-			</AgentuityProvider>
-		</StrictMode>
-	);
-
-	if (import.meta.hot) {
-		const root = (import.meta.hot.data.root ??= createRoot(elem));
-		root.render(app);
-	} else {
-		createRoot(elem).render(app);
-	}
-}
-
-if (document.readyState === 'loading') {
-	document.addEventListener('DOMContentLoaded', init);
+if (import.meta.hot) {
+	// With hot module reloading, `import.meta.hot.data` is persisted.
+	const root = (import.meta.hot.data.root ??= createRoot(elem));
+	root.render(app);
 } else {
-	init();
+	// The hot module reloading API is not available in production.
+	createRoot(elem).render(app);
 }

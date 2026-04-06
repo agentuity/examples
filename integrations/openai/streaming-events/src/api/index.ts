@@ -1,17 +1,11 @@
-/**
- * API routes for the streaming agent.
- * The agent handles streaming and event capture; routes just forward requests.
- */
+import { Hono } from 'hono';
+import type { Env } from '@agentuity/runtime';
+import streaming from '@agent/streaming';
 
-import { createRouter } from '@agentuity/runtime';
-import streaming from '../agent/streaming';
+const router = new Hono<Env>()
+	.post('/chat', streaming.validator(), async (c) => {
+		const data = c.req.valid('json');
+		return c.json(await streaming.run(data));
+	});
 
-const api = createRouter();
-
-// Send a message to the streaming agent
-api.post('/chat', streaming.validator(), async (c) => {
-	const data = c.req.valid('json');
-	return c.json(await streaming.run(data));
-});
-
-export default api;
+export default router;

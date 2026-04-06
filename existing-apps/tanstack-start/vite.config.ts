@@ -21,9 +21,6 @@ export default defineConfig({
 			},
 		},
 	},
-	ssr: {
-		noExternal: [/^@agentuity\//],
-	},
 	test: {
 		environment: 'jsdom',
 	},

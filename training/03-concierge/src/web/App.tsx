@@ -1,11 +1,34 @@
-import { useAPI } from '@agentuity/react';
-import { type ChangeEvent, useState } from 'react';
+import { type ChangeEvent, useCallback, useState } from 'react';
 
 const WORKBENCH_PATH = process.env.AGENTUITY_PUBLIC_WORKBENCH_PATH;
 
 export function App() {
-	const [name, setName] = useState('World');
-	const { data: greeting, invoke, isLoading: running } = useAPI('POST /api/hello');
+	const [prompt, setPrompt] = useState('');
+	const [response, setResponse] = useState<string | null>(null);
+	const [running, setRunning] = useState(false);
+	const [conversationId, setConversationId] = useState<string | undefined>();
+
+	const invoke = useCallback(async (text: string) => {
+		setRunning(true);
+		try {
+			const res = await fetch('/api/concierge', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ prompt: text, conversationId }),
+			});
+			const data = await res.json();
+			if (data.error) {
+				setResponse(data.message ?? data.error);
+			} else {
+				setResponse(data.response ?? JSON.stringify(data));
+				if (data.conversationId) {
+					setConversationId(data.conversationId);
+				}
+			}
+		} finally {
+			setRunning(false);
+		}
+	}, [conversationId]);
 
 	return (
 		<div className="app-container">
@@ -44,17 +67,19 @@ export function App() {
 
 				<div className="card card-interactive">
 					<h2 className="card-title">
-						Try the <span className="highlight">Hello Agent</span>
+						Try the <span className="highlight">Concierge Agent</span>
 					</h2>
 
 					<div className="input-group">
 						<input
 							className="input"
 							disabled={running}
-							onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.currentTarget.value)}
-							placeholder="Enter your name"
+							onChange={(e: ChangeEvent<HTMLInputElement>) =>
+								setPrompt(e.currentTarget.value)
+							}
+							placeholder="Ask about SF, the conference, or Agentuity..."
 							type="text"
-							value={name}
+							value={prompt}
 						/>
 
 						<div className="glow-btn">
@@ -63,16 +88,16 @@ export function App() {
 							<button
 								className={`button ${running ? 'disabled' : ''}`}
 								disabled={running}
-								onClick={() => invoke({ name })}
+								onClick={() => invoke(prompt)}
 								type="button"
 							>
-								{running ? 'Running...' : 'Say Hello'}
+								{running ? 'Running...' : 'Ask'}
 							</button>
 						</div>
 					</div>
 
-					<div className="output" data-loading={!greeting}>
-						{greeting ?? 'Waiting for request'}
+					<div className="output" data-loading={!response}>
+						{response ?? 'Waiting for request'}
 					</div>
 				</div>
 
@@ -86,7 +111,7 @@ export function App() {
 								title: 'Customize your agent',
 								text: (
 									<>
-										Edit <code>src/agent/hello/agent.ts</code> to change how your agent
+										Edit <code>src/agent/concierge/agent.ts</code> to change how your agent
 										responds.
 									</>
 								),
@@ -353,6 +378,7 @@ export function App() {
 						line-height: 1.5;
 						padding: 0.75rem 1rem;
 						z-index: 2;
+						white-space: pre-wrap;
 					}
 
 					.output[data-loading="true"] {

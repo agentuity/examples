@@ -35,7 +35,7 @@ interface NWSForecastResponse {
  */
 export async function getWeather(
 	location: string,
-	ctx: AgentContext
+	ctx: AgentContext<any, any, any>
 ): Promise<WeatherResult> {
 	// Only San Francisco is supported (hardcoded coordinates)
 	const latitude = 37.77;

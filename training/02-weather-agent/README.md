@@ -2,6 +2,11 @@
 
 Fetch real-time weather from the National Weather Service API, cache results with a 5-minute TTL, and generate a conversational summary using OpenAI via the Vercel AI SDK.
 
+## Prerequisites
+
+- [Bun](https://bun.sh/) installed
+- [Agentuity CLI](https://agentuity.dev/cli/installation) installed and logged in (`agentuity login`)
+
 ## Getting Started
 
 ```bash

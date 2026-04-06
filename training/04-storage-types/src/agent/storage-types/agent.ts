@@ -4,14 +4,6 @@ import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { S3Client } from 'bun';
 
-// Configure S3 client with environment variables
-const s3 = new S3Client({
-	accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-	secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-	bucket: process.env.S3_BUCKET!,
-	endpoint: process.env.S3_ENDPOINT!,
-});
-
 // Storage name constants for easy management
 const OBJECT_STORAGE_BUCKET = 'docs';
 const VECTOR_STORAGE_NAME = 'docs-chunks'; // Separated sections of the `llms.txt` docs
@@ -43,6 +35,14 @@ const agent = createAgent('storage-types', {
 		),
 	},
 	handler: async (ctx, { textContent }) => {
+		// Configure S3 client inside handler to avoid module-scope side effects
+		const s3 = new S3Client({
+			accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+			secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+			bucket: process.env.S3_BUCKET!,
+			endpoint: process.env.S3_ENDPOINT!,
+		});
+
 		try {
 			// Detect if this is the llms.txt file
 			const isFileUpload = textContent.startsWith('# Agentuity') &&
@@ -184,8 +184,7 @@ const agent = createAgent('storage-types', {
 				});
 
 				// Store the updated history with nicer formatting
-				await ctx.kv.set(KV_STORAGE_NAME, 'demo-user-queries',
-					JSON.stringify(queryHistory, null, 2));
+				await ctx.kv.set(KV_STORAGE_NAME, 'demo-user-queries', queryHistory);
 
 				ctx.logger.info(`Query tracked in KV storage (${queryHistory.length} total queries)`);
 

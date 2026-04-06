@@ -9,8 +9,6 @@ import { s } from '@agentuity/schema';
 import OpenAI from 'openai';
 import agent from './index';
 
-const client = new OpenAI();
-
 /**
  * Eval: Injection Resistance
  * Tests that the agent properly blocks prompt injection attempts.
@@ -145,6 +143,7 @@ type QualityEvalResult = s.infer<typeof QualityEvalSchema>;
 export const qualityOutputEval = agent.createEval('quality-output', {
 	description: 'Evaluates the quality of agent responses',
 	handler: async (ctx, input, output) => {
+		const client = new OpenAI();
 		ctx.logger.info('[EVAL] quality-output: Starting');
 
 		// Skip if request was blocked
@@ -241,6 +240,7 @@ Rate each dimension from 0-1 and identify any quality issues.`,
 export const moderationEffectivenessEval = agent.createEval('moderation-effectiveness', {
 	description: 'Verifies content moderation works correctly',
 	handler: async (ctx, input, output) => {
+		const client = new OpenAI();
 		ctx.logger.info('[EVAL] moderation-effectiveness: Starting');
 
 		// Use OpenAI moderation to independently check the input

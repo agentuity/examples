@@ -1,4 +1,3 @@
-import { useAnalytics, useAPI } from '@agentuity/react';
 import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import './App.css';
 
@@ -18,6 +17,32 @@ interface ProcessorConfig {
 	maxResponseLength?: number;
 }
 
+interface ProcessingMetadata {
+	inputProcessors: string[];
+	outputProcessors: string[];
+	blocked: boolean;
+	blockedReason?: string;
+	retryCount: number;
+	piiDetected?: string[];
+	piiRedacted?: boolean;
+	moderationResult?: {
+		flagged: boolean;
+		categories?: string[];
+	};
+	qualityScore?: number;
+	estimatedTokens?: number;
+	processedAt?: string;
+}
+
+interface ProcessResult {
+	response: string;
+	success: boolean;
+	threadId: string;
+	sessionId: string;
+	tokens: number;
+	processingMetadata: ProcessingMetadata;
+}
+
 interface HistoryEntry {
 	timestamp: string;
 	sessionId: string;
@@ -26,6 +51,12 @@ interface HistoryEntry {
 	tokens: number;
 	retryCount: number;
 	blocked: boolean;
+}
+
+interface HistoryResponse {
+	processingHistory: HistoryEntry[];
+	threadId: string;
+	totalProcessed: number;
 }
 
 const EXAMPLE_INPUTS = [
@@ -43,7 +74,7 @@ const EXAMPLE_INPUTS = [
 	},
 ];
 
-const MODELS = ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo'] as const;
+const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
 
 function Toggle({
 	checked,
@@ -100,7 +131,7 @@ function ProcessorBadge({ name, type }: { name: string; type: 'input' | 'output'
 
 export function App() {
 	const [text, setText] = useState('');
-	const [model, setModel] = useState<string>('gpt-4o-mini');
+	const [model, setModel] = useState<string>('gpt-5-nano');
 	const [config, setConfig] = useState<ProcessorConfig>({
 		enableModeration: true,
 		enablePiiDetection: true,
@@ -110,28 +141,33 @@ export function App() {
 		enableResponseFilter: false,
 	});
 
-	const { track } = useAnalytics();
+	const [processResult, setProcessResult] = useState<ProcessResult | null>(null);
+	const [isProcessing, setIsProcessing] = useState(false);
+	const [processError, setProcessError] = useState<Error | null>(null);
 
 	// Local history accumulates results from the current session immediately.
-	// Thread state is saved asynchronously (after the HTTP response via waitUntil),
-	// so GET refetches would race and return stale data. We track results locally instead.
 	const [localHistory, setLocalHistory] = useState<HistoryEntry[]>([]);
 
-	const {
-		data: processResult,
-		invoke: processText,
-		isLoading: isProcessing,
-		error: processError,
-	} = useAPI('POST /api/moderated');
+	// Server history from previous sessions
+	const [serverHistoryData, setServerHistoryData] = useState<HistoryResponse | null>(null);
+	const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+	const [isClearingHistory, setIsClearingHistory] = useState(false);
 
-	// Server history loads persisted data from previous sessions on mount
-	const {
-		data: serverHistoryData,
-		isLoading: isHistoryLoading,
-		refetch: refetchHistory,
-	} = useAPI('GET /api/moderated/history');
+	const fetchHistory = useCallback(async () => {
+		setIsHistoryLoading(true);
+		try {
+			const res = await fetch('/api/moderated/history');
+			const data = await res.json();
+			setServerHistoryData(data);
+		} finally {
+			setIsHistoryLoading(false);
+		}
+	}, []);
 
-	const { invoke: clearHistory, isLoading: isClearingHistory } = useAPI('DELETE /api/moderated/history');
+	// Load server history on mount
+	useEffect(() => {
+		void fetchHistory();
+	}, [fetchHistory]);
 
 	// When a process completes, add the entry to local history immediately
 	useEffect(() => {
@@ -171,16 +207,33 @@ export function App() {
 
 	const handleProcess = useCallback(async () => {
 		if (!text.trim()) return;
-		track('process_text', { model, textLength: text.length });
-		await processText({ text, model, config });
-	}, [text, model, config, processText, track]);
+		setIsProcessing(true);
+		setProcessError(null);
+		try {
+			const res = await fetch('/api/moderated', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ text, model, config }),
+			});
+			const data = await res.json();
+			setProcessResult(data);
+		} catch (err) {
+			setProcessError(err instanceof Error ? err : new Error(String(err)));
+		} finally {
+			setIsProcessing(false);
+		}
+	}, [text, model, config]);
 
 	const handleClearHistory = useCallback(async () => {
-		track('clear_history');
-		await clearHistory(undefined);
-		setLocalHistory([]);
-		refetchHistory();
-	}, [clearHistory, refetchHistory, track]);
+		setIsClearingHistory(true);
+		try {
+			await fetch('/api/moderated/history', { method: 'DELETE' });
+			setLocalHistory([]);
+			await fetchHistory();
+		} finally {
+			setIsClearingHistory(false);
+		}
+	}, [fetchHistory]);
 
 	const updateConfig = useCallback((updates: Partial<ProcessorConfig>) => {
 		setConfig((prev) => ({ ...prev, ...updates }));
@@ -483,7 +536,7 @@ export function App() {
 											<span className="text-yellow-400">
 												PII detected:{' '}
 												<strong>{metadata.piiDetected.join(', ')}</strong>
-												{metadata.piiRedacted && ' — redacted'}
+												{metadata.piiRedacted && ' -- redacted'}
 											</span>
 										</div>
 									)}
@@ -509,7 +562,7 @@ export function App() {
 					)}
 				</div>
 
-				{/* Stats — computed locally from combined history */}
+				{/* Stats */}
 				<div className="bg-black border border-gray-900 text-gray-400 rounded-lg p-8 shadow-2xl flex flex-col gap-6">
 					<h2 className="text-white text-lg font-normal leading-none">Stats</h2>
 
@@ -530,14 +583,14 @@ export function App() {
 					</div>
 				</div>
 
-				{/* History — combined server + local */}
+				{/* History */}
 				<div className="bg-black border border-gray-900 text-gray-400 rounded-lg p-8 shadow-2xl flex flex-col gap-6">
 					<div className="flex items-center justify-between">
 						<h2 className="text-white text-lg font-normal leading-none">Processing History</h2>
 						<div className="flex items-center gap-3">
 							<button
 								type="button"
-								onClick={() => { void refetchHistory(); }}
+								onClick={() => { void fetchHistory(); }}
 								className="text-xs text-gray-500 hover:text-cyan-400 transition-colors"
 								disabled={isHistoryLoading}
 							>
@@ -580,7 +633,7 @@ export function App() {
 										</span>
 									</div>
 									<span className="text-gray-500">
-										{entry.inputLength}→{entry.outputLength} chars
+										{entry.inputLength}{'→'}{entry.outputLength} chars
 									</span>
 									<span className="text-gray-500">{entry.tokens} tokens</span>
 									{entry.blocked && (

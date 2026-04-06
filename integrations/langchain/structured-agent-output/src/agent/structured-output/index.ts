@@ -73,7 +73,7 @@ const searchCompany = tool(
 // LangChain Models
 // ---------------------------------------------------------------------------
 
-const model = new ChatOpenAI({ model: 'gpt-4.1', temperature: 0 });
+const model = new ChatOpenAI({ model: 'gpt-5' });
 
 // Step 1: Agent with tools to gather information
 const langchainAgent = createLangChainAgent({

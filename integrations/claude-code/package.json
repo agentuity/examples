@@ -13,19 +13,19 @@
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "@agentuity/frontend": "^1.0.31",
-    "@agentuity/react": "^1.0.31",
-    "@agentuity/runtime": "^1.0.31",
-    "@agentuity/schema": "^1.0.31",
-    "@agentuity/workbench": "^1.0.31",
+    "@agentuity/runtime": "^2.0.0",
+    "@agentuity/schema": "^2.0.0",
+    "@agentuity/workbench": "^2.0.0",
     "@anthropic-ai/claude-agent-sdk": "latest",
     "@anthropic-ai/claude-code": "^2.1.58",
+    "hono": "^4.7.0",
     "marked": "^17.0.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@agentuity/cli": "^1.0.31",
+    "@agentuity/cli": "^2.0.0",
+    "@vitejs/plugin-react": "^4.4.0",
     "@types/bun": "latest",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

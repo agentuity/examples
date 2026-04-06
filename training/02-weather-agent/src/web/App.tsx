@@ -1,11 +1,32 @@
-import { useAPI } from '@agentuity/react';
-import { type ChangeEvent, useState } from 'react';
+import { type ChangeEvent, useCallback, useState } from 'react';
 
 const WORKBENCH_PATH = process.env.AGENTUITY_PUBLIC_WORKBENCH_PATH;
 
 export function App() {
-	const [prompt, setPrompt] = useState('Tell me a joke');
-	const { data: greeting, invoke, isLoading: running } = useAPI('POST /api/hello');
+	const [location, setLocation] = useState('San Francisco');
+	const [result, setResult] = useState<string | null>(null);
+	const [running, setRunning] = useState(false);
+
+	const invoke = useCallback(async (loc: string) => {
+		setRunning(true);
+		try {
+			const res = await fetch('/api/weather', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ location: loc }),
+			});
+			const data = await res.json();
+			if (data.error) {
+				setResult(data.message ?? data.error);
+			} else if (data.ai_summary) {
+				setResult(`${data.ai_summary} (${data.temperature}°F, ${data.forecast})`);
+			} else {
+				setResult(JSON.stringify(data));
+			}
+		} finally {
+			setRunning(false);
+		}
+	}, []);
 
 	return (
 		<div className="app-container">
@@ -44,7 +65,7 @@ export function App() {
 
 				<div className="card card-interactive">
 					<h2 className="card-title">
-						Try the <span className="highlight">OpenAI powered AI Agent</span>
+						Try the <span className="highlight">Weather Agent</span>
 					</h2>
 
 					<div className="input-group">
@@ -52,11 +73,11 @@ export function App() {
 							className="input"
 							disabled={running}
 							onChange={(e: ChangeEvent<HTMLInputElement>) =>
-								setPrompt(e.currentTarget.value)
+								setLocation(e.currentTarget.value)
 							}
-							placeholder="Enter your prompt"
+							placeholder="Enter a city name"
 							type="text"
-							value={prompt}
+							value={location}
 						/>
 
 						<div className="glow-btn">
@@ -65,16 +86,16 @@ export function App() {
 							<button
 								className={`button ${running ? 'disabled' : ''}`}
 								disabled={running}
-								onClick={() => invoke({ prompt })}
+								onClick={() => invoke(location)}
 								type="button"
 							>
-								{running ? 'Running...' : 'Ask AI'}
+								{running ? 'Running...' : 'Get Weather'}
 							</button>
 						</div>
 					</div>
 
-					<div className="output" data-loading={!greeting}>
-						{greeting ?? 'Waiting for request'}
+					<div className="output" data-loading={!result}>
+						{result ?? 'Waiting for request'}
 					</div>
 				</div>
 
@@ -88,7 +109,7 @@ export function App() {
 								title: 'Customize your agent',
 								text: (
 									<>
-										Edit <code>src/agent/hello/agent.ts</code> to change how your agent
+										Edit <code>src/agent/weather/agent.ts</code> to change how your agent
 										responds.
 									</>
 								),

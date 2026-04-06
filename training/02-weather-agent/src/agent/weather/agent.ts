@@ -7,13 +7,6 @@ import { openai } from '@ai-sdk/openai';
 const USER_AGENT =
   'AgentuityWeatherAgent/1.0 (Contact: your-email@example.com)'; // NWS requires a User-Agent
 
-// Pre-defined cities for cron jobs (hardcoded coordinates for demo)
-const MONITORED_CITIES = [
-  { name: 'San Francisco', lat: 37.77, lon: -122.42 },
-  { name: 'New York', lat: 40.71, lon: -74.01 },
-  { name: 'Los Angeles', lat: 34.05, lon: -118.24 },
-  { name: 'Chicago', lat: 41.88, lon: -87.63 },
-];
 
 interface WeatherResult {
   location: string;
@@ -79,7 +72,7 @@ async function fetchNWSWeather(
   latitude: number,
   longitude: number,
   locationName: string,
-  ctx: AgentContext 
+  ctx: AgentContext<any, any, any>
 ): Promise<WeatherResult> {
   ctx.logger.info(
     `Fetching NWS weather for ${locationName} (${latitude}, ${longitude})`

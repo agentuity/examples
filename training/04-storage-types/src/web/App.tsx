@@ -1,11 +1,26 @@
-import { useAPI } from '@agentuity/react';
-import { type ChangeEvent, useState } from 'react';
+import { type ChangeEvent, useCallback, useState } from 'react';
 
 const WORKBENCH_PATH = process.env.AGENTUITY_PUBLIC_WORKBENCH_PATH;
 
 export function App() {
 	const [prompt, setPrompt] = useState('Tell me a joke');
-	const { data: greeting, invoke, isLoading: running } = useAPI('POST /api/hello');
+	const [greeting, setGreeting] = useState<string | null>(null);
+	const [running, setRunning] = useState(false);
+
+	const invoke = useCallback(async (textContent: string) => {
+		setRunning(true);
+		try {
+			const res = await fetch('/api/storage-types', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ textContent }),
+			});
+			const data = await res.json();
+			setGreeting(typeof data === 'string' ? data : JSON.stringify(data, null, 2));
+		} finally {
+			setRunning(false);
+		}
+	}, []);
 
 	return (
 		<div className="app-container">
@@ -44,7 +59,7 @@ export function App() {
 
 				<div className="card card-interactive">
 					<h2 className="card-title">
-						Try the <span className="highlight">OpenAI powered AI Agent</span>
+						Try the <span className="highlight">Storage Types Agent</span>
 					</h2>
 
 					<div className="input-group">
@@ -65,7 +80,7 @@ export function App() {
 							<button
 								className={`button ${running ? 'disabled' : ''}`}
 								disabled={running}
-								onClick={() => invoke({ prompt })}
+								onClick={() => invoke(prompt)}
 								type="button"
 							>
 								{running ? 'Running...' : 'Ask AI'}
@@ -88,7 +103,7 @@ export function App() {
 								title: 'Customize your agent',
 								text: (
 									<>
-										Edit <code>src/agent/hello/agent.ts</code> to change how your agent
+										Edit <code>src/agent/storage-types/agent.ts</code> to change how your agent
 										responds.
 									</>
 								),
@@ -354,6 +369,7 @@ export function App() {
 						font-family: monospace;
 						line-height: 1.5;
 						padding: 0.75rem 1rem;
+						white-space: pre-wrap;
 						z-index: 2;
 					}
 

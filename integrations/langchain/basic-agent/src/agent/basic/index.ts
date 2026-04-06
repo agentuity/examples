@@ -73,11 +73,10 @@ const getWeather = tool(
 // LangChain Model — instance with explicit configuration
 // ---------------------------------------------------------------------------
 
-// You can also use a model identifier string: model: "openai:gpt-4.1"
+// You can also use a model identifier string: model: "openai:gpt-5"
 // Using an instance gives control over temperature, token limits, timeouts, etc.
 const model = new ChatOpenAI({
-	model: 'gpt-4.1',
-	temperature: 0.1,
+	model: 'gpt-5',
 	maxTokens: 1000,
 });
 

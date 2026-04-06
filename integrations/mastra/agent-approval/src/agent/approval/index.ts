@@ -41,7 +41,7 @@ const approvalMastraAgent = new Agent({
 	name: 'Approval Agent',
 	instructions:
 		'You are a helpful assistant with access to tools. Use the appropriate tool when the user asks you to perform an action. Available tools: get-weather (weather lookups), search-records (database search), delete-user-data (permanently delete user data), send-notification (send email/SMS).',
-	model: 'openai/gpt-4o-mini',
+	model: 'openai/gpt-5-nano',
 	tools: {
 		'get-weather': getWeatherTool,
 		'search-records': searchRecordsTool,
@@ -50,9 +50,15 @@ const approvalMastraAgent = new Agent({
 	},
 });
 
-// Mastra instance with storage is required for approve/decline to persist workflow snapshots.
-// Without this, approveToolCallGenerate() / declineToolCallGenerate() fail with "No snapshot found".
-// InMemoryStore avoids local DB files; snapshots only need to survive until the user approves/declines.
+// Mastra requires a storage backend to persist workflow snapshots across approve/decline calls.
+// Without it, approveToolCallGenerate() / declineToolCallGenerate() fail with "No snapshot found".
+//
+// InMemoryStore is used here for simplicity, but it has a critical limitation: pending approvals
+// are lost if the agent process restarts before the user approves or declines. Any in-flight
+// approval becomes unresumable after a restart.
+//
+// For deployments where approvals must survive restarts, replace InMemoryStore with a persistent
+// store backed by Agentuity KV, a database, or another durable backend.
 const mastra = new Mastra({
 	agents: { 'approval-agent': approvalMastraAgent },
 	storage: new InMemoryStore(),
@@ -178,7 +184,7 @@ const agent = createAgent('approval', {
 				status: 'pending',
 				requestedAt: new Date().toISOString(),
 				runId: result.runId,
-				model: 'gpt-4o-mini',
+				model: 'gpt-5-nano',
 			};
 
 			await ctx.thread.state.set('pendingApproval', pendingApproval);

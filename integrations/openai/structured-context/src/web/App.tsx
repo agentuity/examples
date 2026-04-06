@@ -1,4 +1,3 @@
-import { useAPI } from '@agentuity/react';
 import { type ChangeEvent, type FormEvent, useCallback, useState } from 'react';
 import './App.css';
 
@@ -24,24 +23,47 @@ type ContextUsed = {
 	role: string;
 };
 
+type ChatResult = {
+	contact?: Contact;
+	rawResponse: string;
+	contextUsed: ContextUsed;
+	threadId: string;
+	sessionId: string;
+};
+
 export function App() {
 	const [message, setMessage] = useState('');
 	const [showRaw, setShowRaw] = useState(false);
+	const [result, setResult] = useState<ChatResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
-	const { data: chatResult, invoke: chat, isLoading } = useAPI('POST /api/chat');
-	const result = chatResult as {
-		contact?: Contact;
-		rawResponse: string;
-		contextUsed: ContextUsed;
-		threadId: string;
-		sessionId: string;
-	} | null;
+	const chat = useCallback(async (msg: string) => {
+		setIsLoading(true);
+		setError(null);
+		try {
+			const res = await fetch('/api/chat', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ message: msg }),
+			});
+			if (!res.ok) {
+				throw new Error(`Request failed: ${res.status}`);
+			}
+			const data = await res.json();
+			setResult(data);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Something went wrong');
+		} finally {
+			setIsLoading(false);
+		}
+	}, []);
 
 	const handleSubmit = useCallback(
 		async (e: FormEvent) => {
 			e.preventDefault();
 			if (!message.trim() || isLoading) return;
-			await chat({ message: message.trim() });
+			await chat(message.trim());
 		},
 		[message, isLoading, chat],
 	);
@@ -49,7 +71,7 @@ export function App() {
 	const handleSuggestion = useCallback(
 		async (suggestion: string) => {
 			setMessage(suggestion);
-			await chat({ message: suggestion });
+			await chat(suggestion);
 		},
 		[chat],
 	);
@@ -144,6 +166,13 @@ export function App() {
 					)}
 				</form>
 
+				{/* Error */}
+				{error && (
+					<div className="bg-red-950/30 border border-red-900/50 rounded-lg p-4 text-red-400 text-sm">
+						{error}
+					</div>
+				)}
+
 				{/* Response */}
 				{isLoading ? (
 					<div
@@ -233,7 +262,7 @@ export function App() {
 							>
 								Raw Output
 								<span className="text-gray-500 text-sm font-normal">
-									(outputType JSON) {showRaw ? '▾' : '▸'}
+									(outputType JSON) {showRaw ? '\u25BE' : '\u25B8'}
 								</span>
 							</button>
 
@@ -256,7 +285,7 @@ export function App() {
 						{[
 							{
 								title: 'RunContext<T>',
-								text: 'Typed context (UserInfo) passed to run() and accessible in tools — never sent to the LLM',
+								text: 'Typed context (UserInfo) passed to run() and accessible in tools -- never sent to the LLM',
 							},
 							{
 								title: 'outputType',
@@ -264,7 +293,7 @@ export function App() {
 							},
 							{
 								title: 'Typed finalOutput',
-								text: 'result.finalOutput is typed as z.infer<typeof ContactOutput> — full TypeScript inference',
+								text: 'result.finalOutput is typed as z.infer<typeof ContactOutput> -- full TypeScript inference',
 							},
 							{
 								title: 'Context in Tools',

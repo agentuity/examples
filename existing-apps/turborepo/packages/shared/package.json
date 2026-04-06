@@ -13,7 +13,7 @@
 		"typecheck": "bunx tsc --noEmit"
 	},
 	"dependencies": {
-		"@agentuity/schema": "latest"
+		"@agentuity/schema": "^2.0.0"
 	},
 	"devDependencies": {
 		"typescript": "^5"

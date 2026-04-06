@@ -93,7 +93,7 @@ const weatherMastraAgent = new Agent({
 	name: 'Weather Agent',
 	instructions:
 		'You are a helpful weather assistant. Use the get-weather tool to fetch current weather data when users ask about weather conditions. Always provide friendly, informative responses.',
-	model: 'openai/gpt-4o-mini',
+	model: 'openai/gpt-5-nano',
 	tools: { weatherTool },
 });
 

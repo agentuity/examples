@@ -22,14 +22,12 @@ import * as z from 'zod';
 // ---------------------------------------------------------------------------
 
 const basicModel = new ChatOpenAI({
-	model: 'gpt-4.1-mini',
-	temperature: 0.2,
+	model: 'gpt-5-mini',
 	maxTokens: 500,
 });
 
 const advancedModel = new ChatOpenAI({
-	model: 'gpt-4.1',
-	temperature: 0.1,
+	model: 'gpt-5',
 	maxTokens: 2000,
 });
 
@@ -81,40 +79,6 @@ const getWeather = tool(
 );
 
 // ---------------------------------------------------------------------------
-// LangChain Middleware — dynamic model selection based on message count
-// ---------------------------------------------------------------------------
-
-// Track which model was selected for reporting back to the caller
-let lastSelectedModel = 'gpt-4.1-mini';
-
-const dynamicModelSelection = createMiddleware({
-	name: 'DynamicModelSelection',
-	wrapModelCall: (request, handler) => {
-		// Choose model based on conversation complexity
-		const messageCount = request.messages.length;
-
-		if (messageCount > 10) {
-			lastSelectedModel = 'gpt-4.1';
-			return handler({ ...request, model: advancedModel });
-		}
-		lastSelectedModel = 'gpt-4.1-mini';
-		return handler({ ...request, model: basicModel });
-	},
-});
-
-// ---------------------------------------------------------------------------
-// LangChain Agent
-// ---------------------------------------------------------------------------
-
-const langchainAgent = createLangChainAgent({
-	model: basicModel, // Default model (overridden by middleware)
-	tools: [search, getWeather],
-	middleware: [dynamicModelSelection],
-	systemPrompt:
-		'You are a helpful assistant with access to search and weather tools. Be concise.',
-});
-
-// ---------------------------------------------------------------------------
 // Agentuity Agent Wrapper
 // ---------------------------------------------------------------------------
 
@@ -146,6 +110,32 @@ const agent = createAgent('dynamic-model', {
 		ctx.logger.info('──── Dynamic Model Agent ────');
 		ctx.logger.info({ message, historyLength: conversationHistory.length });
 		ctx.logger.info('Request IDs', { threadId: ctx.thread.id, sessionId: ctx.sessionId });
+
+		// Track which model was selected — scoped to this request
+		let lastSelectedModel = 'gpt-5-mini';
+
+		// Middleware and agent created per-request so the closure captures the local variable
+		const dynamicModelSelection = createMiddleware({
+			name: 'DynamicModelSelection',
+			wrapModelCall: (request, handler) => {
+				const messageCount = request.messages.length;
+
+				if (messageCount > 10) {
+					lastSelectedModel = 'gpt-5';
+					return handler({ ...request, model: advancedModel });
+				}
+				lastSelectedModel = 'gpt-5-mini';
+				return handler({ ...request, model: basicModel });
+			},
+		});
+
+		const langchainAgent = createLangChainAgent({
+			model: basicModel,
+			tools: [search, getWeather],
+			middleware: [dynamicModelSelection],
+			systemPrompt:
+				'You are a helpful assistant with access to search and weather tools. Be concise.',
+		});
 
 		// Build messages array: history + current message
 		const messages = [

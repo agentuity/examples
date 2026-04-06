@@ -1,4 +1,3 @@
-import { useAnalytics, useAPI } from '@agentuity/react';
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 
@@ -13,15 +12,33 @@ const EXAMPLE_PROMPTS = [
 	{ label: 'Previous topic', text: 'What did we talk about?' },
 ];
 
+type ChatMessage = { role: string; content: string; timestamp: string };
+type UserPreferences = { name?: string; interests?: string[]; facts?: string[] };
+type HistoryData = { messages: ChatMessage[]; preferences?: UserPreferences; threadId: string; messageCount: number };
+type ChatResult = { response: string; messageCount: number; threadId: string; sessionId: string };
+
+async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
+	const res = await fetch(`/api${path}`, {
+		method,
+		headers: body ? { 'Content-Type': 'application/json' } : undefined,
+		body: body ? JSON.stringify(body) : undefined,
+	});
+	return res.json() as Promise<T>;
+}
+
 export function App() {
 	const [message, setMessage] = useState('');
+	const [isLoading, setIsLoading] = useState(false);
+	const [historyData, setHistoryData] = useState<HistoryData | null>(null);
+	const [chatResult, setChatResult] = useState<ChatResult | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
-	// API hooks
-	const { data: historyData, refetch: refetchHistory } = useAPI('GET /api/history');
-	const { data: chatResult, invoke: sendChat, isLoading } = useAPI('POST /api/chat');
-	const { invoke: clearHistory } = useAPI('DELETE /api/history');
-	const { track } = useAnalytics();
+	const fetchHistory = useCallback(async () => {
+		const data = await api<HistoryData>('GET', '/history');
+		setHistoryData(data);
+	}, []);
+
+	useEffect(() => { void fetchHistory(); }, [fetchHistory]);
 
 	// Combine history from initial fetch and chat results
 	const messages = historyData?.messages ?? [];
@@ -33,38 +50,42 @@ export function App() {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 	}, [messages, chatResult]);
 
-	// Refetch history after chat
-	useEffect(() => {
-		if (chatResult) {
-			refetchHistory();
-		}
-	}, [chatResult, refetchHistory]);
-
 	const handleSubmit = useCallback(
 		async (e: FormEvent) => {
 			e.preventDefault();
 			if (!message.trim() || isLoading) return;
 
-			track('chat_message', { message: message.slice(0, 50) });
-			await sendChat({ message });
-			setMessage('');
+			setIsLoading(true);
+			try {
+				const res = await api<ChatResult>('POST', '/chat', { message });
+				setChatResult(res);
+				setMessage('');
+				await fetchHistory();
+			} finally {
+				setIsLoading(false);
+			}
 		},
-		[message, isLoading, sendChat, track]
+		[message, isLoading, fetchHistory]
 	);
 
 	const handleExampleClick = useCallback(
 		async (text: string) => {
-			track('example_prompt', { prompt: text });
-			await sendChat({ message: text });
+			setIsLoading(true);
+			try {
+				const res = await api<ChatResult>('POST', '/chat', { message: text });
+				setChatResult(res);
+				await fetchHistory();
+			} finally {
+				setIsLoading(false);
+			}
 		},
-		[sendChat, track]
+		[fetchHistory]
 	);
 
 	const handleClearHistory = useCallback(async () => {
-		track('clear_history');
-		await clearHistory();
-		await refetchHistory();
-	}, [clearHistory, refetchHistory, track]);
+		await api('DELETE', '/history');
+		await fetchHistory();
+	}, [fetchHistory]);
 
 	return (
 		<div className="text-white flex font-sans justify-center min-h-screen">
@@ -155,7 +176,7 @@ export function App() {
 						</div>
 					) : (
 						<>
-							{messages.map((msg: { role: string; content: string; timestamp: string }, index: number) => (
+							{messages.map((msg: ChatMessage, index: number) => (
 								<div
 									key={`${msg.timestamp}-${index}`}
 									className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}

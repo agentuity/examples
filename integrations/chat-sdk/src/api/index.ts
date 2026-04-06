@@ -4,37 +4,36 @@
  * dispatches incoming platform webhooks (Slack, Discord) to the bot.
  */
 
-import { createRouter } from '@agentuity/runtime';
+import { Hono } from 'hono';
+import type { Env } from '@agentuity/runtime';
 import { bot } from '@lib/bot';
 
-const api = createRouter();
+const router = new Hono<Env>()
+	// Health check
+	.get('/health', (c) => {
+		return c.json({ status: 'ok', timestamp: new Date().toISOString() });
+	})
+	// Webhook handler for all platforms
+	// Each platform sends webhooks to /api/webhooks/:platform
+	.all('/webhooks/:platform', async (c) => {
+		const platform = c.req.param('platform');
+		const request = c.req.raw;
 
-// Health check
-api.get('/health', (c) => {
-	return c.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+		const webhookHandler = bot.webhooks[platform as keyof typeof bot.webhooks];
 
-// Webhook handler for all platforms
-// Each platform sends webhooks to /api/webhooks/:platform
-api.all('/webhooks/:platform', async (c) => {
-	const platform = c.req.param('platform');
-	const request = c.req.raw;
+		if (!webhookHandler) {
+			return c.json({ error: `Unknown platform: ${platform}` }, 404);
+		}
 
-	const webhookHandler = bot.webhooks[platform as keyof typeof bot.webhooks];
-
-	if (!webhookHandler) {
-		return c.json({ error: `Unknown platform: ${platform}` }, 404);
-	}
-
-	return await webhookHandler(request, {
-		waitUntil: (promise) => {
-			c.waitUntil(async () => {
-				await promise.catch((err) => {
-					c.var.logger.error(`Webhook processing error (${platform})`, { error: err });
+		return await webhookHandler(request, {
+			waitUntil: (promise) => {
+				c.waitUntil(async () => {
+					await promise.catch((err) => {
+						c.var.logger.error(`Webhook processing error (${platform})`, { error: err });
+					});
 				});
-			});
-		},
+			},
+		});
 	});
-});
 
-export default api;
+export default router;

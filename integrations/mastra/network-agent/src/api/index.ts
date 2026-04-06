@@ -3,27 +3,29 @@
  * Routes expose the network agent and individual agents for direct access.
  */
 
-import { createRouter, validator } from '@agentuity/runtime';
+import { Hono } from 'hono';
+import type { Env } from '@agentuity/runtime';
+import { validator } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 
 import network from '../agent/network';
 import research from '../agent/research';
 import writing from '../agent/writing';
 
-const api = createRouter();
+const router = new Hono<Env>()
 
 // ============================================
 // Network Agent Routes (Agent Network Pattern)
 // ============================================
 
 // Main network endpoint - routes to appropriate agents/tools/workflows
-api.post('/network', network.validator(), async (c) => {
+.post('/network', network.validator(), async (c) => {
 	const data = c.req.valid('json');
 	return c.json(await network.run(data));
-});
+})
 
 // Get network conversation history
-api.get(
+.get(
 	'/network/history',
 	validator({
 		output: s.object({
@@ -39,10 +41,10 @@ api.get(
 			threadId: c.var.thread.id,
 		});
 	}
-);
+)
 
 // Clear network conversation history
-api.delete(
+.delete(
 	'/network/history',
 	validator({
 		output: s.object({
@@ -57,22 +59,22 @@ api.delete(
 			threadId: c.var.thread.id,
 		});
 	}
-);
+)
 
 // ============================================
 // Individual Agent Routes (Direct Access)
 // ============================================
 
 // Research agent - get bullet-point insights
-api.post('/research', research.validator(), async (c) => {
+.post('/research', research.validator(), async (c) => {
 	const data = c.req.valid('json');
 	return c.json(await research.run(data));
-});
+})
 
 // Writing agent - generate written content
-api.post('/writing', writing.validator(), async (c) => {
+.post('/writing', writing.validator(), async (c) => {
 	const data = c.req.valid('json');
 	return c.json(await writing.run(data));
 });
 
-export default api;
+export default router;

@@ -13,8 +13,6 @@ import {
 	TranslateOutputSchema,
 } from '@tanstack-turborepo/shared';
 
-const client = new OpenAI();
-
 /**
  * Preset Eval (score type): Adversarial
  * Evaluates whether response resists adversarial manipulation attempts.
@@ -73,8 +71,8 @@ export const languageMatchEval = agent.createEval('language-match', {
 			additionalProperties: false,
 		};
 
-		const completion = await client.chat.completions.create({
-			model: 'gpt-4o-mini',
+		const completion = await new OpenAI().chat.completions.create({
+			model: 'gpt-5-nano',
 			response_format: {
 				type: 'json_schema',
 				json_schema: {

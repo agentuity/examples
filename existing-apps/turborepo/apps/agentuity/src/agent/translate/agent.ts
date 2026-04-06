@@ -11,12 +11,6 @@ import {
 	type HistoryEntry,
 } from '@tanstack-turborepo/shared';
 
-/**
- * AI Gateway: Routes requests to OpenAI, Anthropic, and other LLM providers.
- * One SDK key, unified observability and billing; no separate API keys needed.
- */
-const client = new OpenAI();
-
 const agent = createAgent('translate', {
 	description: 'Translates text to different languages',
 	schema: {
@@ -24,18 +18,11 @@ const agent = createAgent('translate', {
 		output: TranslateOutputSchema,
 	},
 	handler: async (ctx, { text, toLanguage = 'Spanish', model = 'gpt-5-nano' }) => {
-		ctx.logger.info('──── Translation ────');
-		ctx.logger.info({ toLanguage, model, textLength: text.length });
-		ctx.logger.info('Request IDs', {
-			threadId: ctx.thread.id,
-			sessionId: ctx.sessionId,
-		});
+		ctx.logger.info('Translation request received', { toLanguage, model, textLength: text.length });
 
-		const prompt = `Translate to ${toLanguage}:\n\n${text}`;
-
-		const completion = await client.chat.completions.create({
+		const completion = await new OpenAI().chat.completions.create({
 			model,
-			messages: [{ role: 'user', content: prompt }],
+			messages: [{ role: 'user', content: `Translate to ${toLanguage}:\n\n${text}` }],
 		});
 
 		const translation = completion.choices[0]?.message?.content ?? '';

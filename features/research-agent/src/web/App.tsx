@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { useAPI } from '@agentuity/react';
 import './App.css';
 
 const SUGGESTIONS = [
@@ -9,28 +8,66 @@ const SUGGESTIONS = [
 	'Origins of the Internet',
 ];
 
+interface ResearchResult {
+	summary: string;
+	sourcesUsed: number;
+}
+
 export function App() {
 	const [topic, setTopic] = useState('');
-	const { data, invoke, isLoading, error, reset } = useAPI('POST /api/research');
+	const [data, setData] = useState<ResearchResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	const handleResearch = useCallback(async () => {
 		const trimmed = topic.trim();
 		if (!trimmed) return;
-		await invoke({ topic: trimmed });
-	}, [invoke, topic]);
+		setIsLoading(true);
+		setError(null);
+		try {
+			const res = await fetch('/api/research', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ topic: trimmed }),
+			});
+			if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+			const result = await res.json();
+			setData(result);
+		} catch (err) {
+			setError(String(err));
+		} finally {
+			setIsLoading(false);
+		}
+	}, [topic]);
 
 	const handleSuggestion = useCallback(
 		async (suggestion: string) => {
 			setTopic(suggestion);
-			await invoke({ topic: suggestion });
+			setIsLoading(true);
+			setError(null);
+			try {
+				const res = await fetch('/api/research', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ topic: suggestion }),
+				});
+				if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+				const result = await res.json();
+				setData(result);
+			} catch (err) {
+				setError(String(err));
+			} finally {
+				setIsLoading(false);
+			}
 		},
-		[invoke],
+		[],
 	);
 
 	const handleReset = useCallback(() => {
 		setTopic('');
-		reset();
-	}, [reset]);
+		setData(null);
+		setError(null);
+	}, []);
 
 	return (
 		<div className="text-white flex font-sans justify-center min-h-screen">
@@ -136,7 +173,7 @@ export function App() {
 				{error && (
 					<div className="flex flex-col gap-3">
 						<div className="bg-red-950/30 border border-red-900 rounded-lg p-4 text-red-400 text-sm">
-							{String(error)}
+							{error}
 						</div>
 						<button
 							type="button"

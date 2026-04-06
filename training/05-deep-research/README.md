@@ -2,6 +2,11 @@
 
 Run a recursive multi-agent research pipeline that searches the web, evaluates sources, extracts learnings, and generates a structured markdown report.
 
+## Prerequisites
+
+- [Bun](https://bun.sh/) installed
+- [Agentuity CLI](https://agentuity.dev/cli/installation) installed and logged in (`agentuity login`)
+
 ## Getting Started
 
 You need an [Exa API key](https://exa.ai) to run web searches.

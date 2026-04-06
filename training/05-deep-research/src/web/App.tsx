@@ -1,11 +1,26 @@
-import { useAPI } from '@agentuity/react';
-import { type ChangeEvent, useState } from 'react';
+import { type ChangeEvent, useCallback, useState } from 'react';
 
 const WORKBENCH_PATH = process.env.AGENTUITY_PUBLIC_WORKBENCH_PATH;
 
 export function App() {
-	const [name, setName] = useState('World');
-	const { data: greeting, invoke, isLoading: running } = useAPI('POST /api/hello');
+	const [query, setQuery] = useState('');
+	const [result, setResult] = useState<string | null>(null);
+	const [running, setRunning] = useState(false);
+
+	const invoke = useCallback(async (query: string) => {
+		setRunning(true);
+		try {
+			const res = await fetch('/api/research', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ query }),
+			});
+			const data = await res.json();
+			setResult(typeof data === 'string' ? data : JSON.stringify(data));
+		} finally {
+			setRunning(false);
+		}
+	}, []);
 
 	return (
 		<div className="app-container">
@@ -44,17 +59,17 @@ export function App() {
 
 				<div className="card card-interactive">
 					<h2 className="card-title">
-						Try the <span className="highlight">Hello Agent</span>
+						Try the <span className="highlight">Deep Research Agent</span>
 					</h2>
 
 					<div className="input-group">
 						<input
 							className="input"
 							disabled={running}
-							onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.currentTarget.value)}
-							placeholder="Enter your name"
+							onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.currentTarget.value)}
+							placeholder="Enter your research query"
 							type="text"
-							value={name}
+							value={query}
 						/>
 
 						<div className="glow-btn">
@@ -63,16 +78,16 @@ export function App() {
 							<button
 								className={`button ${running ? 'disabled' : ''}`}
 								disabled={running}
-								onClick={() => invoke({ name })}
+								onClick={() => invoke(query)}
 								type="button"
 							>
-								{running ? 'Running...' : 'Say Hello'}
+								{running ? 'Researching...' : 'Research'}
 							</button>
 						</div>
 					</div>
 
-					<div className="output" data-loading={!greeting}>
-						{greeting ?? 'Waiting for request'}
+					<div className="output" data-loading={!result}>
+						{result ?? 'Waiting for request'}
 					</div>
 				</div>
 
@@ -86,7 +101,7 @@ export function App() {
 								title: 'Customize your agent',
 								text: (
 									<>
-										Edit <code>src/agent/hello/agent.ts</code> to change how your agent
+										Edit <code>src/agent/orchestrator/agent.ts</code> to change how your agent
 										responds.
 									</>
 								),
@@ -352,6 +367,7 @@ export function App() {
 						font-family: monospace;
 						line-height: 1.5;
 						padding: 0.75rem 1rem;
+						white-space: pre-wrap;
 						z-index: 2;
 					}
 

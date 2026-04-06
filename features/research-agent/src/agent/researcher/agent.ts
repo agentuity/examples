@@ -2,7 +2,6 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createAgent } from '@agentuity/runtime';
 import { ResearchInput, ResearchOutput } from './types';
 
-const client = new Anthropic();
 const MAX_STEPS = 8;
 
 const SYSTEM_PROMPT = `You are a research assistant that investigates topics using Wikipedia.
@@ -96,6 +95,7 @@ const agent = createAgent('researcher', {
 	},
 
 	handler: async (ctx, input) => {
+		const client = new Anthropic();
 		ctx.logger.info('Starting research on: %s', input.topic);
 
 		const messages: Anthropic.MessageParam[] = [

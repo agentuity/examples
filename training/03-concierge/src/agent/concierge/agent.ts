@@ -5,8 +5,6 @@ import conferenceAgent from '../conference/agent';
 import sanfranciscoAgent from '../sanfrancisco/agent';
 import developerAgent from '../developer/agent';
 
-const openai = new OpenAI();
-
 function getWelcomeMessage(): string {
 	return `Welcome to AI Engineer World Fair 2025 Concierge!
 
@@ -41,6 +39,9 @@ const agent = createAgent('concierge', {
 		),
 	},
 	handler: async (ctx, { prompt, conversationId }) => {
+		// Uses the raw OpenAI SDK for intent classification (simple completion),
+		// while sub-agents use the AI SDK (generateText) for richer tool support.
+		const openai = new OpenAI();
 		ctx.logger.info('Concierge agent processing request');
 
 		try {
@@ -77,7 +78,7 @@ const agent = createAgent('concierge', {
 			let intent = 'other';
 			try {
 				const intentResponse = await openai.chat.completions.create({
-					model: 'gpt-4o-mini',
+					model: 'gpt-5-nano',
 					messages: [
 						{
 							role: 'system',

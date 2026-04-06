@@ -54,15 +54,18 @@ const agent = createAgent('translate', {
 });
 ```
 
-### 3. Frontend Gets Type Safety (`apps/web`)
+### 3. Frontend Uses Shared Types (`apps/web`)
 
 ```typescript
 // apps/web/src/components/TranslateDemo.tsx
-import '@tanstack-turborepo/agentuity/routes'; // Generated types
-import { LANGUAGES, type Language } from '@tanstack-turborepo/shared';
+import { LANGUAGES, type Language, type HistoryEntry } from '@tanstack-turborepo/shared';
 
-const { data, invoke } = useAPI('POST /api/translate');
-// TypeScript knows the exact input/output types!
+const res = await fetch('/api/translate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ text, toLanguage, model }),
+});
+const data = await res.json();
 ```
 
 ### 4. Turborepo Orchestrates Everything
@@ -89,9 +92,9 @@ bun run build  # Builds agentuity first (for route types), then web
 ## Type Safety Flow
 
 1. Schemas defined in `packages/shared`
-2. Agent uses schemas → `agentuity build` generates `routes.ts`
-3. Frontend imports `@tanstack-turborepo/agentuity/routes`
-4. `useAPI('POST /api/translate')` is fully typed
+2. Agent uses shared schemas for input/output validation
+3. Frontend imports shared types for request/response shapes
+4. Single source of truth for types across the monorepo
 
 ## Deploying
 
@@ -107,8 +110,6 @@ cd apps/web && bun run build
 
 ## Related
 
-- [React hooks](https://agentuity.dev/frontend/react-hooks)
-- [Provider setup](https://agentuity.dev/frontend/provider-setup)
 - [Schema libraries](https://agentuity.dev/agents/schema-libraries)
 - [Project structure](https://agentuity.dev/get-started/project-structure)
 - [Agentuity SDK](https://github.com/agentuity/sdk)

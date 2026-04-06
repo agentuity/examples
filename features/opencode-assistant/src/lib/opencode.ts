@@ -109,6 +109,7 @@ export async function createSession(serverUrl: string, password: string): Promis
 	for (let attempt = 1; attempt <= 5; attempt++) {
 		try {
 			const resp = await client.session.create({ body: {} });
+			// The @opencode-ai/sdk session.create() response type doesn't expose the ID field directly
 			const sessionId =
 				(resp as any)?.data?.id ??
 				(resp as any)?.id ??

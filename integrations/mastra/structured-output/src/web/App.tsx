@@ -1,5 +1,4 @@
-import { useAnalytics, useAPI } from '@agentuity/react';
-import { type ChangeEvent, Fragment, useCallback, useState } from 'react';
+import { type ChangeEvent, Fragment, useCallback, useEffect, useState } from 'react';
 import './App.css';
 
 const WORKBENCH_PATH = process.env.AGENTUITY_PUBLIC_WORKBENCH_PATH;
@@ -21,29 +20,76 @@ type TimeBlock = {
 	activities: Activity[];
 };
 
+type HistoryEntry = {
+	model: string;
+	sessionId: string;
+	prompt: string;
+	timestamp: string;
+	tokens: number;
+	planType: string;
+	activityCount: number;
+};
+
+type PlanResult = {
+	plan: TimeBlock[];
+	summary: string;
+	totalActivities: number;
+	history: HistoryEntry[];
+	sessionId: string;
+	threadId: string;
+	tokens: number;
+};
+
+type HistoryResponse = {
+	history: HistoryEntry[];
+	threadId: string;
+};
+
 export function App() {
 	const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
 	const [planType, setPlanType] = useState<(typeof PLAN_TYPES)[number]>('mixed');
 	const [model, setModel] = useState<(typeof MODELS)[number]>('gpt-5-nano');
+	const [planResult, setPlanResult] = useState<PlanResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [historyData, setHistoryData] = useState<HistoryResponse | null>(null);
 
-	const { data: historyData, refetch: refetchHistory } = useAPI('GET /api/plan/history');
-	const { data: planResult, invoke: createPlan, isLoading } = useAPI('POST /api/plan');
-	const { invoke: clearHistory } = useAPI('DELETE /api/plan/history');
-	const { track } = useAnalytics();
+	const fetchHistory = useCallback(async () => {
+		try {
+			const res = await fetch('/api/plan/history');
+			const data = await res.json();
+			setHistoryData(data);
+		} catch {
+			// ignore
+		}
+	}, []);
+
+	useEffect(() => {
+		void fetchHistory();
+	}, [fetchHistory]);
 
 	const history = planResult?.history ?? historyData?.history ?? [];
 	const threadId = planResult?.threadId ?? historyData?.threadId;
 
 	const handleCreatePlan = useCallback(async () => {
-		track('create_plan', { prompt, planType, model });
-		await createPlan({ prompt, planType, model });
-	}, [prompt, planType, model, createPlan, track]);
+		setIsLoading(true);
+		try {
+			const res = await fetch('/api/plan', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ prompt, planType, model }),
+			});
+			const data = await res.json();
+			setPlanResult(data);
+		} finally {
+			setIsLoading(false);
+		}
+	}, [prompt, planType, model]);
 
 	const handleClearHistory = useCallback(async () => {
-		track('clear_history');
-		await clearHistory();
-		await refetchHistory();
-	}, [clearHistory, refetchHistory, track]);
+		await fetch('/api/plan/history', { method: 'DELETE' });
+		setPlanResult(null);
+		await fetchHistory();
+	}, [fetchHistory]);
 
 	const getPriorityColor = (priority: string) => {
 		switch (priority) {
@@ -357,7 +403,7 @@ export function App() {
 								title: 'Customize the output schema',
 								text: (
 									<>
-										Edit <code className="text-white">src/agent/translate/index.ts</code> to
+										Edit <code className="text-white">src/agent/day-planner/index.ts</code> to
 										define your own structured output format.
 									</>
 								),

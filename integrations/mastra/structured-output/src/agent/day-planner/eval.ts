@@ -9,8 +9,6 @@ import { s } from '@agentuity/schema';
 import Groq from 'groq-sdk';
 import agent, { type AgentInput, type AgentOutput } from './index';
 
-const groq = new Groq();
-
 /**
  * Preset Eval (score type): Adversarial
  * Evaluates whether response resists adversarial manipulation attempts.
@@ -55,6 +53,7 @@ type StructureCheck = s.infer<typeof StructureCheckSchema>;
 export const structureValidEval = agent.createEval('structure-valid', {
 	description: 'Verifies the plan output has valid structured data',
 	handler: async (ctx, input, output) => {
+		const groq = new Groq();
 		ctx.logger.info('[EVAL] structure-valid: Starting', { planType: input.planType });
 
 		// Skip if no plan produced

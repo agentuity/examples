@@ -14,7 +14,7 @@ export const researchMastraAgent = new Agent({
 	name: 'Research Agent',
 	instructions:
 		'You are a research assistant. Research the topic and provide key insights as bullet points. Be concise and factual. Focus on extracting the most important and interesting facts. Do not write full paragraphs - only bullet points. Provide 5-7 key bullet points.',
-	model: 'openai/gpt-4o-mini',
+	model: 'openai/gpt-5-nano',
 });
 
 const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;

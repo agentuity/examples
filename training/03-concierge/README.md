@@ -2,6 +2,11 @@
 
 A multi-agent orchestration example where a concierge agent classifies user intent and delegates to specialist agents, with conversation history persisted across turns in KV.
 
+## Prerequisites
+
+- [Bun](https://bun.sh/) installed
+- [Agentuity CLI](https://agentuity.dev/cli/installation) installed and logged in (`agentuity login`)
+
 ## Getting Started
 
 ```bash
@@ -18,7 +23,7 @@ The `concierge` agent is the entry point. It classifies each incoming message wi
 ```typescript
 // Classify intent
 const intentResponse = await openai.chat.completions.create({
-  model: 'gpt-4o-mini',
+  model: 'gpt-5-nano',
   messages: [{ role: 'system', content: `Classify as: sanfrancisco, conference, agentuity, or other` },
              { role: 'user', content: prompt }],
   temperature: 0,
@@ -47,9 +52,9 @@ On the next request, the same `conversationId` reloads the prior messages so eac
 
 The three specialist agents each use a different provider and knowledge source:
 
-- **`conference`**: answers questions about AI Engineer World Fair 2025 using content loaded from `src/content/conference/llms.txt` via `Bun.file()`. Uses OpenAI (`gpt-4o-mini`) via the AI SDK. Content is cached in KV after the first load.
+- **`conference`**: answers questions about AI Engineer World Fair 2025 using content loaded from `src/content/conference/llms.txt` via `Bun.file()`. Uses OpenAI (`gpt-5-nano`) via the AI SDK. Content is cached in KV after the first load.
 - **`sanfrancisco`**: local SF guide backed by Perplexity (`sonar-pro`) for live web search. Fetches current weather via `src/lib/weather.ts` when the query mentions weather keywords, and appends sources extracted from Perplexity's response.
-- **`developer`**: Agentuity platform expert using documentation loaded from `src/content/agentuity/llms.txt`. Uses OpenAI (`gpt-4o-mini`) and caches the doc content in KV.
+- **`developer`**: Agentuity platform expert using documentation loaded from `src/content/agentuity/llms.txt`. Uses OpenAI (`gpt-5-nano`) and caches the doc content in KV.
 
 ## Project Structure
 

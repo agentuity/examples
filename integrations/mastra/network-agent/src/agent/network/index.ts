@@ -32,7 +32,7 @@ For complex tasks:
 - If the user wants a written report, use the research agent to gather facts, then use the writing agent to produce the content
 - If the user asks about a specific city, use the research agent for city facts, then the writing agent for a complete report
 - For simple weather questions, use the weather tool`,
-	model: 'openai/gpt-4o-mini',
+	model: 'openai/gpt-5-nano',
 	agents: {
 		researchAgent: researchMastraAgent,
 		writingAgent: writingMastraAgent,

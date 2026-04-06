@@ -16,9 +16,9 @@
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
 		"paths": {
-			"@agents/*": ["./src/agent/*"]
+			"@agent/*": ["./src/agent/*"],
+			"@api/*": ["./src/api/*"]
 		}
 	},
-	"include": ["src/**/*", "app.ts", ".agentuity/.agentuity_types.ts"],
-	"exclude": ["node_modules", ".agentuity", "src/generated/routes.ts"]
+	"include": ["src/**/*", "app.ts"]
 }

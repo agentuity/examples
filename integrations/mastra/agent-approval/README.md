@@ -112,6 +112,12 @@ bun run build  # Build for deployment
 bun run deploy # Deploy to Agentuity
 ```
 
+## Known Limitations
+
+**InMemoryStore loses pending approvals on restart.** Mastra's workflow snapshots are stored in `InMemoryStore`, which only lives for the duration of the process. If the agent restarts while an approval is pending, the snapshot is gone and `approveToolCallGenerate` / `declineToolCallGenerate` will fail with "No snapshot found". The pending approval record in Agentuity thread state will also be orphaned.
+
+This is acceptable for demos and short-lived examples. For deployments where approvals must survive restarts, replace `InMemoryStore` with a persistent store backed by Agentuity KV, a database, or another durable backend.
+
 ## Related
 
 - [Mastra: Agent Tool Approval](https://mastra.ai/docs/agents/agent-tool-approval)

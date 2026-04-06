@@ -1,19 +1,9 @@
-import { createApp, createTrustedCorsOrigin } from '@agentuity/runtime';
+import { createApp } from '@agentuity/runtime';
+import agents from './src/agent';
+import router from './src/api';
 
-const allowedOrigins = process.env.AGENTUITY_CORS_ALLOWED_ORIGINS?.split(',')
-	.map((origin) => origin.trim())
-	.filter(Boolean);
-
-const app = await createApp({
-	cors: {
-		origin: createTrustedCorsOrigin({
-			allowedOrigins,
-		}),
-		sameOrigin: true,
-		allowedOrigins: allowedOrigins?.length ? allowedOrigins : undefined,
-	},
+export default await createApp({
+	agents,
+	router,
+	workbench: true,
 });
-
-app.logger.info(`[NextJS-Agentuity] Server started: ${app.server.url}`);
-
-export default app;

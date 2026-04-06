@@ -1,8 +1,6 @@
 'use client';
 
-import { type ChangeEvent, useMemo, useState } from 'react';
-import { AgentuityProvider, useAPI } from '@agentuity/react';
-import '@agentuity/routes';
+import { type ChangeEvent, useCallback, useMemo, useState } from 'react';
 
 const LANGUAGES = ['Spanish', 'French', 'German', 'Chinese'] as const;
 const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
@@ -10,16 +8,43 @@ const MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
 const DEFAULT_TEXT =
 	'This Next.js UI sends translation requests to an Agentuity backend, where Agentuity handles model access through a gateway, keeps thread state and history in sync, and runs eval checks on results.';
 
-function TranslateDemoInner() {
+const BASE_URL = process.env.NEXT_PUBLIC_AGENTUITY_BASE_URL ?? '';
+
+interface HistoryEntry {
+	model: string;
+	sessionId: string;
+	text: string;
+	timestamp: string;
+	tokens: number;
+	toLanguage: string;
+	translation: string;
+}
+
+interface TranslateResponse {
+	history: HistoryEntry[];
+	sessionId: string;
+	threadId: string;
+	tokens: number;
+	translation: string;
+	translationCount: number;
+}
+
+interface HistoryResponse {
+	history: HistoryEntry[];
+	threadId: string;
+	translationCount: number;
+}
+
+export default function TranslateDemo() {
 	const [text, setText] = useState(DEFAULT_TEXT);
 	const [toLanguage, setToLanguage] = useState<(typeof LANGUAGES)[number]>('Spanish');
 	const [model, setModel] = useState<(typeof MODELS)[number]>('gpt-5-nano');
-
+	const [isLoading, setIsLoading] = useState(false);
+	const [isClearing, setIsClearing] = useState(false);
+	const [error, setError] = useState<Error | null>(null);
+	const [translateData, setTranslateData] = useState<TranslateResponse | null>(null);
+	const [historyData, setHistoryData] = useState<HistoryResponse | null>(null);
 	const [lastCleared, setLastCleared] = useState(false);
-
-	const { data: historyData, refetch: refetchHistory } = useAPI('GET /api/translate/history');
-	const { data: translateData, invoke: translate, isLoading, error } = useAPI('POST /api/translate');
-	const { invoke: clearHistory, isLoading: isClearing } = useAPI('DELETE /api/translate/history');
 
 	const history = useMemo(
 		() => lastCleared
@@ -29,22 +54,48 @@ function TranslateDemoInner() {
 	);
 	const threadId = translateData?.threadId;
 
-	const onTranslate = async () => {
+	const fetchHistory = useCallback(async () => {
 		try {
-			setLastCleared(false);
-			await translate({ text, toLanguage, model });
+			const res = await fetch(`${BASE_URL}/api/translate/history`);
+			if (!res.ok) throw new Error(`Failed to fetch history: ${res.statusText}`);
+			const data: HistoryResponse = await res.json();
+			setHistoryData(data);
 		} catch {
-			return;
+			// Silently ignore history fetch failures
+		}
+	}, []);
+
+	const onTranslate = async () => {
+		setIsLoading(true);
+		setError(null);
+		setLastCleared(false);
+		try {
+			const res = await fetch(`${BASE_URL}/api/translate`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ text, toLanguage, model }),
+			});
+			if (!res.ok) throw new Error(`Translation failed: ${res.statusText}`);
+			const data: TranslateResponse = await res.json();
+			setTranslateData(data);
+		} catch (err) {
+			setError(err instanceof Error ? err : new Error(String(err)));
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
 	const onClearHistory = async () => {
+		setIsClearing(true);
 		try {
-			await clearHistory();
+			const res = await fetch(`${BASE_URL}/api/translate/history`, { method: 'DELETE' });
+			if (!res.ok) throw new Error(`Failed to clear history: ${res.statusText}`);
 			setLastCleared(true);
-			await refetchHistory();
+			await fetchHistory();
 		} catch {
-			return;
+			// Silently ignore clear failures
+		} finally {
+			setIsClearing(false);
 		}
 	};
 
@@ -151,7 +202,7 @@ function TranslateDemoInner() {
 							{[...history].reverse().map((entry, index) => (
 								<li className="demo-history-item" key={`${entry.timestamp}-${index}`}>
 									<div className="demo-history-meta">
-										{entry.model} • {entry.toLanguage} • {entry.sessionId.slice(0, 12)}...
+										{entry.model} &bull; {entry.toLanguage} &bull; {entry.sessionId.slice(0, 12)}...
 									</div>
 									<div className="demo-history-source">{entry.text}</div>
 									<div className="demo-history-translation">{entry.translation}</div>
@@ -164,13 +215,5 @@ function TranslateDemoInner() {
 				</section>
 			</div>
 		</main>
-	);
-}
-
-export default function TranslateDemo() {
-	return (
-		<AgentuityProvider baseUrl={process.env.NEXT_PUBLIC_AGENTUITY_BASE_URL}>
-			<TranslateDemoInner />
-		</AgentuityProvider>
 	);
 }

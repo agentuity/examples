@@ -93,8 +93,7 @@ const assistant = new Agent<UserInfo, typeof ContactOutput>({
 	name: 'Contact Finder',
 	instructions:
 		'You are a contact lookup assistant. Use the tools to find contact information. Always return complete, structured data about the contact.',
-	model: 'gpt-4.1',
-	modelSettings: { temperature: 0 },
+	model: 'gpt-5',
 	tools: [lookupContact, listContacts],
 	outputType: ContactOutput,
 });

@@ -1,5 +1,4 @@
-import { useAPI } from '@agentuity/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import './App.css';
 
 function relativeTime(dateStr: string): string {
@@ -17,32 +16,83 @@ function relativeTime(dateStr: string): string {
 	return `${days}d ago`;
 }
 
+interface DigestEntry {
+	title: string;
+	summary: string;
+	streamUrl: string;
+	streamId: string;
+	date: string;
+	itemCount: number;
+}
+
+interface LatestResponse {
+	exists: boolean;
+	digest?: DigestEntry;
+}
+
+interface HistoryResponse {
+	digests: DigestEntry[];
+}
+
 export function App() {
 	const [copied, setCopied] = useState(false);
 
-	const {
-		data: latestData,
-		refetch: refetchLatest,
-		isLoading: loadingLatest,
-	} = useAPI('GET /api/digests/latest');
-	const {
-		data: historyData,
-		refetch: refetchHistory,
-		isLoading: loadingHistory,
-	} = useAPI('GET /api/digests/history');
-	const { invoke: triggerDigest, isLoading: generating } = useAPI('POST /api/digest/now');
-
+	const [latestData, setLatestData] = useState<LatestResponse | null>(null);
+	const [loadingLatest, setLoadingLatest] = useState(true);
+	const [historyData, setHistoryData] = useState<HistoryResponse | null>(null);
+	const [loadingHistory, setLoadingHistory] = useState(true);
+	const [generating, setGenerating] = useState(false);
 	const [runError, setRunError] = useState<string | null>(null);
+
+	const fetchLatest = useCallback(async () => {
+		setLoadingLatest(true);
+		try {
+			const res = await fetch('/api/digests/latest');
+			const data = await res.json();
+			setLatestData(data);
+		} catch {
+			// Silently handle fetch errors
+		} finally {
+			setLoadingLatest(false);
+		}
+	}, []);
+
+	const fetchHistory = useCallback(async () => {
+		setLoadingHistory(true);
+		try {
+			const res = await fetch('/api/digests/history');
+			const data = await res.json();
+			setHistoryData(data);
+		} catch {
+			// Silently handle fetch errors
+		} finally {
+			setLoadingHistory(false);
+		}
+	}, []);
+
+	// Load data on mount
+	useEffect(() => {
+		fetchLatest();
+		fetchHistory();
+	}, [fetchLatest, fetchHistory]);
 
 	const handleRunNow = useCallback(async () => {
 		setRunError(null);
+		setGenerating(true);
 		try {
-			await triggerDigest();
-			await Promise.all([refetchLatest(), refetchHistory()]);
+			const res = await fetch('/api/digest/now', { method: 'POST' });
+			const data = await res.json();
+			if (data.status === 'error') {
+				setRunError(data.error ?? 'Failed to generate digest');
+			} else {
+				await Promise.all([fetchLatest(), fetchHistory()]);
+			}
 		} catch (err) {
 			setRunError(err instanceof Error ? err.message : 'Failed to generate digest');
+		} finally {
+			setGenerating(false);
 		}
-	}, [triggerDigest, refetchLatest, refetchHistory]);
+	}, [fetchLatest, fetchHistory]);
 
 	const handleCopy = useCallback(async (url: string) => {
 		await navigator.clipboard.writeText(url);

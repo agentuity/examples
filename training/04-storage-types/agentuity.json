@@ -1,15 +1,14 @@
 {
   "$schema": "https://agentuity.dev/schema/cli/v1/agentuity.json",
-  "projectId": "proj_11df0eb05a70026a1df81aba00346edb",
-  "orgId": "org_2u8RgDTwcZWrZrZ3sZh24T5FCtz",
+  "projectId": "proj_35acaa0cb0e365d5fe7e33a8414c5301",
+  "orgId": "org_2zgmb8jl16mZ3tzXBqg9gO9SS5V",
+  "region": "usc",
   "deployment": {
     "resources": {
       "memory": "500Mi",
       "cpu": "500m",
-      "disk": "500Mi",
-      "storage": "ag-b0cp27yuo07d",
-      "db": "lucia_sesko"
-    }
-  },
-  "region": "use"
+      "disk": "500Mi"
+    },
+    "domains": []
+  }
 }
