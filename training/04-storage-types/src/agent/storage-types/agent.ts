@@ -44,10 +44,10 @@ const agent = createAgent('storage-types', {
 		});
 
 		try {
-			// Detect if this is the llms.txt file
-			const isFileUpload = textContent.startsWith('# Agentuity') &&
-												(textContent.includes('## Features') || textContent.includes('## Product Features')) &&
-												textContent.includes('## About');
+			// Detect if this is the Agentuity docs file
+			const isFileUpload = (textContent.startsWith('# Agentuity') || textContent.startsWith('AGENTUITY PLATFORM')) &&
+												(textContent.includes('## Features') || textContent.includes('## Product Features') || textContent.includes('CORE CONCEPTS')) &&
+												(textContent.includes('## About') || textContent.includes('OVERVIEW'));
 
 			if (isFileUpload) {
 				/* Handle file (`llms.txt`) upload in DevMode UI*/
@@ -73,26 +73,32 @@ const agent = createAgent('storage-types', {
 				// PHASE 1: Add Vector Storage
 				/* Split the text into sections based on the ## headers */
 
-				// Find the exact positions of the main ## headers
-				let featuresIndex = textContent.indexOf('## Product Features');
-				if (featuresIndex === -1) {  // Fallback to just '## Features' if 'Product Features' not found
-					featuresIndex = textContent.indexOf('## Features');
+				// Split into sections using separator lines or major headings
+				const isNewFormat = textContent.startsWith('AGENTUITY PLATFORM');
+				let sections: string[];
+				let sectionTitles: string[];
+
+				if (isNewFormat) {
+					// New format: split on ===== separator lines
+					const parts = textContent.split(/^={10,}$/m).map(s => s.trim()).filter(Boolean);
+					sections = parts.slice(0, 5);
+					sectionTitles = ['Overview', 'Core Concepts', 'Managed Services', 'FAQ', 'Reference'];
+				} else {
+					// Legacy format: split on ## headers
+					let featuresIndex = textContent.indexOf('## Product Features');
+					if (featuresIndex === -1) featuresIndex = textContent.indexOf('## Features');
+					const coreBenefitsIndex = textContent.indexOf('## Core Benefits');
+					const aboutIndex = textContent.indexOf('## About');
+					const blogIndex = textContent.indexOf('## Blog Posts');
+					sections = [
+						textContent.substring(0, featuresIndex).trim(),
+						textContent.substring(featuresIndex, coreBenefitsIndex).trim(),
+						textContent.substring(coreBenefitsIndex, aboutIndex).trim(),
+						textContent.substring(aboutIndex, blogIndex).trim(),
+						textContent.substring(blogIndex).trim(),
+					];
+					sectionTitles = ['Introduction', 'Product Features', 'Core Benefits', 'About', 'Blog Posts'];
 				}
-				const coreBenefitsIndex = textContent.indexOf('## Core Benefits');
-				const aboutIndex = textContent.indexOf('## About');
-				const blogIndex = textContent.indexOf('## Blog Posts');
-
-				// Create the 5 major sections based on these positions
-				const sections: string[] = [
-					textContent.substring(0, featuresIndex).trim(),  // Intro
-					textContent.substring(featuresIndex, coreBenefitsIndex).trim(),  // Product Features section
-					textContent.substring(coreBenefitsIndex, aboutIndex).trim(),  // Core Benefits section
-					textContent.substring(aboutIndex, blogIndex).trim(),  // About section
-					textContent.substring(blogIndex).trim()  // Blog Posts
-				];
-
-				// Section titles for metadata
-				const sectionTitles = ['Introduction', 'Product Features', 'Core Benefits', 'About', 'Blog Posts'];
 
 				// Store each section in vector storage
 				const vectorIds: string[] = [];

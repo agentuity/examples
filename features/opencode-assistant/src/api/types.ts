@@ -10,6 +10,8 @@ export const AssistantState = s.object({
 	startedAt: s.string(),
 	phase: s.enum(['creating', 'booting', 'cloning', 'ready', 'error']),
 	error: s.optional(s.string()),
+	// Cancellation token: if KV state is gone or has a different runId, the run was cancelled.
+	runId: s.optional(s.string()),
 });
 
 export const StartInput = s.object({

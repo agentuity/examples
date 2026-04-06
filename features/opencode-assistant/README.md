@@ -10,6 +10,8 @@ Demonstrates Agentuity platform features using a chat interface for GitHub repos
 
 No agents are defined. All features are used directly from API routes.
 
+> **Note:** This example requires live sandbox infrastructure via Agentuity Cloud. The bootstrap process creates a remote sandbox, installs OpenCode, and clones a repository, which can take 30-60 seconds. Transient failures during sandbox provisioning or OpenCode startup may cause health check timeouts. If you run into issues, retry or reach out in [our Discord help channel](https://discord.com/channels/1332974865371758646/1379506339960852631).
+
 ## Getting Started
 
 ```bash

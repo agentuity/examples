@@ -47,26 +47,44 @@ function makeState(
 	};
 }
 
+// Re-write state with a fresh TTL to prevent expiry on active workspaces.
+async function refreshState(
+	kv: { set: (ns: string, key: string, value: AssistantState, opts?: { ttl?: number }) => Promise<void> },
+	state: AssistantState,
+): Promise<void> {
+	await kv.set(KV_NAMESPACE, KV_KEY, state, { ttl: KV_TTL });
+}
+
+// Returns true if KV no longer holds a matching runId (stop was called or a new run started).
+async function isRunCancelled(
+	kv: { get: (ns: string, key: string) => Promise<{ exists: boolean; data: AssistantState }> },
+	runId: string,
+): Promise<boolean> {
+	const result = await kv.get(KV_NAMESPACE, KV_KEY);
+	return !result.exists || result.data.runId !== runId;
+}
+
 // Background setup: creates sandbox, polls health, clones repo, creates session.
 // Writes progressive KV state so GET /api/status can report progress.
 async function runSetup(params: {
 	repoUrl: string;
 	password: string;
-	kv: { set: (ns: string, key: string, value: AssistantState, opts?: { ttl?: number }) => Promise<void> };
+	runId: string;
+	kv: { get: (ns: string, key: string) => Promise<{ exists: boolean; data: AssistantState }>; set: (ns: string, key: string, value: AssistantState, opts?: { ttl?: number }) => Promise<void> };
 	sandbox: {
 		create: (opts: any) => Promise<{ id: string; execute: (opts: any) => Promise<any>; destroy: () => Promise<void> }>;
 		get: (id: string) => Promise<{ url?: string; status?: string; executions?: number }>;
 	};
 	logger: { info: (msg: string, meta?: any) => void; warn: (msg: string, meta?: any) => void; error: (msg: string, meta?: any) => void };
 }): Promise<void> {
-	const { repoUrl, password, kv, sandbox, logger } = params;
+	const { repoUrl, password, runId, kv, sandbox, logger } = params;
 	let sbx: Awaited<ReturnType<typeof sandbox.create>> | undefined;
 
 	try {
 		// --- LLM Configuration ---
 		const sdkKey = process.env.AGENTUITY_SDK_KEY;
 		const openaiKey = process.env.OPENAI_API_KEY;
-		const gatewayBase = process.env.AGENTUITY_AIGATEWAY_URL || process.env.AGENTUITY_TRANSPORT_URL || 'https://agentuity.ai';
+		const gatewayBase = process.env.AGENTUITY_AIGATEWAY_URL || process.env.AGENTUITY_TRANSPORT_URL || 'https://catalyst.agentuity.cloud';
 
 		const env: Record<string, string> = {
 			OPENCODE_SERVER_PASSWORD: password,
@@ -146,9 +164,16 @@ async function runSetup(params: {
 			throw new Error('Sandbox did not expose a public URL.');
 		}
 
+		// Bail early if stop was called while the sandbox was being created
+		if (await isRunCancelled(kv, runId)) {
+			logger.info('Run cancelled after sandbox creation, destroying sandbox', { sandboxId: sbx.id });
+			await sbx.destroy().catch(() => {});
+			return;
+		}
+
 		// Phase: booting -- sandbox exists, polling for OpenCode health
 		await kv.set(KV_NAMESPACE, KV_KEY, makeState({
-			sandboxId: sbx.id, serverUrl, password, repoUrl, phase: 'booting',
+			sandboxId: sbx.id, serverUrl, password, repoUrl, runId, phase: 'booting',
 		}), { ttl: KV_TTL });
 
 		// --- Poll for server readiness ---
@@ -186,9 +211,16 @@ async function runSetup(params: {
 			);
 		}
 
+		// Bail early if stop was called while we were polling for health
+		if (await isRunCancelled(kv, runId)) {
+			logger.info('Run cancelled after health polling, destroying sandbox', { sandboxId: sbx.id });
+			await sbx.destroy().catch(() => {});
+			return;
+		}
+
 		// Phase: cloning -- server healthy, cloning repo
 		await kv.set(KV_NAMESPACE, KV_KEY, makeState({
-			sandboxId: sbx.id, serverUrl, password, repoUrl, phase: 'cloning',
+			sandboxId: sbx.id, serverUrl, password, repoUrl, runId, phase: 'cloning',
 		}), { ttl: KV_TTL });
 
 		// --- Launch git clone ---
@@ -260,6 +292,13 @@ async function runSetup(params: {
 			throw new Error('Repository clone did not complete in time.');
 		}
 
+		// Bail early if stop was called while we were waiting for the clone
+		if (await isRunCancelled(kv, runId)) {
+			logger.info('Run cancelled after clone, destroying sandbox', { sandboxId: sbx.id });
+			await sbx.destroy().catch(() => {});
+			return;
+		}
+
 		// --- Create OpenCode session ---
 		let sessionId: string;
 		try {
@@ -274,9 +313,16 @@ async function runSetup(params: {
 		}
 		logger.info('OpenCode session created', { sandboxId: sbx.id, sessionId });
 
+		// Bail early if stop was called during session creation
+		if (await isRunCancelled(kv, runId)) {
+			logger.info('Run cancelled after session creation, destroying sandbox', { sandboxId: sbx.id });
+			await sbx.destroy().catch(() => {});
+			return;
+		}
+
 		// Phase: ready -- workspace fully operational
 		await kv.set(KV_NAMESPACE, KV_KEY, makeState({
-			sandboxId: sbx.id, serverUrl, password, sessionId, repoUrl, phase: 'ready',
+			sandboxId: sbx.id, serverUrl, password, sessionId, repoUrl, runId, phase: 'ready',
 		}), { ttl: KV_TTL });
 
 		logger.info('Workspace setup complete', { sandboxId: sbx.id, sessionId });
@@ -289,6 +335,7 @@ async function runSetup(params: {
 			await kv.set(KV_NAMESPACE, KV_KEY, makeState({
 				sandboxId: sbx?.id ?? '',
 				repoUrl,
+				runId,
 				phase: 'error',
 				error: errorMessage,
 			}), { ttl: ERROR_TTL });
@@ -361,6 +408,9 @@ const router = new Hono<Env>()
 			return c.json({ exists: false });
 		}
 
+		// Workspace is confirmed alive — refresh TTL so state survives long sessions
+		await refreshState(kv, state);
+
 		return c.json({
 			exists: true,
 			repoUrl: state.repoUrl,
@@ -429,8 +479,9 @@ const router = new Hono<Env>()
 		}
 
 		const password = crypto.randomUUID();
+		const runId = crypto.randomUUID();
 		await kv.set(KV_NAMESPACE, KV_KEY, makeState({
-			password, repoUrl: requestedRepoUrl, phase: 'creating',
+			password, repoUrl: requestedRepoUrl, runId, phase: 'creating',
 		}), { ttl: KV_TTL });
 
 		// Clean up the old sandbox (if any) in the background
@@ -447,7 +498,7 @@ const router = new Hono<Env>()
 
 		// --- Agentuity waitUntil: Run full setup in the background ---
 		c.waitUntil(async () => {
-			await runSetup({ repoUrl: requestedRepoUrl, password, kv, sandbox, logger });
+			await runSetup({ repoUrl: requestedRepoUrl, password, runId, kv, sandbox, logger });
 		});
 
 		return c.json({ accepted: true, repoUrl: requestedRepoUrl, phase: 'creating' as const }, 202);
@@ -473,6 +524,9 @@ const router = new Hono<Env>()
 			return c.json({ accepted: false }, 500);
 		}
 
+		// Prompt delivered — refresh TTL while the session is actively used
+		await refreshState(kv, result.data);
+
 		return c.json({ accepted: true });
 	})
 	// --- Agentuity SSE: Stream events from sandbox to browser ---
@@ -492,6 +546,9 @@ const router = new Hono<Env>()
 				stream.close();
 				return;
 			}
+
+			// SSE connection established — refresh TTL while the browser is connected
+			await refreshState(kv, result.data);
 
 			const { serverUrl, password } = result.data;
 			const auth = authHeader(password);
